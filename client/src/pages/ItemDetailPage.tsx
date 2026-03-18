@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getItem, updateItem, deleteItem, Item } from '../api';
+import { getItem, updateItem, deleteItem, type Item } from '../api';
 
 export default function ItemDetailPage() {
   const { itemId } = useParams<{ itemId: string }>();

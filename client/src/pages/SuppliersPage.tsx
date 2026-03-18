@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   getCustomer, getCustomerSuppliers, getAllSuppliers,
   createSupplier, linkSupplierToCustomer,
-  Customer, Supplier
+  type Customer, type Supplier
 } from '../api';
 
 export default function SuppliersPage() {

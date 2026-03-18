@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   getCustomer, getCustomerSuppliers, getSupplierItems,
-  createItem, Item, Customer, Supplier
+  createItem, type Item, type Customer, type Supplier
 } from '../api';
 
 export default function ItemsPage() {

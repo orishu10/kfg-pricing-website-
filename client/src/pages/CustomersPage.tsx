@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCustomers, createCustomer, deleteCustomer, Customer } from '../api';
+import { getCustomers, createCustomer, deleteCustomer, type Customer } from '../api';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
