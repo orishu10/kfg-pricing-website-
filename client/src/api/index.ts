@@ -71,9 +71,37 @@ export interface Item {
   sap_price_case: N;
 }
 
-export type ItemUpdate = Omit<Item,
-  'id' | 'customer_id' | 'supplier_id' | 'supplier_name' | 'customer_name' | 'created_at' | 'updated_at'
->;
+// What we SEND to the server on PUT (numeric fields as number | null)
+export interface ItemPayload {
+  name: string;
+  supplier_incoterms: string | null;
+  customer_incoterms: string | null;
+  logistics: number | null;
+  container_type: string | null;
+  fob: number | null;
+  cif: number | null;
+  dap: number | null;
+  ddp: number | null;
+  cases_in_fcl: number | null;
+  units_in_case: number | null;
+  unit_weight: number | null;
+  supplier_price_unit: number | null;
+  supplier_price_case: number | null;
+  supplier_price_fcl: number | null;
+  supplier_price_1kg: number | null;
+  sub_total_1: number | null;
+  us_tariff: number | null;
+  sub_total_2: number | null;
+  import_factor: number | null;
+  kfg_commission: number | null;
+  total: number | null;
+  cost_unit: number | null;
+  cost_case: number | null;
+  price_unit: number | null;
+  price_case: number | null;
+  sap_price_unit: number | null;
+  sap_price_case: number | null;
+}
 
 // Customers
 export const getCustomers = () => api.get<Customer[]>('/customers').then(r => r.data);
@@ -99,6 +127,6 @@ export const getSupplierItems = (supplierId: number, customerId: string) =>
 export const getItem = (id: string) => api.get<Item>(`/items/${id}`).then(r => r.data);
 export const createItem = (data: { id: string; name: string; customer_id: string; supplier_id: number }) =>
   api.post<Item>('/items', data).then(r => r.data);
-export const updateItem = (id: string, data: ItemUpdate) =>
+export const updateItem = (id: string, data: ItemPayload) =>
   api.put<Item>(`/items/${id}`, data).then(r => r.data);
 export const deleteItem = (id: string) => api.delete(`/items/${id}`);

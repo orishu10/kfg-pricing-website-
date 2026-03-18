@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getItem, updateItem, deleteItem, type Item, type ItemUpdate } from '../api';
+import { getItem, updateItem, deleteItem, type Item, type ItemPayload } from '../api';
 
 // ── Update this list when the customer provides the 4 container types ──
 const CONTAINER_TYPES = ['20GP', '40GP', '40HC', '45HC'];
@@ -224,7 +224,7 @@ export default function ItemDetailPage() {
     e.preventDefault();
     setError('');
     setSaved(false);
-    const payload: ItemUpdate = {
+    const payload: ItemPayload = {
       name:                form.name,
       supplier_incoterms:  form.supplier_incoterms || null,
       customer_incoterms:  form.customer_incoterms || null,
