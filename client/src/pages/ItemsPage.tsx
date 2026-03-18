@@ -15,7 +15,6 @@ export default function ItemsPage() {
   const [showForm, setShowForm] = useState(false);
   const [newId, setNewId] = useState('');
   const [newName, setNewName] = useState('');
-  const [newPrice, setNewPrice] = useState('');
   const [error, setError] = useState('');
 
   const loadItems = () =>
@@ -29,6 +28,8 @@ export default function ItemsPage() {
       else setSupplier(found);
     });
     loadItems();
+    // navigate and loadItems are stable references — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId, supplierId]);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -40,15 +41,14 @@ export default function ItemsPage() {
         name: newName.trim(),
         customer_id: customerId!,
         supplier_id: Number(supplierId),
-        final_price: newPrice ? parseFloat(newPrice) : null,
       });
       setNewId('');
       setNewName('');
-      setNewPrice('');
       setShowForm(false);
       loadItems();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create item');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      setError(msg || 'Failed to create item');
     }
   };
 
@@ -76,17 +76,6 @@ export default function ItemsPage() {
             Name
             <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Item name" required />
           </label>
-          <label>
-            Final Price (optional)
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={newPrice}
-              onChange={e => setNewPrice(e.target.value)}
-              placeholder="0.00"
-            />
-          </label>
           {error && <p className="error">{error}</p>}
           <button className="btn-primary" type="submit">Create</button>
         </form>
@@ -107,7 +96,7 @@ export default function ItemsPage() {
               <span className="list-item-id">{item.id}</span>
             </div>
             <span className="list-item-price">
-              {item.final_price != null ? `₪${parseFloat(item.final_price).toFixed(2)}` : '—'}
+              {item.total != null ? `$${parseFloat(item.total).toFixed(2)}` : '—'}
             </span>
           </div>
         ))}

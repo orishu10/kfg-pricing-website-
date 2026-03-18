@@ -8,10 +8,8 @@ const CONTAINER_TYPES = ['20GP', '40GP', '40HC', '45HC'];
 // ── Helpers ────────────────────────────────────────────────────────────
 const toNum = (v: string): number | null => (v.trim() === '' ? null : parseFloat(v));
 const toInt = (v: string): number | null => (v.trim() === '' ? null : parseInt(v, 10));
-const fmt = (v: string | number | null | undefined, decimals = 4): string =>
+const fmt = (v: string | number | null | undefined): string =>
   v == null ? '' : String(v);
-const display = (v: string | number | null | undefined): string =>
-  v == null || v === '' ? '—' : String(v);
 
 // Auto-calculate derived fields from current form state
 function calcDerived(f: FormState): Partial<FormState> {
@@ -205,6 +203,8 @@ export default function ItemDetailPage() {
       setItem(data);
       setForm(itemToForm(data));
     }).catch(() => navigate('/'));
+    // navigate is a stable reference — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);
 
   // Recalculate derived fields whenever relevant inputs change
@@ -260,8 +260,9 @@ export default function ItemDetailPage() {
       setForm(itemToForm(updated));
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      setError(msg || 'Failed to save');
     }
   };
 

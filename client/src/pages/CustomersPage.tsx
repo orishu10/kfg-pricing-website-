@@ -23,8 +23,9 @@ export default function CustomersPage() {
       setNewName('');
       setShowForm(false);
       load();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create customer');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      setError(msg || 'Failed to create customer');
     }
   };
 

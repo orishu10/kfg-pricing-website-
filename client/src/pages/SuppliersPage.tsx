@@ -26,6 +26,8 @@ export default function SuppliersPage() {
     getCustomer(customerId!).then(setCustomer).catch(() => navigate('/'));
     loadSuppliers();
     getAllSuppliers().then(setAllSuppliers);
+    // navigate and loadSuppliers are stable references — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId]);
 
   const handleAddNew = async (e: React.FormEvent) => {
@@ -36,8 +38,9 @@ export default function SuppliersPage() {
       setNewName('');
       setShowForm(false);
       loadSuppliers();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create supplier');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      setError(msg || 'Failed to create supplier');
     }
   };
 
@@ -49,8 +52,9 @@ export default function SuppliersPage() {
       setLinkId('');
       setShowForm(false);
       loadSuppliers();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to link supplier');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      setError(msg || 'Failed to link supplier');
     }
   };
 
