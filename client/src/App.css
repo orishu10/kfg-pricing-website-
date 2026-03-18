@@ -176,26 +176,98 @@ input:focus, select:focus { border-color: #0071e3; background: #fff; }
 .list-item-arrow { color: #bbb; font-size: 18px; }
 .list-item-price { font-size: 15px; font-weight: 600; color: #1d8348; }
 
-/* Item Detail */
-.item-detail-form hr { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+/* ── Item Detail Page ─────────────────────────────────────────── */
+.item-detail-page .page-header h1 {
+  font-size: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 480px;
+}
 
-.field-readonly { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.detail-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 20px 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #0071e3;
+  margin: 0 0 14px;
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px 16px;
+}
+
+/* individual field block */
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 .field-label {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   color: #888;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
+/* read-only display value */
 .field-value {
-  font-size: 15px;
+  font-size: 14px;
   font-family: monospace;
-  color: #555;
+  color: #444;
   background: #f5f5f7;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 7px 10px;
+  border-radius: 7px;
+}
+
+/* auto-calculated field highlight */
+.field-calc .field-label { color: #6f42c1; }
+.input-calc {
+  background: #f5f0ff !important;
+  border-color: #c9b8f0 !important;
+  color: #4a2c8a;
+}
+.input-calc:focus { border-color: #7c4dff !important; }
+
+.calc-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  background: #ede9fe;
+  color: #6f42c1;
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* form footer */
+.form-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0 24px;
+}
+
+.btn-large {
+  padding: 10px 28px;
+  font-size: 15px;
 }
 
 /* Feedback */
