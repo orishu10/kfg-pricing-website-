@@ -1,3 +1,4 @@
+import type { FormState } from "./types";
 
 export const EMPTY_FORM: FormState = {
   name: '', supplier_incoterms: '', customer_incoterms: '',

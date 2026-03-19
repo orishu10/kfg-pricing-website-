@@ -90,7 +90,7 @@ export default function CustomersPage() {
       ) : (
         <Grid container spacing={2}>
           {customers.map(c => (
-            <Grid size={{ xs: 12, sm: 6 }} key={c.id}>
+            <Grid key={c.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardActionArea
                   onClick={() => navigate(`/customers/${c.id}/suppliers`)}
