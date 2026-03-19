@@ -86,6 +86,8 @@ function itemToForm(item: Item): FormState {
     price_case: fmt(item.price_case),
     sap_price_unit: fmt(item.sap_price_unit),
     sap_price_case: fmt(item.sap_price_case),
+    cases_per_pallets: fmt(item.cas),
+    
   };
 }
 
@@ -507,7 +509,7 @@ export default function ItemDetailPage() {
         {/* ── 5. Volume / Weight ── */}
         <Section title="">
           <FormTextField
-            label="C/P"
+            label="Cases Per Pallet"
             value={form.cases_per_pallets}
             onChange={set("unit_weight")}
           />
