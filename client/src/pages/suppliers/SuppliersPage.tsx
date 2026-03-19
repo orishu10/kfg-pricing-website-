@@ -4,7 +4,7 @@ import {
   getCustomer, getCustomerSuppliers, getAllSuppliers,
   createSupplier, linkSupplierToCustomer,
   type Customer, type Supplier
-} from '../api';
+} from '../../api';
 
 export default function SuppliersPage() {
   const { customerId } = useParams<{ customerId: string }>();

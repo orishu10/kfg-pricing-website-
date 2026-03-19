@@ -1,0 +1,506 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  getItem,
+  updateItem,
+  deleteItem,
+  type Item,
+  type ItemPayload,
+} from "../../api";
+
+function calcDerived(f: FormState): Partial<FormState> {
+  const unit = parseFloat(f.supplier_price_unit) || 0;
+  const uic = parseInt(f.units_in_case, 10) || 0;
+  const cif = parseInt(f.cases_in_fcl, 10) || 0;
+  const wt = parseFloat(f.unit_weight) || 0;
+  const logi = parseFloat(f.logistics) || 0;
+  const tar = parseFloat(f.us_tariff) || 0;
+  const kfg = parseFloat(f.kfg_commission) || 0;
+
+  const sp_case = unit && uic ? unit * uic : null;
+  const sp_fcl = sp_case && cif ? sp_case * cif : null;
+  const sp_1kg = unit && wt ? unit / wt : null;
+  const st1 = logi || unit ? logi + unit : null;
+  const st2 = st1 != null ? st1 + tar : null;
+  const tot = st2 != null ? st2 + kfg : null;
+
+  return {
+    supplier_price_case: sp_case != null ? sp_case.toFixed(4) : "",
+    supplier_price_fcl: sp_fcl != null ? sp_fcl.toFixed(4) : "",
+    supplier_price_1kg: sp_1kg != null ? sp_1kg.toFixed(4) : "",
+    sub_total_1: st1 != null ? st1.toFixed(4) : "",
+    sub_total_2: st2 != null ? st2.toFixed(4) : "",
+    total: tot != null ? tot.toFixed(4) : "",
+  };
+}
+
+
+function itemToForm(item: Item): FormState {
+  return {
+    name: item.name ?? "",
+    supplier_incoterms: item.supplier_incoterms ?? "",
+    customer_incoterms: item.customer_incoterms ?? "",
+    logistics: fmt(item.logistics),
+    container_type: item.container_type ?? "",
+    fob: fmt(item.fob),
+    cif: fmt(item.cif),
+    dap: fmt(item.dap),
+    ddp: fmt(item.ddp),
+    cases_in_fcl: item.cases_in_fcl != null ? String(item.cases_in_fcl) : "",
+    units_in_case: item.units_in_case != null ? String(item.units_in_case) : "",
+    unit_weight: fmt(item.unit_weight),
+    supplier_price_unit: fmt(item.supplier_price_unit),
+    supplier_price_case: fmt(item.supplier_price_case),
+    supplier_price_fcl: fmt(item.supplier_price_fcl),
+    supplier_price_1kg: fmt(item.supplier_price_1kg),
+    sub_total_1: fmt(item.sub_total_1),
+    us_tariff: fmt(item.us_tariff),
+    sub_total_2: fmt(item.sub_total_2),
+    import_factor: fmt(item.import_factor),
+    kfg_commission: fmt(item.kfg_commission),
+    total: fmt(item.total),
+    cost_unit: fmt(item.cost_unit),
+    cost_case: fmt(item.cost_case),
+    price_unit: fmt(item.price_unit),
+    price_case: fmt(item.price_case),
+    sap_price_unit: fmt(item.sap_price_unit),
+    sap_price_case: fmt(item.sap_price_case),
+  };
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="detail-section">
+      <h2 className="section-title">{title}</h2>
+      <div className="section-grid">{children}</div>
+    </div>
+  );
+}
+
+function ReadonlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="field-block">
+      <span className="field-label">{label}</span>
+      <span className="field-value">{value || "—"}</span>
+    </div>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+}) {
+  return (
+    <div className="field-block">
+      <label className="field-label">{label}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+      />
+    </div>
+  );
+}
+
+function NumField({
+  label,
+  value,
+  onChange,
+  calc,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  calc?: boolean;
+}) {
+  return (
+    <div className={`field-block${calc ? " field-calc" : ""}`}>
+      <label className="field-label">
+        {label}
+        {calc && <span className="calc-badge">auto</span>}
+      </label>
+      <input
+        type="number"
+        step="0.0001"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="—"
+        className={calc ? "input-calc" : ""}
+      />
+    </div>
+  );
+}
+
+function IntField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="field-block">
+      <label className="field-label">{label}</label>
+      <input
+        type="number"
+        step="1"
+        min="0"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="—"
+      />
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  return (
+    <div className="field-block">
+      <label className="field-label">{label}</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">— select —</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────
+export default function ItemDetailPage() {
+  const { itemId } = useParams<{ itemId: string }>();
+  const navigate = useNavigate();
+
+  const [item, setItem] = useState<Item | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getItem(itemId!)
+      .then((data) => {
+        setItem(data);
+        setForm(itemToForm(data));
+      })
+      .catch(() => navigate("/"));
+    // navigate is a stable reference — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId]);
+
+  // Recalculate derived fields whenever relevant inputs change
+  const set = (key: keyof FormState) => (value: string) => {
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      const derived = calcDerived(next);
+      return { ...next, ...derived };
+    });
+  };
+
+  // For non-derived fields, just update directly
+  const setDirect = (key: keyof FormState) => (value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSaved(false);
+    const payload: ItemPayload = {
+      name: form.name,
+      supplier_incoterms: form.supplier_incoterms || null,
+      customer_incoterms: form.customer_incoterms || null,
+      logistics: toNum(form.logistics),
+      container_type: form.container_type || null,
+      fob: toNum(form.fob),
+      cif: toNum(form.cif),
+      dap: toNum(form.dap),
+      ddp: toNum(form.ddp),
+      cases_in_fcl: toInt(form.cases_in_fcl),
+      units_in_case: toInt(form.units_in_case),
+      unit_weight: toNum(form.unit_weight),
+      supplier_price_unit: toNum(form.supplier_price_unit),
+      supplier_price_case: toNum(form.supplier_price_case),
+      supplier_price_fcl: toNum(form.supplier_price_fcl),
+      supplier_price_1kg: toNum(form.supplier_price_1kg),
+      sub_total_1: toNum(form.sub_total_1),
+      us_tariff: toNum(form.us_tariff),
+      sub_total_2: toNum(form.sub_total_2),
+      import_factor: toNum(form.import_factor),
+      kfg_commission: toNum(form.kfg_commission),
+      total: toNum(form.total),
+      cost_unit: toNum(form.cost_unit),
+      cost_case: toNum(form.cost_case),
+      price_unit: toNum(form.price_unit),
+      price_case: toNum(form.price_case),
+      sap_price_unit: toNum(form.sap_price_unit),
+      sap_price_case: toNum(form.sap_price_case),
+    };
+    try {
+      const updated = await updateItem(itemId!, payload);
+      setItem(updated);
+      setForm(itemToForm(updated));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } }).response
+        ?.data?.error;
+      setError(msg || "Failed to save");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Delete item "${item?.name}"?`)) return;
+    try {
+      await deleteItem(itemId!);
+      navigate(
+        `/customers/${item?.customer_id}/suppliers/${item?.supplier_id}/items`,
+      );
+    } catch {
+      setError("Failed to delete item");
+    }
+  };
+
+  if (!item)
+    return (
+      <div className="page">
+        <p>Loading…</p>
+      </div>
+    );
+
+  const updatedAt = item.updated_at
+    ? new Date(item.updated_at).toLocaleString()
+    : new Date(item.created_at).toLocaleString();
+
+  return (
+    <div className="page item-detail-page">
+      <button
+        className="btn-back"
+        onClick={() =>
+          navigate(
+            `/customers/${item.customer_id}/suppliers/${item.supplier_id}/items`,
+          )
+        }
+      >
+        ← Items
+      </button>
+
+      <div className="page-header">
+        <h1>{item.name}</h1>
+        <button className="btn-danger" onClick={handleDelete}>
+          Delete
+        </button>
+      </div>
+
+      <form onSubmit={handleSave}>
+        {/* ── 1. Identity ── */}
+        <Section title="Identity">
+          <ReadonlyField label="Item ID" value={item.id} />
+          <ReadonlyField
+            label="Customer"
+            value={item.customer_name ?? item.customer_id}
+          />
+          <ReadonlyField
+            label="Supplier"
+            value={item.supplier_name ?? String(item.supplier_id)}
+          />
+          <ReadonlyField label="Last Updated" value={updatedAt} />
+        </Section>
+
+        {/* ── 2. Basic ── */}
+        <Section title="Basic Info">
+          <TextField
+            label="Item Name"
+            value={form.name}
+            onChange={set("name")}
+            required
+          />
+          <TextField
+            label="Supplier Incoterms"
+            value={form.supplier_incoterms}
+            onChange={set("supplier_incoterms")}
+          />
+          <TextField
+            label="Customer Incoterms"
+            value={form.customer_incoterms}
+            onChange={set("customer_incoterms")}
+          />
+        </Section>
+
+        {/* ── 3. Logistics ── */}
+        <Section title="Logistics">
+          <SelectField
+            label="Container Type"
+            value={form.container_type}
+            onChange={set("container_type")}
+            options={CONTAINER_TYPES}
+          />
+          <NumField
+            label="Logistics"
+            value={form.logistics}
+            onChange={set("logistics")}
+          />
+        </Section>
+
+        {/* ── 4. Incoterm Prices ── */}
+        <Section title="Incoterm Prices">
+          <NumField label="FOB" value={form.fob} onChange={set("fob")} />
+          <NumField label="CIF" value={form.cif} onChange={set("cif")} />
+          <NumField label="DAP" value={form.dap} onChange={set("dap")} />
+          <NumField label="DDP" value={form.ddp} onChange={set("ddp")} />
+        </Section>
+
+        {/* ── 5. Volume / Weight ── */}
+        <Section title="Volume &amp; Weight">
+          <IntField
+            label="Cases in FCL"
+            value={form.cases_in_fcl}
+            onChange={set("cases_in_fcl")}
+          />
+          <IntField
+            label="Units in Case"
+            value={form.units_in_case}
+            onChange={set("units_in_case")}
+          />
+          <NumField
+            label="Unit Weight"
+            value={form.unit_weight}
+            onChange={set("unit_weight")}
+          />
+        </Section>
+
+        {/* ── 6. Supplier Pricing ── */}
+        <Section title="Supplier Pricing">
+          <NumField
+            label="Supplier Price — Unit"
+            value={form.supplier_price_unit}
+            onChange={set("supplier_price_unit")}
+          />
+          <NumField
+            label="Supplier Price — Case"
+            value={form.supplier_price_case}
+            onChange={setDirect("supplier_price_case")}
+            calc
+          />
+          <NumField
+            label="Supplier Price — FCL"
+            value={form.supplier_price_fcl}
+            onChange={setDirect("supplier_price_fcl")}
+            calc
+          />
+          <NumField
+            label="Supplier Price — 1 Kg"
+            value={form.supplier_price_1kg}
+            onChange={setDirect("supplier_price_1kg")}
+            calc
+          />
+        </Section>
+
+        {/* ── 7. Cost Build-up ── */}
+        <Section title="Cost Build-up">
+          <NumField
+            label="Sub Total 1 (Logistics + Supplier)"
+            value={form.sub_total_1}
+            onChange={setDirect("sub_total_1")}
+            calc
+          />
+          <NumField
+            label="US Tariff"
+            value={form.us_tariff}
+            onChange={set("us_tariff")}
+          />
+          <NumField
+            label="Sub Total 2 (Sub1 + Tariff)"
+            value={form.sub_total_2}
+            onChange={setDirect("sub_total_2")}
+            calc
+          />
+          <NumField
+            label="Import Factor"
+            value={form.import_factor}
+            onChange={set("import_factor")}
+          />
+          <NumField
+            label="KFG Commission"
+            value={form.kfg_commission}
+            onChange={set("kfg_commission")}
+          />
+          <NumField
+            label="Total (Sub2 + KFG)"
+            value={form.total}
+            onChange={setDirect("total")}
+            calc
+          />
+        </Section>
+
+        {/* ── 8. Final Cost & Price ── */}
+        <Section title="Final Cost &amp; Price">
+          <NumField
+            label="Cost — Unit"
+            value={form.cost_unit}
+            onChange={set("cost_unit")}
+          />
+          <NumField
+            label="Cost — Case"
+            value={form.cost_case}
+            onChange={set("cost_case")}
+          />
+          <NumField
+            label="Price — Unit"
+            value={form.price_unit}
+            onChange={set("price_unit")}
+          />
+          <NumField
+            label="Price — Case"
+            value={form.price_case}
+            onChange={set("price_case")}
+          />
+          <NumField
+            label="SAP Price — Unit"
+            value={form.sap_price_unit}
+            onChange={set("sap_price_unit")}
+          />
+          <NumField
+            label="SAP Price — Case"
+            value={form.sap_price_case}
+            onChange={set("sap_price_case")}
+          />
+        </Section>
+
+        <div className="form-footer">
+          {error && <p className="error">{error}</p>}
+          {saved && <p className="success">✓ Saved</p>}
+          <button className="btn-primary btn-large" type="submit">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

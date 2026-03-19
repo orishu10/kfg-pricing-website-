@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import CustomersPage from './pages/CustomersPage';
-import SuppliersPage from './pages/SuppliersPage';
-import ItemsPage from './pages/ItemsPage';
-import ItemDetailPage from './pages/ItemDetailPage';
+import CustomersPage from './pages/customers/CustomersPage';
+import SuppliersPage from './pages/suppliers/SuppliersPage';
+import ItemsPage from './pages/items/ItemsPage';
+import ItemDetailPage from './pages/items/ItemDetailPage';
 import './App.css';
 
 export default function App() {

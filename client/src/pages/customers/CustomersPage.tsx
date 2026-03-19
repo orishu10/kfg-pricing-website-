@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState,  type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCustomers, createCustomer, deleteCustomer, type Customer } from '../api';
+import { getCustomers, createCustomer, deleteCustomer, type Customer } from '../../api';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -14,7 +14,7 @@ export default function CustomersPage() {
 
   useEffect(() => { load(); }, []);
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     try {
