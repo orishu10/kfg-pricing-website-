@@ -139,7 +139,7 @@ export default function SuppliersPage() {
       ) : (
         <Grid container spacing={2}>
           {suppliers.map(s => (
-            <Grid item xs={12} sm={6} key={s.id}>
+            <Grid size={{ xs: 12, sm: 6 }} key={s.id}>
               <Card sx={{ height: '100%' }}>
                 <CardActionArea
                   onClick={() => navigate(`/customers/${customerId}/suppliers/${s.id}/items`)}

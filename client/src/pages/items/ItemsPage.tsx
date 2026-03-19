@@ -109,7 +109,7 @@ export default function ItemsPage() {
       ) : (
         <Grid container spacing={2}>
           {items.map(item => (
-            <Grid item xs={12} sm={6} key={item.id}>
+            <Grid size={{ xs: 12, sm: 6 }} key={item.id}>
               <Card sx={{ height: '100%' }}>
                 <CardActionArea onClick={() => navigate(`/items/${item.id}`)} sx={{ height: '100%' }}>
                   <CardContent>

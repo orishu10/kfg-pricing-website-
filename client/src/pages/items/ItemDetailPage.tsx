@@ -97,7 +97,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
-    <Grid item xs={6} sm={4} md={3}>
+    <Grid size={{ xs: 6, sm: 4, md: 3 }}>
       <Typography variant="caption" color="text.secondary" display="block" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
         {label}
       </Typography>
@@ -112,7 +112,7 @@ function FormTextField({ label, value, onChange, required }: {
   label: string; value: string; onChange: (v: string) => void; required?: boolean;
 }) {
   return (
-    <Grid item xs={12} sm={6} md={4}>
+    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
       <TextField
         label={label} size="small" fullWidth required={required}
         value={value} onChange={e => onChange(e.target.value)}
@@ -125,7 +125,7 @@ function NumField({ label, value, onChange, calc }: {
   label: string; value: string; onChange: (v: string) => void; calc?: boolean;
 }) {
   return (
-    <Grid item xs={12} sm={6} md={3}>
+    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
       <TextField
         label={label} size="small" fullWidth
         type="number"
@@ -158,7 +158,7 @@ function IntField({ label, value, onChange }: {
   label: string; value: string; onChange: (v: string) => void;
 }) {
   return (
-    <Grid item xs={12} sm={6} md={3}>
+    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
       <TextField
         label={label} size="small" fullWidth
         type="number"
@@ -175,7 +175,7 @@ function FormSelectField({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void; options: string[];
 }) {
   return (
-    <Grid item xs={12} sm={6} md={3}>
+    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
       <FormControl size="small" fullWidth>
         <InputLabel>{label}</InputLabel>
         <Select value={value} label={label} onChange={e => onChange(e.target.value)}>
