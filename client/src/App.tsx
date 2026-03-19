@@ -6,10 +6,10 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import theme from './theme';
-import CustomersPage from './pages/CustomersPage';
-import SuppliersPage from './pages/SuppliersPage';
-import ItemsPage from './pages/ItemsPage';
-import ItemDetailPage from './pages/ItemDetailPage';
+import CustomersPage from './pages/customers/CustomersPage';
+import SuppliersPage from './pages/suppliers/SuppliersPage';
+import ItemsPage from './pages/items/ItemsPage';
+import ItemDetailPage from './pages/items/ItemDetailPage';
 
 export default function App() {
   return (

@@ -13,16 +13,10 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { getItem, updateItem, deleteItem, type Item, type ItemPayload } from '../api';
-
-// ── Update this list when the customer provides the 4 container types ──
-const CONTAINER_TYPES = ['20GP', '40GP', '40HC', '45HC'];
-
-// ── Helpers ────────────────────────────────────────────────────────────
-const toNum = (v: string): number | null => (v.trim() === '' ? null : parseFloat(v));
-const toInt = (v: string): number | null => (v.trim() === '' ? null : parseInt(v, 10));
-const fmt = (v: string | number | null | undefined): string =>
-  v == null ? '' : String(v);
+import { getItem, updateItem, deleteItem, type Item, type ItemPayload } from '../../api';
+import { CONTAINER_TYPES, EMPTY_FORM } from './utils/consts';
+import { toNum, toInt, fmt } from './utils/helpers';
+import type { FormState } from './utils/types';
 
 // Auto-calculate derived fields from current form state
 function calcDerived(f: FormState): Partial<FormState> {
@@ -50,50 +44,6 @@ function calcDerived(f: FormState): Partial<FormState> {
     total:               tot     != null ? tot.toFixed(4)      : '',
   };
 }
-
-// ── Form state (all string so inputs are controlled) ───────────────────
-interface FormState {
-  name: string;
-  supplier_incoterms: string;
-  customer_incoterms: string;
-  logistics: string;
-  container_type: string;
-  fob: string;
-  cif: string;
-  dap: string;
-  ddp: string;
-  cases_in_fcl: string;
-  units_in_case: string;
-  unit_weight: string;
-  supplier_price_unit: string;
-  supplier_price_case: string;
-  supplier_price_fcl: string;
-  supplier_price_1kg: string;
-  sub_total_1: string;
-  us_tariff: string;
-  sub_total_2: string;
-  import_factor: string;
-  kfg_commission: string;
-  total: string;
-  cost_unit: string;
-  cost_case: string;
-  price_unit: string;
-  price_case: string;
-  sap_price_unit: string;
-  sap_price_case: string;
-}
-
-const EMPTY_FORM: FormState = {
-  name: '', supplier_incoterms: '', customer_incoterms: '',
-  logistics: '', container_type: '',
-  fob: '', cif: '', dap: '', ddp: '',
-  cases_in_fcl: '', units_in_case: '', unit_weight: '',
-  supplier_price_unit: '', supplier_price_case: '', supplier_price_fcl: '', supplier_price_1kg: '',
-  sub_total_1: '', us_tariff: '', sub_total_2: '',
-  import_factor: '', kfg_commission: '', total: '',
-  cost_unit: '', cost_case: '', price_unit: '', price_case: '',
-  sap_price_unit: '', sap_price_case: '',
-};
 
 function itemToForm(item: Item): FormState {
   return {

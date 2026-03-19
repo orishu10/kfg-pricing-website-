@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import {
   getCustomer, getCustomerSuppliers, getSupplierItems,
   createItem, type Item, type Customer, type Supplier
-} from '../api';
+} from '../../api';
 
 export default function ItemsPage() {
   const { customerId, supplierId } = useParams<{ customerId: string; supplierId: string }>();
