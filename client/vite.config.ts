@@ -10,4 +10,7 @@ export default defineConfig({
       '/api': 'http://localhost:3001',
     },
   },
+  optimizeDeps: {
+    include: ['@emotion/react', '@emotion/styled', '@mui/material'],
+  },
 })
