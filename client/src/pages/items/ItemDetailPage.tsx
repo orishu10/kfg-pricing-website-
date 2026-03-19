@@ -26,22 +26,36 @@ import type { FormState } from "./utils/types";
 
 // Auto-calculate derived fields from current form state
 function calcDerived(f: FormState): Partial<FormState> {
-  const unit = parseFloat(f.supplier_price_unit) || 0;
-  const uic  = parseInt(f.units_in_case, 10)     || 0;
-  const cif  = parseInt(f.cases_in_fcl, 10)       || 0;
-  const wt   = parseFloat(f.unit_weight)           || 0;
-  const logi = parseFloat(f.logistics)             || 0;
-  const tar  = parseFloat(f.us_tariff)             || 0;
-  const kfg  = parseFloat(f.kfg_commission)        || 0;
+  const unit   = parseFloat(f.supplier_price_unit) || 0;
+  const uic    = parseInt(f.units_in_case, 10)     || 0;
+  const wt     = parseFloat(f.unit_weight)          || 0;
+  const pallet = parseInt(f.pallets_per_fcl, 10)   || 0;
+  const cpp    = parseInt(f.cases_per_pallet, 10)  || 0;
+  const fob    = parseFloat(f.fob)                  || 0;
+  const cif    = parseFloat(f.cif)                  || 0;
+  const dap    = parseFloat(f.dap)                  || 0;
+  const ddp    = parseFloat(f.ddp)                  || 0;
+  const tar    = parseFloat(f.us_tariff)            || 0;
+  const kfg    = parseFloat(f.kfg_commission)       || 0;
 
-  const sp_case = unit && uic   ? unit * uic       : null;
-  const sp_fcl  = sp_case && cif ? sp_case * cif   : null;
-  const sp_1kg  = unit && wt    ? unit / wt         : null;
-  const st1     = logi || unit  ? logi + unit       : null;
-  const st2     = st1 != null   ? st1 + tar         : null;
-  const tot     = st2 != null   ? st2 + kfg         : null;
+  // cases_in_fcl = pallets_per_fcl × cases_per_pallet
+  const cifcl   = pallet > 0 && cpp > 0 ? pallet * cpp : null;
+  // supplier_price_case = supplier_price_unit × units_in_case
+  const sp_case = unit > 0 && uic > 0   ? unit * uic   : null;
+  // supplier_price_fcl = supplier_price_case × cases_in_fcl
+  const sp_fcl  = sp_case != null && cifcl != null ? sp_case * cifcl : null;
+  // supplier_price_1kg = supplier_price_unit / unit_weight
+  const sp_1kg  = unit > 0 && wt > 0    ? unit / wt    : null;
+  // sub_total_1 = fob + cif + dap + ddp + supplier_price_fcl
+  const hasInco = fob > 0 || cif > 0 || dap > 0 || ddp > 0;
+  const incoSum = fob + cif + dap + ddp;
+  const st1     = hasInco || sp_fcl != null ? incoSum + (sp_fcl ?? 0) : null;
+  // sub_total_2 = sub_total_1 + us_tariff
+  const st2     = st1 != null ? st1 + tar : null;
+  const tot     = st2 != null ? st2 + kfg : null;
 
   return {
+    cases_in_fcl:        cifcl   != null ? String(cifcl)      : "",
     supplier_price_case: sp_case != null ? sp_case.toFixed(4) : "",
     supplier_price_fcl:  sp_fcl  != null ? sp_fcl.toFixed(4)  : "",
     supplier_price_1kg:  sp_1kg  != null ? sp_1kg.toFixed(4)  : "",
@@ -220,7 +234,8 @@ export default function ItemDetailPage() {
     getItem(itemId!)
       .then((data) => {
         setItem(data);
-        setForm(itemToForm(data));
+        const f = itemToForm(data);
+        setForm({ ...f, ...calcDerived(f) });
       })
       .catch(() => navigate("/"));
     // navigate is a stable reference — intentionally omitted
@@ -358,26 +373,26 @@ export default function ItemDetailPage() {
 
         {/* ── 5. Volume & Weight ── */}
         <Section title="Volume & Weight">
-          <IntField label="Cases in FCL"     value={form.cases_in_fcl}     onChange={set("cases_in_fcl")} />
-          <IntField label="Units in Case"    value={form.units_in_case}    onChange={set("units_in_case")} />
-          <NumField label="Unit Weight"      value={form.unit_weight}      onChange={set("unit_weight")} />
-          <IntField label="Cases per Pallet" value={form.cases_per_pallet} onChange={set("cases_per_pallet")} />
-          <IntField label="Pallets per FCL"  value={form.pallets_per_fcl}  onChange={set("pallets_per_fcl")} />
+          <IntField        label="Units in Case"    value={form.units_in_case}    onChange={set("units_in_case")} />
+          <NumField        label="Unit Weight"      value={form.unit_weight}      onChange={set("unit_weight")} />
+          <IntField        label="Cases per Pallet" value={form.cases_per_pallet} onChange={set("cases_per_pallet")} />
+          <IntField        label="Pallets per FCL"  value={form.pallets_per_fcl}  onChange={set("pallets_per_fcl")} />
+          <ReadonlyField   label="Cases in FCL"     value={form.cases_in_fcl} />
         </Section>
 
         {/* ── 6. Supplier Pricing ── */}
         <Section title="Supplier Pricing">
-          <NumField label="Supplier Price — Unit" value={form.supplier_price_unit} onChange={set("supplier_price_unit")} />
-          <NumField label="Supplier Price — Case" value={form.supplier_price_case} onChange={setDirect("supplier_price_case")} calc />
-          <NumField label="Supplier Price — FCL"  value={form.supplier_price_fcl}  onChange={setDirect("supplier_price_fcl")}  calc />
-          <NumField label="Supplier Price — 1 Kg" value={form.supplier_price_1kg}  onChange={setDirect("supplier_price_1kg")}  calc />
+          <NumField      label="Supplier Price — Unit" value={form.supplier_price_unit} onChange={set("supplier_price_unit")} />
+          <ReadonlyField label="Supplier Price — Case" value={form.supplier_price_case} />
+          <ReadonlyField label="Supplier Price — FCL"  value={form.supplier_price_fcl} />
+          <ReadonlyField label="Supplier Price — 1 Kg" value={form.supplier_price_1kg} />
         </Section>
 
         {/* ── 7. Cost Build-up ── */}
         <Section title="Cost Build-up">
-          <NumField label="Sub Total 1 (Logistics + Supplier)" value={form.sub_total_1}          onChange={setDirect("sub_total_1")}   calc />
-          <NumField label="US Tariff"                          value={form.us_tariff}             onChange={set("us_tariff")} />
-          <NumField label="Sub Total 2 (Sub1 + Tariff)"        value={form.sub_total_2}          onChange={setDirect("sub_total_2")}   calc />
+          <ReadonlyField label="Sub Total 1 (FOB+CIF+DAP+DDP+Supplier FCL)" value={form.sub_total_1} />
+          <NumField      label="US Tariff"                                   value={form.us_tariff}   onChange={set("us_tariff")} />
+          <ReadonlyField label="Sub Total 2 (Sub1 + US Tariff)"             value={form.sub_total_2} />
           <NumField label="Import Factor"                      value={form.import_factor}         onChange={set("import_factor")} />
           <NumField label="KFG Commission"                     value={form.kfg_commission}        onChange={set("kfg_commission")} />
           <NumField label="Total (Sub2 + KFG)"                 value={form.total}                 onChange={setDirect("total")}         calc />
