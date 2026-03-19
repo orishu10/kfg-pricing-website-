@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import FormControl from '@mui/material/FormControl';
+import Grid from '@mui/material/Grid';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { getItem, updateItem, deleteItem, type Item, type ItemPayload } from '../api';
 
 // ── Update this list when the customer provides the 4 container types ──
@@ -13,28 +26,28 @@ const fmt = (v: string | number | null | undefined): string =>
 
 // Auto-calculate derived fields from current form state
 function calcDerived(f: FormState): Partial<FormState> {
-  const unit  = parseFloat(f.supplier_price_unit) || 0;
-  const uic   = parseInt(f.units_in_case, 10) || 0;
-  const cif   = parseInt(f.cases_in_fcl, 10) || 0;
-  const wt    = parseFloat(f.unit_weight) || 0;
-  const logi  = parseFloat(f.logistics) || 0;
-  const tar   = parseFloat(f.us_tariff) || 0;
-  const kfg   = parseFloat(f.kfg_commission) || 0;
+  const unit = parseFloat(f.supplier_price_unit) || 0;
+  const uic  = parseInt(f.units_in_case, 10)     || 0;
+  const cif  = parseInt(f.cases_in_fcl, 10)      || 0;
+  const wt   = parseFloat(f.unit_weight)          || 0;
+  const logi = parseFloat(f.logistics)            || 0;
+  const tar  = parseFloat(f.us_tariff)            || 0;
+  const kfg  = parseFloat(f.kfg_commission)       || 0;
 
-  const sp_case = unit && uic  ? unit * uic          : null;
-  const sp_fcl  = sp_case && cif ? sp_case * cif    : null;
-  const sp_1kg  = unit && wt   ? unit / wt           : null;
-  const st1     = logi || unit  ? logi + unit        : null;
-  const st2     = st1 != null   ? st1 + tar          : null;
-  const tot     = st2 != null   ? st2 + kfg          : null;
+  const sp_case = unit && uic   ? unit * uic         : null;
+  const sp_fcl  = sp_case && cif ? sp_case * cif     : null;
+  const sp_1kg  = unit && wt    ? unit / wt           : null;
+  const st1     = logi || unit  ? logi + unit         : null;
+  const st2     = st1 != null   ? st1 + tar           : null;
+  const tot     = st2 != null   ? st2 + kfg           : null;
 
   return {
     supplier_price_case: sp_case != null ? sp_case.toFixed(4) : '',
     supplier_price_fcl:  sp_fcl  != null ? sp_fcl.toFixed(4)  : '',
     supplier_price_1kg:  sp_1kg  != null ? sp_1kg.toFixed(4)  : '',
-    sub_total_1:         st1     != null ? st1.toFixed(4)     : '',
-    sub_total_2:         st2     != null ? st2.toFixed(4)     : '',
-    total:               tot     != null ? tot.toFixed(4)     : '',
+    sub_total_1:         st1     != null ? st1.toFixed(4)      : '',
+    sub_total_2:         st2     != null ? st2.toFixed(4)      : '',
+    total:               tot     != null ? tot.toFixed(4)      : '',
   };
 }
 
@@ -116,32 +129,45 @@ function itemToForm(item: Item): FormState {
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="detail-section">
-      <h2 className="section-title">{title}</h2>
-      <div className="section-grid">{children}</div>
-    </div>
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="overline" color="primary" fontWeight={700} display="block" mb={2}>
+          {title}
+        </Typography>
+        <Grid container spacing={2}>
+          {children}
+        </Grid>
+      </CardContent>
+    </Card>
   );
 }
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="field-block">
-      <span className="field-label">{label}</span>
-      <span className="field-value">{value || '—'}</span>
-    </div>
+    <Grid item xs={6} sm={4} md={3}>
+      <Typography variant="caption" color="text.secondary" display="block" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
+        {label}
+      </Typography>
+      <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, px: 1.5, py: 0.75, mt: 0.5 }}>
+        <Typography variant="body2" fontFamily="monospace">{value || '—'}</Typography>
+      </Box>
+    </Grid>
   );
 }
 
-function TextField({ label, value, onChange, required }: {
+function FormTextField({ label, value, onChange, required }: {
   label: string; value: string; onChange: (v: string) => void; required?: boolean;
 }) {
   return (
-    <div className="field-block">
-      <label className="field-label">{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)} required={required} />
-    </div>
+    <Grid item xs={12} sm={6} md={4}>
+      <TextField
+        label={label} size="small" fullWidth required={required}
+        value={value} onChange={e => onChange(e.target.value)}
+      />
+    </Grid>
   );
 }
 
@@ -149,17 +175,32 @@ function NumField({ label, value, onChange, calc }: {
   label: string; value: string; onChange: (v: string) => void; calc?: boolean;
 }) {
   return (
-    <div className={`field-block${calc ? ' field-calc' : ''}`}>
-      <label className="field-label">{label}{calc && <span className="calc-badge">auto</span>}</label>
-      <input
+    <Grid item xs={12} sm={6} md={3}>
+      <TextField
+        label={label} size="small" fullWidth
         type="number"
-        step="0.0001"
+        inputProps={{ step: '0.0001' }}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder="—"
-        className={calc ? 'input-calc' : ''}
+        InputProps={calc ? {
+          endAdornment: (
+            <Chip
+              label="auto"
+              size="small"
+              sx={{ height: 16, fontSize: 9, bgcolor: 'rgba(111,66,193,0.25)', color: '#b39ddb', ml: 0.5 }}
+            />
+          ),
+        } : undefined}
+        sx={calc ? {
+          '& .MuiOutlinedInput-root': {
+            bgcolor: 'rgba(111,66,193,0.08)',
+            '& fieldset': { borderColor: 'rgba(111,66,193,0.4)' },
+          },
+          '& .MuiInputLabel-root': { color: '#9b74d9' },
+        } : undefined}
       />
-    </div>
+    </Grid>
   );
 }
 
@@ -167,24 +208,32 @@ function IntField({ label, value, onChange }: {
   label: string; value: string; onChange: (v: string) => void;
 }) {
   return (
-    <div className="field-block">
-      <label className="field-label">{label}</label>
-      <input type="number" step="1" min="0" value={value} onChange={e => onChange(e.target.value)} placeholder="—" />
-    </div>
+    <Grid item xs={12} sm={6} md={3}>
+      <TextField
+        label={label} size="small" fullWidth
+        type="number"
+        inputProps={{ step: '1', min: '0' }}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="—"
+      />
+    </Grid>
   );
 }
 
-function SelectField({ label, value, onChange, options }: {
+function FormSelectField({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void; options: string[];
 }) {
   return (
-    <div className="field-block">
-      <label className="field-label">{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)}>
-        <option value="">— select —</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </div>
+    <Grid item xs={12} sm={6} md={3}>
+      <FormControl size="small" fullWidth>
+        <InputLabel>{label}</InputLabel>
+        <Select value={value} label={label} onChange={e => onChange(e.target.value)}>
+          <MenuItem value="">— select —</MenuItem>
+          {options.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+        </Select>
+      </FormControl>
+    </Grid>
   );
 }
 
@@ -211,8 +260,7 @@ export default function ItemDetailPage() {
   const set = (key: keyof FormState) => (value: string) => {
     setForm(prev => {
       const next = { ...prev, [key]: value };
-      const derived = calcDerived(next);
-      return { ...next, ...derived };
+      return { ...next, ...calcDerived(next) };
     });
   };
 
@@ -276,47 +324,49 @@ export default function ItemDetailPage() {
     }
   };
 
-  if (!item) return <div className="page"><p>Loading…</p></div>;
+  if (!item) return <Box sx={{ p: 3 }}><Typography>Loading…</Typography></Box>;
 
   const updatedAt = item.updated_at
     ? new Date(item.updated_at).toLocaleString()
     : new Date(item.created_at).toLocaleString();
 
   return (
-    <div className="page item-detail-page">
-      <button
-        className="btn-back"
+    <Box>
+      <Button
         onClick={() => navigate(`/customers/${item.customer_id}/suppliers/${item.supplier_id}/items`)}
+        sx={{ mb: 1, p: 0, textTransform: 'none' }}
       >
         ← Items
-      </button>
+      </Button>
 
-      <div className="page-header">
-        <h1>{item.name}</h1>
-        <button className="btn-danger" onClick={handleDelete}>Delete</button>
-      </div>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h5" fontWeight={700} sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
+          {item.name}
+        </Typography>
+        <Button variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+      </Box>
 
-      <form onSubmit={handleSave}>
+      <Box component="form" onSubmit={handleSave}>
 
         {/* ── 1. Identity ── */}
         <Section title="Identity">
-          <ReadonlyField label="Item ID"       value={item.id} />
-          <ReadonlyField label="Customer"      value={item.customer_name ?? item.customer_id} />
-          <ReadonlyField label="Supplier"      value={item.supplier_name ?? String(item.supplier_id)} />
-          <ReadonlyField label="Last Updated"  value={updatedAt} />
+          <ReadonlyField label="Item ID"      value={item.id} />
+          <ReadonlyField label="Customer"     value={item.customer_name ?? item.customer_id} />
+          <ReadonlyField label="Supplier"     value={item.supplier_name ?? String(item.supplier_id)} />
+          <ReadonlyField label="Last Updated" value={updatedAt} />
         </Section>
 
-        {/* ── 2. Basic ── */}
+        {/* ── 2. Basic Info ── */}
         <Section title="Basic Info">
-          <TextField label="Item Name" value={form.name} onChange={set('name')} required />
-          <TextField label="Supplier Incoterms"  value={form.supplier_incoterms}  onChange={set('supplier_incoterms')} />
-          <TextField label="Customer Incoterms"  value={form.customer_incoterms}  onChange={set('customer_incoterms')} />
+          <FormTextField label="Item Name"          value={form.name}               onChange={set('name')} required />
+          <FormTextField label="Supplier Incoterms" value={form.supplier_incoterms}  onChange={set('supplier_incoterms')} />
+          <FormTextField label="Customer Incoterms" value={form.customer_incoterms}  onChange={set('customer_incoterms')} />
         </Section>
 
         {/* ── 3. Logistics ── */}
         <Section title="Logistics">
-          <SelectField label="Container Type" value={form.container_type} onChange={set('container_type')} options={CONTAINER_TYPES} />
-          <NumField    label="Logistics"      value={form.logistics}      onChange={set('logistics')} />
+          <FormSelectField label="Container Type" value={form.container_type} onChange={set('container_type')} options={CONTAINER_TYPES} />
+          <NumField        label="Logistics"      value={form.logistics}      onChange={set('logistics')} />
         </Section>
 
         {/* ── 4. Incoterm Prices ── */}
@@ -328,7 +378,7 @@ export default function ItemDetailPage() {
         </Section>
 
         {/* ── 5. Volume / Weight ── */}
-        <Section title="Volume &amp; Weight">
+        <Section title="Volume & Weight">
           <IntField label="Cases in FCL"  value={form.cases_in_fcl}  onChange={set('cases_in_fcl')} />
           <IntField label="Units in Case" value={form.units_in_case} onChange={set('units_in_case')} />
           <NumField label="Unit Weight"   value={form.unit_weight}   onChange={set('unit_weight')} />
@@ -336,38 +386,38 @@ export default function ItemDetailPage() {
 
         {/* ── 6. Supplier Pricing ── */}
         <Section title="Supplier Pricing">
-          <NumField label="Supplier Price — Unit"  value={form.supplier_price_unit}  onChange={set('supplier_price_unit')} />
-          <NumField label="Supplier Price — Case"  value={form.supplier_price_case}  onChange={setDirect('supplier_price_case')} calc />
-          <NumField label="Supplier Price — FCL"   value={form.supplier_price_fcl}   onChange={setDirect('supplier_price_fcl')}  calc />
-          <NumField label="Supplier Price — 1 Kg"  value={form.supplier_price_1kg}   onChange={setDirect('supplier_price_1kg')}  calc />
+          <NumField label="Supplier Price — Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} />
+          <NumField label="Supplier Price — Case" value={form.supplier_price_case} onChange={setDirect('supplier_price_case')} calc />
+          <NumField label="Supplier Price — FCL"  value={form.supplier_price_fcl}  onChange={setDirect('supplier_price_fcl')}  calc />
+          <NumField label="Supplier Price — 1 Kg" value={form.supplier_price_1kg}  onChange={setDirect('supplier_price_1kg')}  calc />
         </Section>
 
         {/* ── 7. Cost Build-up ── */}
         <Section title="Cost Build-up">
-          <NumField label="Sub Total 1 (Logistics + Supplier)"   value={form.sub_total_1}   onChange={setDirect('sub_total_1')}   calc />
-          <NumField label="US Tariff"                            value={form.us_tariff}     onChange={set('us_tariff')} />
-          <NumField label="Sub Total 2 (Sub1 + Tariff)"         value={form.sub_total_2}   onChange={setDirect('sub_total_2')}   calc />
-          <NumField label="Import Factor"                        value={form.import_factor} onChange={set('import_factor')} />
-          <NumField label="KFG Commission"                       value={form.kfg_commission} onChange={set('kfg_commission')} />
-          <NumField label="Total (Sub2 + KFG)"                  value={form.total}         onChange={setDirect('total')}         calc />
+          <NumField label="Sub Total 1 (Logistics + Supplier)" value={form.sub_total_1}    onChange={setDirect('sub_total_1')}   calc />
+          <NumField label="US Tariff"                          value={form.us_tariff}       onChange={set('us_tariff')} />
+          <NumField label="Sub Total 2 (Sub1 + Tariff)"        value={form.sub_total_2}    onChange={setDirect('sub_total_2')}   calc />
+          <NumField label="Import Factor"                      value={form.import_factor}   onChange={set('import_factor')} />
+          <NumField label="KFG Commission"                     value={form.kfg_commission}  onChange={set('kfg_commission')} />
+          <NumField label="Total (Sub2 + KFG)"                 value={form.total}           onChange={setDirect('total')}         calc />
         </Section>
 
         {/* ── 8. Final Cost & Price ── */}
-        <Section title="Final Cost &amp; Price">
-          <NumField label="Cost — Unit"       value={form.cost_unit}       onChange={set('cost_unit')} />
-          <NumField label="Cost — Case"       value={form.cost_case}       onChange={set('cost_case')} />
-          <NumField label="Price — Unit"      value={form.price_unit}      onChange={set('price_unit')} />
-          <NumField label="Price — Case"      value={form.price_case}      onChange={set('price_case')} />
-          <NumField label="SAP Price — Unit"  value={form.sap_price_unit}  onChange={set('sap_price_unit')} />
-          <NumField label="SAP Price — Case"  value={form.sap_price_case}  onChange={set('sap_price_case')} />
+        <Section title="Final Cost & Price">
+          <NumField label="Cost — Unit"      value={form.cost_unit}      onChange={set('cost_unit')} />
+          <NumField label="Cost — Case"      value={form.cost_case}      onChange={set('cost_case')} />
+          <NumField label="Price — Unit"     value={form.price_unit}     onChange={set('price_unit')} />
+          <NumField label="Price — Case"     value={form.price_case}     onChange={set('price_case')} />
+          <NumField label="SAP Price — Unit" value={form.sap_price_unit} onChange={set('sap_price_unit')} />
+          <NumField label="SAP Price — Case" value={form.sap_price_case} onChange={set('sap_price_case')} />
         </Section>
 
-        <div className="form-footer">
-          {error  && <p className="error">{error}</p>}
-          {saved  && <p className="success">✓ Saved</p>}
-          <button className="btn-primary btn-large" type="submit">Save Changes</button>
-        </div>
-      </form>
-    </div>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2 }}>
+          {error && <Alert severity="error">{error}</Alert>}
+          {saved && <Alert severity="success">✓ Saved</Alert>}
+          <Button variant="contained" type="submit" size="large">Save Changes</Button>
+        </Box>
+      </Box>
+    </Box>
   );
 }

@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardActionArea from '@mui/material/CardActionArea';
+import CardContent from '@mui/material/CardContent';
+import Collapse from '@mui/material/Collapse';
+import Grid from '@mui/material/Grid';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import {
   getCustomer, getCustomerSuppliers, getSupplierItems,
   createItem, type Item, type Customer, type Supplier
@@ -53,54 +63,70 @@ export default function ItemsPage() {
   };
 
   return (
-    <div className="page">
-      <button className="btn-back" onClick={() => navigate(`/customers/${customerId}/suppliers`)}>
-        ← {customer?.name ?? '...'}
-      </button>
+    <Box>
+      <Button
+        onClick={() => navigate(`/customers/${customerId}/suppliers`)}
+        sx={{ mb: 1, p: 0, textTransform: 'none' }}
+      >
+        ← {customer?.name ?? '…'}
+      </Button>
 
-      <div className="page-header">
-        <h1>{supplier?.name ?? '...'} — Items</h1>
-        <button className="btn-primary" onClick={() => { setShowForm(v => !v); setError(''); }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h5" fontWeight={700}>{supplier?.name ?? '…'} — Items</Typography>
+        <Button variant="contained" onClick={() => { setShowForm(v => !v); setError(''); }}>
           {showForm ? 'Cancel' : '+ Add Item'}
-        </button>
-      </div>
+        </Button>
+      </Box>
 
-      {showForm && (
-        <form className="card form-card" onSubmit={handleAdd}>
-          <h2>New Item</h2>
-          <label>
-            Item ID (unique, you define it)
-            <input value={newId} onChange={e => setNewId(e.target.value)} placeholder="e.g. ITEM-001" required />
-          </label>
-          <label>
-            Name
-            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Item name" required />
-          </label>
-          {error && <p className="error">{error}</p>}
-          <button className="btn-primary" type="submit">Create</button>
-        </form>
+      <Collapse in={showForm}>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="subtitle1" fontWeight={600} mb={2}>New Item</Typography>
+            <Box component="form" onSubmit={handleAdd} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Item ID" size="small" required
+                value={newId} onChange={e => setNewId(e.target.value)}
+                placeholder="e.g. ITEM-001"
+              />
+              <TextField
+                label="Name" size="small" required
+                value={newName} onChange={e => setNewName(e.target.value)}
+                placeholder="Item name"
+              />
+              {error && <Alert severity="error">{error}</Alert>}
+              <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>Create</Button>
+            </Box>
+          </CardContent>
+        </Card>
+      </Collapse>
+
+      {!showForm && error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {items.length === 0 ? (
+        <Typography color="text.secondary" textAlign="center" py={6}>
+          No items for this supplier / customer yet.
+        </Typography>
+      ) : (
+        <Grid container spacing={2}>
+          {items.map(item => (
+            <Grid item xs={12} sm={6} key={item.id}>
+              <Card sx={{ height: '100%' }}>
+                <CardActionArea onClick={() => navigate(`/items/${item.id}`)} sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight={600}>{item.name}</Typography>
+                    <Typography variant="caption" color="text.secondary" fontFamily="monospace">{item.id}</Typography>
+                    {item.total != null && (
+                      <Typography variant="body2" color="success.main" fontWeight={600} mt={1}>
+                        ${parseFloat(item.total).toFixed(2)}
+                      </Typography>
+                    )}
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
-
-      {!showForm && error && <p className="error">{error}</p>}
-
-      <div className="list">
-        {items.length === 0 && <p className="empty">No items for this supplier / customer yet.</p>}
-        {items.map(item => (
-          <div
-            key={item.id}
-            className="list-item"
-            onClick={() => navigate(`/items/${item.id}`)}
-          >
-            <div className="list-item-content">
-              <span className="list-item-name">{item.name}</span>
-              <span className="list-item-id">{item.id}</span>
-            </div>
-            <span className="list-item-price">
-              {item.total != null ? `$${parseFloat(item.total).toFixed(2)}` : '—'}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+    </Box>
   );
 }

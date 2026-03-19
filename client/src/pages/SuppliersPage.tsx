@@ -1,5 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardActionArea from '@mui/material/CardActionArea';
+import CardContent from '@mui/material/CardContent';
+import Collapse from '@mui/material/Collapse';
+import FormControl from '@mui/material/FormControl';
+import Grid from '@mui/material/Grid';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import {
   getCustomer, getCustomerSuppliers, getAllSuppliers,
   createSupplier, linkSupplierToCustomer,
@@ -14,7 +30,7 @@ export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [mode, setMode] = useState<'new' | 'existing'>('new');
+  const [tab, setTab] = useState(0);
   const [newName, setNewName] = useState('');
   const [linkId, setLinkId] = useState('');
   const [error, setError] = useState('');
@@ -62,70 +78,83 @@ export default function SuppliersPage() {
   const unlinkableSuppliers = allSuppliers.filter(s => !linkedIds.has(s.id));
 
   return (
-    <div className="page">
-      <button className="btn-back" onClick={() => navigate('/')}>← Customers</button>
+    <Box>
+      <Button onClick={() => navigate('/')} sx={{ mb: 1, p: 0, textTransform: 'none' }}>
+        ← Customers
+      </Button>
 
-      <div className="page-header">
-        <h1>{customer?.name ?? '...'} — Suppliers</h1>
-        <button className="btn-primary" onClick={() => { setShowForm(v => !v); setError(''); }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h5" fontWeight={700}>
+          {customer?.name ?? '…'} — Suppliers
+        </Typography>
+        <Button variant="contained" onClick={() => { setShowForm(v => !v); setError(''); }}>
           {showForm ? 'Cancel' : '+ Add Supplier'}
-        </button>
-      </div>
+        </Button>
+      </Box>
 
-      {showForm && (
-        <div className="card form-card">
-          <div className="tab-bar">
-            <button className={mode === 'new' ? 'tab active' : 'tab'} onClick={() => setMode('new')}>New Supplier</button>
-            <button className={mode === 'existing' ? 'tab active' : 'tab'} onClick={() => setMode('existing')}>Link Existing</button>
-          </div>
+      <Collapse in={showForm}>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+              <Tab label="New Supplier" />
+              <Tab label="Link Existing" />
+            </Tabs>
 
-          {mode === 'new' && (
-            <form onSubmit={handleAddNew}>
-              <label>
-                Supplier Name
-                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Supplier name" required />
-              </label>
-              {error && <p className="error">{error}</p>}
-              <button className="btn-primary" type="submit">Create & Link</button>
-            </form>
-          )}
+            {tab === 0 && (
+              <Box component="form" onSubmit={handleAddNew} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <TextField
+                  label="Supplier Name" size="small" required
+                  value={newName} onChange={e => setNewName(e.target.value)}
+                  placeholder="Supplier name"
+                />
+                {error && <Alert severity="error">{error}</Alert>}
+                <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>Create & Link</Button>
+              </Box>
+            )}
 
-          {mode === 'existing' && (
-            <form onSubmit={handleLinkExisting}>
-              <label>
-                Select Supplier
-                <select value={linkId} onChange={e => setLinkId(e.target.value)} required>
-                  <option value="">-- choose --</option>
-                  {unlinkableSuppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} (#{s.id})</option>
-                  ))}
-                </select>
-              </label>
-              {error && <p className="error">{error}</p>}
-              <button className="btn-primary" type="submit" disabled={!linkId}>Link</button>
-            </form>
-          )}
-        </div>
+            {tab === 1 && (
+              <Box component="form" onSubmit={handleLinkExisting} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <FormControl size="small" required>
+                  <InputLabel>Select Supplier</InputLabel>
+                  <Select value={linkId} label="Select Supplier" onChange={e => setLinkId(e.target.value)}>
+                    {unlinkableSuppliers.map(s => (
+                      <MenuItem key={s.id} value={s.id}>{s.name} (#{s.id})</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {error && <Alert severity="error">{error}</Alert>}
+                <Button type="submit" variant="contained" disabled={!linkId} sx={{ alignSelf: 'flex-start' }}>Link</Button>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Collapse>
+
+      {!showForm && error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {suppliers.length === 0 ? (
+        <Typography color="text.secondary" textAlign="center" py={6}>
+          No suppliers linked to this customer yet.
+        </Typography>
+      ) : (
+        <Grid container spacing={2}>
+          {suppliers.map(s => (
+            <Grid item xs={12} sm={6} key={s.id}>
+              <Card sx={{ height: '100%' }}>
+                <CardActionArea
+                  onClick={() => navigate(`/customers/${customerId}/suppliers/${s.id}/items`)}
+                  sx={{ height: '100%' }}
+                >
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight={600}>{s.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">#{s.id}</Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
-
-      {!showForm && error && <p className="error">{error}</p>}
-
-      <div className="list">
-        {suppliers.length === 0 && <p className="empty">No suppliers linked to this customer yet.</p>}
-        {suppliers.map(s => (
-          <div
-            key={s.id}
-            className="list-item"
-            onClick={() => navigate(`/customers/${customerId}/suppliers/${s.id}/items`)}
-          >
-            <div className="list-item-content">
-              <span className="list-item-name">{s.name}</span>
-              <span className="list-item-id">#{s.id}</span>
-            </div>
-            <span className="list-item-arrow">→</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    </Box>
   );
 }
