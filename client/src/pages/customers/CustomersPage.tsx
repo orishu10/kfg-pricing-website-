@@ -12,6 +12,7 @@ import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { getCustomers, createCustomer, deleteCustomer, type Customer } from '../../api';
+import { Grid2 } from '@mui/material';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -88,9 +89,9 @@ export default function CustomersPage() {
       {customers.length === 0 ? (
         <Typography color="text.secondary" textAlign="center" py={6}>No customers yet.</Typography>
       ) : (
-        <Grid container spacing={2}>
+        <Grid2 container spacing={2}>
           {customers.map(c => (
-            <Grid key={c.id}>
+            <Grid2 key={c.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardActionArea
                   onClick={() => navigate(`/customers/${c.id}/suppliers`)}
@@ -107,9 +108,9 @@ export default function CustomersPage() {
                   </Button>
                 </CardActions>
               </Card>
-            </Grid>
+            </Grid2>
           ))}
-        </Grid>
+        </Grid2>
       )}
     </Box>
   );
