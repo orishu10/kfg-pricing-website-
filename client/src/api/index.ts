@@ -47,6 +47,8 @@ export interface Item {
   cases_in_fcl: number | null;
   units_in_case: number | null;
   unit_weight: N;
+  cases_per_pallet: number | null;
+  pallets_per_fcl: number | null;
 
   // Supplier pricing
   supplier_price_unit: N;
@@ -61,6 +63,9 @@ export interface Item {
   import_factor: N;
   kfg_commission: N;
   total: N;
+  kfg_commission_total: N;
+  tariffs_total: N;
+  usd_nis: N;
 
   // Final cost & price
   cost_unit: N;
@@ -85,6 +90,8 @@ export interface ItemPayload {
   cases_in_fcl: number | null;
   units_in_case: number | null;
   unit_weight: number | null;
+  cases_per_pallet: number | null;
+  pallets_per_fcl: number | null;
   supplier_price_unit: number | null;
   supplier_price_case: number | null;
   supplier_price_fcl: number | null;
@@ -95,6 +102,9 @@ export interface ItemPayload {
   import_factor: number | null;
   kfg_commission: number | null;
   total: number | null;
+  kfg_commission_total: number | null;
+  tariffs_total: number | null;
+  usd_nis: number | null;
   cost_unit: number | null;
   cost_case: number | null;
   price_unit: number | null;
