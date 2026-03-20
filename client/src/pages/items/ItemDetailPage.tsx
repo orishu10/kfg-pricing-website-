@@ -108,13 +108,8 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
         label={label}
         fullWidth
         value={value}
-        placeholder="—"
-        slotProps={{ input: { readOnly: true } }}
+disabled
         sx={{
-          "& .MuiOutlinedInput-root": {
-            bgcolor: "rgba(0,0,0,0.04)",
-            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-          },
           "& .MuiInputBase-input": { color: "text.secondary", fontFamily: "monospace" },
         }}
       />
@@ -169,63 +164,7 @@ function FormTextField({
   );
 }
 
-function NumField({
-  label,
-  value,
-  onChange,
-  calc,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  calc?: boolean;
-}) {
-  return (
-    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-      <TextField
-        label={label}
-        fullWidth
-        type="number"
-        slotProps={{
-          htmlInput: { step: "0.0001" },
-          ...(calc
-            ? {
-                input: {
-                  endAdornment: (
-                    <Chip
-                      label="auto"
-                      size="small"
-                      sx={{
-                        height: 18,
-                        fontSize: 10,
-                        bgcolor: "rgba(111,66,193,0.25)",
-                        color: "#b39ddb",
-                        ml: 0.5,
-                      }}
-                    />
-                  ),
-                },
-              }
-            : {}),
-        }}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
-        sx={
-          calc
-            ? {
-                "& .MuiOutlinedInput-root": {
-                  bgcolor: "rgba(111,66,193,0.08)",
-                  "& fieldset": { borderColor: "rgba(111,66,193,0.4)" },
-                },
-                "& .MuiInputLabel-root": { color: "#9b74d9" },
-              }
-            : undefined
-        }
-      />
-    </Grid>
-  );
-}
+
 
 function IntField({
   label,
@@ -241,11 +180,10 @@ function IntField({
       <TextField
         label={label}
         fullWidth
-        type="number"
         slotProps={{ htmlInput: { step: "1", min: "0" } }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
+        placeholder={label}
       />
     </Grid>
   );
@@ -311,9 +249,6 @@ export default function ItemDetailPage() {
       return { ...next, ...calcDerived(next) };
     });
   };
-
-  const setDirect = (key: keyof FormState) => (value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -532,14 +467,14 @@ export default function ItemDetailPage() {
         {/* ── 7. Cost Build-up ── */}
         <Section title="Cost Build-up">
           <ReadonlyField label="Sub Total 1 (FOB+CIF+DAP+DDP+Supplier FCL)" value={form.sub_total_1} />
-          <NumField      label="US Tariff"                                   value={form.us_tariff}   onChange={set("us_tariff")} />
+          <IntField      label="US Tariff"                                   value={form.us_tariff}   onChange={set("us_tariff")} />
           <ReadonlyField label="Sub Total 2 (Sub1 + US Tariff)"             value={form.sub_total_2} />
           <ReadonlyField label="Import Factor"                               value={form.import_factor} />
-          <NumField      label="KFG Commission"                              value={form.kfg_commission} onChange={set("kfg_commission")} />
+          <IntField      label="KFG Commission"                              value={form.kfg_commission} onChange={set("kfg_commission")} />
           <ReadonlyField label="KFG Commission Total"                        value={form.kfg_commission_total} />
           <ReadonlyField label="Tariffs Total"                               value={form.tariffs_total} />
           <ReadonlyField label="Total (Sub2 + KFG)"                         value={form.total} />
-          <NumField      label="USD / NIS"                                   value={form.usd_nis} onChange={set("usd_nis")} />
+          <IntField      label="USD / NIS"                                   value={form.usd_nis} onChange={set("usd_nis")} />
         </Section>
 
         {/* ── 8. Final Cost & Price ── */}
@@ -549,7 +484,7 @@ export default function ItemDetailPage() {
           <ReadonlyField label="Price — Case"     value={form.price_case} />
           <ReadonlyField label="Price — Unit"     value={form.price_unit} />
           <ReadonlyField label="SAP Price — Unit" value={form.sap_price_unit} />
-          <NumField      label="SAP Price — Case" value={form.sap_price_case} onChange={set("sap_price_case")} />
+          <IntField      label="SAP Price — Case" value={form.sap_price_case} onChange={set("sap_price_case")} />
         </Section>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
