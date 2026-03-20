@@ -17,6 +17,7 @@ import type { FormState } from "./utils/types";
 import {
   Card,
   CardContent,
+  InputAdornment,
   Typography,
   TextField,
   Chip,
@@ -75,7 +76,7 @@ function Section({
   title,
   children,
 }: {
-  title: string;
+  title?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -101,9 +102,9 @@ function Section({
 }
 
 // For computed/derived fields — looks like a regular TextField but non-editable
-function ReadonlyField({ label, value }: { label: string; value: string }) {
+function ReadonlyField({ label, value, col }: { label: string; value: string; col?: boolean }) {
   return (
-    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+    <Grid size={col ? { xs: 12 } : { xs: 12, sm: 6, md: 3 }}>
       <TextField
         label={label}
         fullWidth
@@ -150,20 +151,29 @@ function FormTextField({
   value,
   onChange,
   required,
+  currency,
+  col,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
+  currency?: boolean;
+  col?: boolean;
 }) {
   return (
-    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+    <Grid size={col ? { xs: 12 } : { xs: 12, sm: 6, md: 4 }}>
       <TextField
         label={label}
         fullWidth
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        slotProps={currency && value ? {
+          input: {
+            endAdornment: <InputAdornment position="end">$</InputAdornment>,
+          },
+        } : undefined}
       />
     </Grid>
   );
@@ -174,14 +184,16 @@ function NumField({
   value,
   onChange,
   calc,
+  col,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   calc?: boolean;
+  col?: boolean;
 }) {
   return (
-    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+    <Grid size={col ? { xs: 12 } : { xs: 12, sm: 6, md: 3 }}>
       <TextField
         label={label}
         fullWidth
@@ -231,13 +243,15 @@ function IntField({
   label,
   value,
   onChange,
+  col,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  col?: boolean;
 }) {
   return (
-    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+    <Grid size={col ? { xs: 12 } : { xs: 12, sm: 6, md: 3 }}>
       <TextField
         label={label}
         fullWidth
@@ -439,117 +453,64 @@ export default function ItemDetailPage() {
         </Section>
 
         {/* ── 2. Basic Info ── */}
-        <Section title="Basic Info">
-          <FormTextField
-            label="Description"
-            value={form.name}
-            onChange={set("name")}
-            required
-          />
-          <FormSelectField
-            label="Supplier Incoterms"
-            value={form.supplier_incoterms}
-            onChange={set("supplier_incoterms")}
-            options={INCOTERMS_OPTIONS}
-          />
-          <FormSelectField
-            label="Customer Incoterms"
-            value={form.customer_incoterms}
-            onChange={set("customer_incoterms")}
-            options={INCOTERMS_OPTIONS}
-          />
+        <Section>
+          <FormTextField label="Description"        value={form.name}              onChange={set("name")} required />
+          <FormSelectField label="Supplier Incoterms" value={form.supplier_incoterms} onChange={set("supplier_incoterms")} options={INCOTERMS_OPTIONS} />
+          <FormSelectField label="Customer Incoterms" value={form.customer_incoterms} onChange={set("customer_incoterms")} options={INCOTERMS_OPTIONS} />
         </Section>
 
         {/* ── 3. Logistics ── */}
-        <Section title="Logistics">
-          <FormTextField
-            label="Logistics"
-            value={form.logistics}
-            onChange={set("logistics")}
-          />
-          <FormSelectField
-            label="Container Type"
-            value={form.container_type}
-            onChange={set("container_type")}
-            options={CONTAINER_OPTIONS}
-          />
+        <Section>
+          <FormTextField   label="Logistics"      value={form.logistics}      onChange={set("logistics")} />
+          <FormSelectField label="Container Type" value={form.container_type} onChange={set("container_type")} options={CONTAINER_OPTIONS} />
         </Section>
 
         {/* ── 4. Incoterm Prices ── */}
-        <Section title="Incoterm Prices">
-          <FormTextField label="FOB" value={form.fob} onChange={set("fob")} />
-          <FormTextField label="CIF" value={form.cif} onChange={set("cif")} />
-          <FormTextField label="DAP" value={form.dap} onChange={set("dap")} />
-          <FormTextField label="DDP" value={form.ddp} onChange={set("ddp")} />
+        <Section>
+          <FormTextField label="FOB" value={form.fob} onChange={set("fob")} currency />
+          <FormTextField label="CIF" value={form.cif} onChange={set("cif")} currency />
+          <FormTextField label="DAP" value={form.dap} onChange={set("dap")} currency />
+          <FormTextField label="DDP" value={form.ddp} onChange={set("ddp")} currency />
         </Section>
 
-        {/* ── 5. Volume & Weight ── */}
-        <Section title="Volume & Weight">
-          <IntField
-            label="Units in Case"
-            value={form.units_in_case}
-            onChange={set("units_in_case")}
-          />
-          <FormTextField
-            label="Unit Weight"
-            value={form.unit_weight}
-            onChange={set("unit_weight")}
-          />
-          <IntField
-            label="Cases per Pallet"
-            value={form.cases_per_pallet}
-            onChange={set("cases_per_pallet")}
-          />
-          <IntField
-            label="Pallets per FCL"
-            value={form.pallets_per_fcl}
-            onChange={set("pallets_per_fcl")}
-          />
-          <ReadonlyField label="Cases in FCL" value={form.cases_in_fcl} />
+        {/* ── 5. Volume & Weight — stacked ── */}
+        <Section>
+          <IntField      label="Units in Case"    value={form.units_in_case}    onChange={set("units_in_case")}    col />
+          <FormTextField label="Unit Weight"      value={form.unit_weight}      onChange={set("unit_weight")}      col />
+          <IntField      label="Cases per Pallet" value={form.cases_per_pallet} onChange={set("cases_per_pallet")} col />
+          <IntField      label="Pallets per FCL"  value={form.pallets_per_fcl}  onChange={set("pallets_per_fcl")}  col />
+          <ReadonlyField label="Cases in FCL"     value={form.cases_in_fcl}                                        col />
         </Section>
 
-        {/* ── 6. Supplier Pricing ── */}
-        <Section title="Supplier Pricing">
-          <FormTextField
-            label="Supplier Price — Unit"
-            value={form.supplier_price_unit}
-            onChange={set("supplier_price_unit")}
-          />
-          <ReadonlyField
-            label="Supplier Price — Case"
-            value={form.supplier_price_case}
-          />
-          <ReadonlyField
-            label="Supplier Price — FCL"
-            value={form.supplier_price_fcl}
-          />
-          <ReadonlyField
-            label="Supplier Price — 1 Kg"
-            value={form.supplier_price_1kg}
-          />
+        {/* ── 6. Supplier Pricing — stacked ── */}
+        <Section>
+          <FormTextField label="Supplier Price — Unit" value={form.supplier_price_unit} onChange={set("supplier_price_unit")} col />
+          <ReadonlyField label="Supplier Price — Case" value={form.supplier_price_case}                                       col />
+          <ReadonlyField label="Supplier Price — FCL"  value={form.supplier_price_fcl}                                        col />
+          <ReadonlyField label="Supplier Price — 1 Kg" value={form.supplier_price_1kg}                                        col />
         </Section>
 
-        {/* ── 7. Cost Build-up ── */}
-        <Section title="Cost Build-up">
-          <ReadonlyField label="Sub Total 1 (FOB+CIF+DAP+DDP+Supplier FCL)" value={form.sub_total_1} />
-          <NumField      label="US Tariff"                                   value={form.us_tariff}   onChange={set("us_tariff")} />
-          <ReadonlyField label="Sub Total 2 (Sub1 + US Tariff)"             value={form.sub_total_2} />
-          <ReadonlyField label="Import Factor"                               value={form.import_factor} />
-          <NumField      label="KFG Commission"                              value={form.kfg_commission} onChange={set("kfg_commission")} />
-          <ReadonlyField label="KFG Commission Total"                        value={form.kfg_commission_total} />
-          <ReadonlyField label="Tariffs Total"                               value={form.tariffs_total} />
-          <ReadonlyField label="Total (Sub2 + KFG)"                         value={form.total} />
-          <NumField      label="USD / NIS"                                   value={form.usd_nis} onChange={set("usd_nis")} />
+        {/* ── 7. Cost Build-up — stacked ── */}
+        <Section>
+          <ReadonlyField label="Sub Total 1 (FOB+CIF+DAP+DDP+Supplier FCL)" value={form.sub_total_1}          col />
+          <NumField      label="US Tariff"                                   value={form.us_tariff}            onChange={set("us_tariff")}        col />
+          <ReadonlyField label="Sub Total 2 (Sub1 + US Tariff)"             value={form.sub_total_2}          col />
+          <ReadonlyField label="Import Factor"                               value={form.import_factor}        col />
+          <NumField      label="KFG Commission"                              value={form.kfg_commission}       onChange={set("kfg_commission")}    col />
+          <ReadonlyField label="KFG Commission Total"                        value={form.kfg_commission_total} col />
+          <ReadonlyField label="Tariffs Total"                               value={form.tariffs_total}        col />
+          <ReadonlyField label="Total (Sub2 + KFG)"                         value={form.total}                col />
+          <NumField      label="USD / NIS"                                   value={form.usd_nis}              onChange={set("usd_nis")}           col />
         </Section>
 
-        {/* ── 8. Final Cost & Price ── */}
-        <Section title="Final Cost & Price">
-          <ReadonlyField label="Cost — Case"      value={form.cost_case} />
-          <ReadonlyField label="Cost — Unit"      value={form.cost_unit} />
-          <ReadonlyField label="Price — Case"     value={form.price_case} />
-          <ReadonlyField label="Price — Unit"     value={form.price_unit} />
-          <ReadonlyField label="SAP Price — Unit" value={form.sap_price_unit} />
-          <NumField      label="SAP Price — Case" value={form.sap_price_case} onChange={set("sap_price_case")} />
+        {/* ── 8. Final Cost & Price — stacked ── */}
+        <Section>
+          <ReadonlyField label="Cost — Case"      value={form.cost_case}      col />
+          <ReadonlyField label="Cost — Unit"      value={form.cost_unit}      col />
+          <ReadonlyField label="Price — Case"     value={form.price_case}     col />
+          <ReadonlyField label="Price — Unit"     value={form.price_unit}     col />
+          <ReadonlyField label="SAP Price — Unit" value={form.sap_price_unit} col />
+          <NumField      label="SAP Price — Case" value={form.sap_price_case} onChange={set("sap_price_case")} col />
         </Section>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
