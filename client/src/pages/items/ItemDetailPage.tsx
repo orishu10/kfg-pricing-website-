@@ -102,30 +102,8 @@ function Section({
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
-    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        display="block"
-        fontWeight={600}
-        textTransform="uppercase"
-        letterSpacing={0.5}
-      >
-        {label}
-      </Typography>
-      <Box
-        sx={{
-          bgcolor: "action.hover",
-          borderRadius: 1,
-          px: 1.5,
-          py: 1,
-          mt: 0.5,
-        }}
-      >
-        <Typography variant="body2" fontFamily="monospace">
-          {value || "—"}
-        </Typography>
-      </Box>
+    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <TextField label={label} fullWidth value={value} disabled />
     </Grid>
   );
 }
@@ -475,32 +453,95 @@ export default function ItemDetailPage() {
 
         {/* ── 5. Volume & Weight ── */}
         <Section title="Volume & Weight">
-          <IntField        label="Units in Case"    value={form.units_in_case}    onChange={set("units_in_case")} />
-          <NumField        label="Unit Weight"      value={form.unit_weight}      onChange={set("unit_weight")} />
-          <IntField        label="Cases per Pallet" value={form.cases_per_pallet} onChange={set("cases_per_pallet")} />
-          <IntField        label="Pallets per FCL"  value={form.pallets_per_fcl}  onChange={set("pallets_per_fcl")} />
-          <ReadonlyField   label="Cases in FCL"     value={form.cases_in_fcl} />
+          <IntField
+            label="Units in Case"
+            value={form.units_in_case}
+            onChange={set("units_in_case")}
+          />
+          <FormTextField
+            label="Unit Weight"
+            value={form.unit_weight}
+            onChange={set("unit_weight")}
+          />
+          <IntField
+            label="Cases per Pallet"
+            value={form.cases_per_pallet}
+            onChange={set("cases_per_pallet")}
+          />
+          <IntField
+            label="Pallets per FCL"
+            value={form.pallets_per_fcl}
+            onChange={set("pallets_per_fcl")}
+          />
+          <ReadonlyField label="Cases in FCL" value={form.cases_in_fcl} />
         </Section>
 
         {/* ── 6. Supplier Pricing ── */}
         <Section title="Supplier Pricing">
-          <NumField      label="Supplier Price — Unit" value={form.supplier_price_unit} onChange={set("supplier_price_unit")} />
-          <ReadonlyField label="Supplier Price — Case" value={form.supplier_price_case} />
-          <ReadonlyField label="Supplier Price — FCL"  value={form.supplier_price_fcl} />
-          <ReadonlyField label="Supplier Price — 1 Kg" value={form.supplier_price_1kg} />
+          <FormTextField
+            label="Supplier Price — Unit"
+            value={form.supplier_price_unit}
+            onChange={set("supplier_price_unit")}
+          />
+          <ReadonlyField
+            label="Supplier Price — Case"
+            value={form.supplier_price_case}
+          />
+          <ReadonlyField
+            label="Supplier Price — FCL"
+            value={form.supplier_price_fcl}
+          />
+          <ReadonlyField
+            label="Supplier Price — 1 Kg"
+            value={form.supplier_price_1kg}
+          />
         </Section>
 
         {/* ── 7. Cost Build-up ── */}
         <Section title="Cost Build-up">
-          <ReadonlyField label="Sub Total 1 (FOB+CIF+DAP+DDP+Supplier FCL)" value={form.sub_total_1} />
-          <NumField      label="US Tariff"                                   value={form.us_tariff}   onChange={set("us_tariff")} />
-          <ReadonlyField label="Sub Total 2 (Sub1 + US Tariff)"             value={form.sub_total_2} />
-          <NumField label="Import Factor"                      value={form.import_factor}         onChange={set("import_factor")} />
-          <NumField label="KFG Commission"                     value={form.kfg_commission}        onChange={set("kfg_commission")} />
-          <NumField label="Total (Sub2 + KFG)"                 value={form.total}                 onChange={setDirect("total")}         calc />
-          <NumField label="KFG Commission Total"               value={form.kfg_commission_total}  onChange={set("kfg_commission_total")} />
-          <NumField label="Tariffs Total"                      value={form.tariffs_total}         onChange={set("tariffs_total")} />
-          <NumField label="USD / NIS"                          value={form.usd_nis}               onChange={set("usd_nis")} />
+          <ReadonlyField
+            label="Sub Total 1 (FOB+CIF+DAP+DDP+Supplier FCL)"
+            value={form.sub_total_1}
+          />
+          <FormTextField
+            label="US Tariff"
+            value={form.us_tariff}
+            onChange={set("us_tariff")}
+          />
+          <ReadonlyField
+            label="Sub Total 2 (Sub1 + US Tariff)"
+            value={form.sub_total_2}
+          />
+          <IntField
+            label="Import Factor"
+            value={form.import_factor}
+            onChange={set("import_factor")}
+          />
+          <IntField
+            label="KFG Commission"
+            value={form.kfg_commission}
+            onChange={set("kfg_commission")}
+          />
+          <IntField
+            label="Total (Sub2 + KFG)"
+            value={form.total}
+            onChange={setDirect("total")}
+          />
+          <IntField
+            label="KFG Commission Total"
+            value={form.kfg_commission_total}
+            onChange={set("kfg_commission_total")}
+          />
+          <IntField
+            label="Tariffs Total"
+            value={form.tariffs_total}
+            onChange={set("tariffs_total")}
+          />
+          <IntField
+            label="USD / NIS"
+            value={form.usd_nis}
+            onChange={set("usd_nis")}
+          />
         </Section>
 
         {/* ── 8. Final Cost & Price ── */}
