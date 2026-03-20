@@ -34,7 +34,24 @@ export function calcDerived(f: FormState): Partial<FormState> {
   const st1     = hasInco || sp_fcl != null ? incoSum + (sp_fcl ?? 0) : null;
   // sub_total_2 = sub_total_1 + us_tariff
   const st2     = st1 != null ? st1 + tar : null;
+  // import_factor = (fob + cif + dap + ddp) / supplier_price_fcl
+  const imp_f   = sp_fcl != null && sp_fcl > 0 ? incoSum / sp_fcl : null;
+  // kfg_commission_total = kfg_commission + sub_total_1
+  const kfg_tot = st1 != null ? kfg + st1 : null;
+  // tariffs_total = supplier_price_fcl × us_tariff
+  const tar_tot = sp_fcl != null && tar > 0 ? sp_fcl * tar : null;
+  // total = sub_total_2 + kfg_commission
   const tot     = st2 != null ? st2 + kfg : null;
+  // cost_case = sub_total_2 / cases_in_fcl
+  const c_case  = st2 != null && cifcl != null && cifcl > 0 ? st2 / cifcl : null;
+  // cost_unit = cost_case / units_in_case
+  const c_unit  = c_case != null && uic > 0 ? c_case / uic : null;
+  // price_case = total / cases_in_fcl
+  const p_case  = tot != null && cifcl != null && cifcl > 0 ? tot / cifcl : null;
+  // price_unit = price_case / units_in_case
+  const p_unit  = p_case != null && uic > 0 ? p_case / uic : null;
+  // sap_price_unit = supplier_price_case / units_in_case
+  const sap_u   = sp_case != null && uic > 0 ? sp_case / uic : null;
 
   return {
     cases_in_fcl:        cifcl   != null ? String(cifcl)      : "",
@@ -43,6 +60,14 @@ export function calcDerived(f: FormState): Partial<FormState> {
     supplier_price_1kg:  sp_1kg  != null ? sp_1kg.toFixed(4)  : "",
     sub_total_1:         st1     != null ? st1.toFixed(4)      : "",
     sub_total_2:         st2     != null ? st2.toFixed(4)      : "",
+    import_factor:       imp_f   != null ? imp_f.toFixed(4)    : "",
+    kfg_commission_total: kfg_tot != null ? kfg_tot.toFixed(4) : "",
+    tariffs_total:       tar_tot != null ? tar_tot.toFixed(4)  : "",
     total:               tot     != null ? tot.toFixed(4)      : "",
+    cost_case:           c_case  != null ? c_case.toFixed(4)   : "",
+    cost_unit:           c_unit  != null ? c_unit.toFixed(4)   : "",
+    price_case:          p_case  != null ? p_case.toFixed(4)   : "",
+    price_unit:          p_unit  != null ? p_unit.toFixed(4)   : "",
+    sap_price_unit:      sap_u   != null ? sap_u.toFixed(4)    : "",
   };
 }

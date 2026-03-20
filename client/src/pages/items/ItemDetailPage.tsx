@@ -100,7 +100,30 @@ function Section({
   );
 }
 
+// For computed/derived fields — looks like a regular TextField but non-editable
 function ReadonlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <TextField
+        label={label}
+        fullWidth
+        value={value}
+        placeholder="—"
+        slotProps={{ input: { readOnly: true } }}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            bgcolor: "rgba(0,0,0,0.04)",
+            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
+          },
+          "& .MuiInputBase-input": { color: "text.secondary", fontFamily: "monospace" },
+        }}
+      />
+    </Grid>
+  );
+}
+
+// For the Identity section — caption label + grey box (original style)
+function IdentityField({ label, value }: { label: string; value: string }) {
   return (
     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
       <Typography
@@ -113,15 +136,7 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
       >
         {label}
       </Typography>
-      <Box
-        sx={{
-          bgcolor: "action.hover",
-          borderRadius: 1,
-          px: 1.5,
-          py: 1,
-          mt: 0.5,
-        }}
-      >
+      <Box sx={{ bgcolor: "action.hover", borderRadius: 1, px: 1.5, py: 1, mt: 0.5 }}>
         <Typography variant="body2" fontFamily="monospace">
           {value || "—"}
         </Typography>
@@ -342,7 +357,8 @@ export default function ItemDetailPage() {
     try {
       const updated = await updateItem(itemId!, payload);
       setItem(updated);
-      setForm(itemToForm(updated));
+      const f = itemToForm(updated);
+      setForm({ ...f, ...calcDerived(f) });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: unknown) {
@@ -416,16 +432,10 @@ export default function ItemDetailPage() {
       <Box component="form" onSubmit={handleSave}>
         {/* ── 1. Identity ── */}
         <Section title="Identity">
-          <ReadonlyField label="Item ID" value={item.id} />
-          <ReadonlyField
-            label="Customer"
-            value={item.customer_name ?? item.customer_id}
-          />
-          <ReadonlyField
-            label="Supplier"
-            value={item.supplier_name ?? String(item.supplier_id)}
-          />
-          <ReadonlyField label="Last Updated" value={updatedAt} />
+          <IdentityField label="Item ID"      value={item.id} />
+          <IdentityField label="Customer"     value={item.customer_name ?? item.customer_id} />
+          <IdentityField label="Supplier"     value={item.supplier_name ?? String(item.supplier_id)} />
+          <IdentityField label="Last Updated" value={updatedAt} />
         </Section>
 
         {/* ── 2. Basic Info ── */}
@@ -495,46 +505,22 @@ export default function ItemDetailPage() {
           <ReadonlyField label="Sub Total 1 (FOB+CIF+DAP+DDP+Supplier FCL)" value={form.sub_total_1} />
           <NumField      label="US Tariff"                                   value={form.us_tariff}   onChange={set("us_tariff")} />
           <ReadonlyField label="Sub Total 2 (Sub1 + US Tariff)"             value={form.sub_total_2} />
-          <NumField label="Import Factor"                      value={form.import_factor}         onChange={set("import_factor")} />
-          <NumField label="KFG Commission"                     value={form.kfg_commission}        onChange={set("kfg_commission")} />
-          <NumField label="Total (Sub2 + KFG)"                 value={form.total}                 onChange={setDirect("total")}         calc />
-          <NumField label="KFG Commission Total"               value={form.kfg_commission_total}  onChange={set("kfg_commission_total")} />
-          <NumField label="Tariffs Total"                      value={form.tariffs_total}         onChange={set("tariffs_total")} />
-          <NumField label="USD / NIS"                          value={form.usd_nis}               onChange={set("usd_nis")} />
+          <ReadonlyField label="Import Factor"                               value={form.import_factor} />
+          <NumField      label="KFG Commission"                              value={form.kfg_commission} onChange={set("kfg_commission")} />
+          <ReadonlyField label="KFG Commission Total"                        value={form.kfg_commission_total} />
+          <ReadonlyField label="Tariffs Total"                               value={form.tariffs_total} />
+          <ReadonlyField label="Total (Sub2 + KFG)"                         value={form.total} />
+          <NumField      label="USD / NIS"                                   value={form.usd_nis} onChange={set("usd_nis")} />
         </Section>
 
         {/* ── 8. Final Cost & Price ── */}
         <Section title="Final Cost & Price">
-          <FormTextField
-            label="Cost — Unit"
-            value={form.cost_unit}
-            onChange={set("cost_unit")}
-          />
-          <FormTextField
-            label="Cost — Case"
-            value={form.cost_case}
-            onChange={set("cost_case")}
-          />
-          <FormTextField
-            label="Price — Unit"
-            value={form.price_unit}
-            onChange={set("price_unit")}
-          />
-          <FormTextField
-            label="Price — Case"
-            value={form.price_case}
-            onChange={set("price_case")}
-          />
-          <FormTextField
-            label="SAP Price — Unit"
-            value={form.sap_price_unit}
-            onChange={set("sap_price_unit")}
-          />
-          <FormTextField
-            label="SAP Price — Case"
-            value={form.sap_price_case}
-            onChange={set("sap_price_case")}
-          />
+          <ReadonlyField label="Cost — Case"      value={form.cost_case} />
+          <ReadonlyField label="Cost — Unit"      value={form.cost_unit} />
+          <ReadonlyField label="Price — Case"     value={form.price_case} />
+          <ReadonlyField label="Price — Unit"     value={form.price_unit} />
+          <ReadonlyField label="SAP Price — Unit" value={form.sap_price_unit} />
+          <NumField      label="SAP Price — Case" value={form.sap_price_case} onChange={set("sap_price_case")} />
         </Section>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
