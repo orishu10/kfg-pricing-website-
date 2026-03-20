@@ -109,13 +109,8 @@ function ReadonlyField({ label, value, col }: { label: string; value: string; co
         label={label}
         fullWidth
         value={value}
-        placeholder="—"
-        slotProps={{ input: { readOnly: true } }}
+disabled
         sx={{
-          "& .MuiOutlinedInput-root": {
-            bgcolor: "rgba(0,0,0,0.04)",
-            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-          },
           "& .MuiInputBase-input": { color: "text.secondary", fontFamily: "monospace" },
         }}
       />
@@ -255,11 +250,10 @@ function IntField({
       <TextField
         label={label}
         fullWidth
-        type="number"
         slotProps={{ htmlInput: { step: "1", min: "0" } }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
+        placeholder={label}
       />
     </Grid>
   );
@@ -325,9 +319,6 @@ export default function ItemDetailPage() {
       return { ...next, ...calcDerived(next) };
     });
   };
-
-  const setDirect = (key: keyof FormState) => (value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
