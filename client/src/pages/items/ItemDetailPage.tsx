@@ -485,19 +485,48 @@ export default function ItemDetailPage() {
 
         {/* ── 5. Volume & Weight ── */}
         <Section title="Volume & Weight">
-          <IntField        label="Units in Case"    value={form.units_in_case}    onChange={set("units_in_case")} />
-          <NumField        label="Unit Weight"      value={form.unit_weight}      onChange={set("unit_weight")} />
-          <IntField        label="Cases per Pallet" value={form.cases_per_pallet} onChange={set("cases_per_pallet")} />
-          <IntField        label="Pallets per FCL"  value={form.pallets_per_fcl}  onChange={set("pallets_per_fcl")} />
-          <ReadonlyField   label="Cases in FCL"     value={form.cases_in_fcl} />
+          <IntField
+            label="Units in Case"
+            value={form.units_in_case}
+            onChange={set("units_in_case")}
+          />
+          <FormTextField
+            label="Unit Weight"
+            value={form.unit_weight}
+            onChange={set("unit_weight")}
+          />
+          <IntField
+            label="Cases per Pallet"
+            value={form.cases_per_pallet}
+            onChange={set("cases_per_pallet")}
+          />
+          <IntField
+            label="Pallets per FCL"
+            value={form.pallets_per_fcl}
+            onChange={set("pallets_per_fcl")}
+          />
+          <ReadonlyField label="Cases in FCL" value={form.cases_in_fcl} />
         </Section>
 
         {/* ── 6. Supplier Pricing ── */}
         <Section title="Supplier Pricing">
-          <NumField      label="Supplier Price — Unit" value={form.supplier_price_unit} onChange={set("supplier_price_unit")} />
-          <ReadonlyField label="Supplier Price — Case" value={form.supplier_price_case} />
-          <ReadonlyField label="Supplier Price — FCL"  value={form.supplier_price_fcl} />
-          <ReadonlyField label="Supplier Price — 1 Kg" value={form.supplier_price_1kg} />
+          <FormTextField
+            label="Supplier Price — Unit"
+            value={form.supplier_price_unit}
+            onChange={set("supplier_price_unit")}
+          />
+          <ReadonlyField
+            label="Supplier Price — Case"
+            value={form.supplier_price_case}
+          />
+          <ReadonlyField
+            label="Supplier Price — FCL"
+            value={form.supplier_price_fcl}
+          />
+          <ReadonlyField
+            label="Supplier Price — 1 Kg"
+            value={form.supplier_price_1kg}
+          />
         </Section>
 
         {/* ── 7. Cost Build-up ── */}
