@@ -2,22 +2,22 @@ import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
-    mode: 'dark',
-    primary: { main: '#5b8dee' },
-    error:   { main: '#f44336' },
-    success: { main: '#4caf50' },
+    mode: 'light',
+    primary: { main: '#c41230' },
+    error:   { main: '#d32f2f' },
+    success: { main: '#2e7d32' },
     background: {
-      default: '#0f0f0f',
-      paper:   '#1c1c1e',
+      default: '#c8c8c8',
+      paper:   '#ffffff',
     },
   },
-  shape: { borderRadius: 10 },
+  shape: { borderRadius: 8 },
   components: {
-    MuiCard: {
-      styleOverrides: { root: { backgroundImage: 'none' } },
-    },
     MuiButton: {
       styleOverrides: { root: { textTransform: 'none', fontWeight: 600 } },
+    },
+    MuiCard: {
+      styleOverrides: { root: { backgroundImage: 'none' } },
     },
     MuiAppBar: {
       styleOverrides: { root: { backgroundImage: 'none' } },
