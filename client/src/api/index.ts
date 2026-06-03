@@ -4,6 +4,8 @@ const api = axios.create({
   baseURL: '/api',
 });
 
+export default api;
+
 export interface Customer {
   id: string;
   name: string;
@@ -140,3 +142,7 @@ export const createItem = (data: { id: string; name: string; customer_id: string
 export const updateItem = (id: string, data: ItemPayload) =>
   api.put<Item>(`/items/${id}`, data).then(r => r.data);
 export const deleteItem = (id: string) => api.delete(`/items/${id}`);
+
+// Auth
+export const login = (username: string, password: string) =>
+  api.post<{ token: string; username: string }>('/auth/login', { username, password }).then(r => r.data);

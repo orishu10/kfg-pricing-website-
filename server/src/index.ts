@@ -5,6 +5,7 @@ import { pool } from './db';
 import customersRouter from './routes/customers';
 import suppliersRouter from './routes/suppliers';
 import itemsRouter from './routes/items';
+import authRouter from './routes/auth';
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+app.use('/api/auth', authRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/suppliers', suppliersRouter);
 app.use('/api/items', itemsRouter);

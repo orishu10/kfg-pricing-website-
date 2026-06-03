@@ -31,7 +31,7 @@ export default function ItemsPage() {
     getSupplierItems(Number(supplierId), customerId!).then(setItems).catch(() => setError('Failed to load items'));
 
   useEffect(() => {
-    getCustomer(customerId!).then(setCustomer).catch(() => navigate('/'));
+    getCustomer(customerId!).then(setCustomer).catch(() => navigate('/customers'));
     getCustomerSuppliers(customerId!).then(list => {
       const found = list.find(s => s.id === Number(supplierId));
       if (!found) navigate(`/customers/${customerId}/suppliers`);

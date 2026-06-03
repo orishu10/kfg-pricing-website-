@@ -39,7 +39,7 @@ export default function SuppliersPage() {
     getCustomerSuppliers(customerId!).then(setSuppliers).catch(() => setError('Failed to load suppliers'));
 
   useEffect(() => {
-    getCustomer(customerId!).then(setCustomer).catch(() => navigate('/'));
+    getCustomer(customerId!).then(setCustomer).catch(() => navigate('/customers'));
     loadSuppliers();
     getAllSuppliers().then(setAllSuppliers);
     // navigate and loadSuppliers are stable references — intentionally omitted
@@ -79,7 +79,7 @@ export default function SuppliersPage() {
 
   return (
     <Box>
-      <Button onClick={() => navigate('/')} sx={{ mb: 1, p: 0, textTransform: 'none' }}>
+      <Button onClick={() => navigate('/customers')} sx={{ mb: 1, p: 0, textTransform: 'none' }}>
         ← Customers
       </Button>
 
