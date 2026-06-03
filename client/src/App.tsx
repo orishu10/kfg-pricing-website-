@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import AppBar from '@mui/material/AppBar';
@@ -15,36 +15,53 @@ import SuppliersPage from './pages/suppliers/SuppliersPage';
 import ItemsPage from './pages/items/ItemsPage';
 import ItemDetailPage from './pages/items/ItemDetailPage';
 
+const STRIPE =
+  'repeating-linear-gradient(135deg, transparent 0px, transparent 22px, rgba(255,255,255,0.2) 22px, rgba(255,255,255,0.2) 44px)';
+
 function ProtectedLayout() {
   const { isAuthenticated, logout, username } = useAuth();
+  const navigate = useNavigate();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: '#c8c8c8',
+        backgroundImage: STRIPE,
+      }}
+    >
       <AppBar
         position="static"
         elevation={0}
-        sx={{ bgcolor: 'background.paper', borderBottom: '1px solid rgba(255,255,255,0.08)', width: '100%' }}
+        sx={{ bgcolor: '#424143', width: '100%' }}
       >
         <Toolbar>
           <Typography
-            component="a"
-            href="/"
+            onClick={() => navigate('/')}
             variant="h6"
             fontWeight={700}
-            sx={{ color: 'inherit', textDecoration: 'none', letterSpacing: '-0.3px', flexGrow: 1 }}
+            sx={{ color: '#fff', letterSpacing: '-0.3px', flexGrow: 1, cursor: 'pointer' }}
           >
             KFG Pricing
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mr: 2, fontSize: '0.85rem' }}>
             {username}
           </Typography>
           <Button
             size="small"
-            variant="outlined"
-            color="inherit"
             onClick={logout}
-            sx={{ opacity: 0.7, borderColor: 'rgba(255,255,255,0.2)' }}
+            sx={{
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '0.8rem',
+              px: 1.5,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+            }}
           >
             Sign Out
           </Button>
