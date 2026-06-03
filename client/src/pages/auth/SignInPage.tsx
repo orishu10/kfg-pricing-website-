@@ -16,13 +16,13 @@ const STRIPE =
 const inputSx = {
   width: "100%",
   "& .MuiOutlinedInput-root": {
-    bgcolor: "#fff",
+    bgcolor: "#fff !important",
     borderRadius: 1,
     "& fieldset": { borderColor: "#bbb", borderRadius: 1 },
     "&:hover fieldset": { borderColor: "#888" },
     "&.Mui-focused fieldset": { borderColor: "#555" },
   },
-  "& .MuiInputBase-input": { color: "#111", py: 1.2, px: 1.5 },
+  "& .MuiInputBase-input": { color: "#e6d9d9", py: 1.2, px: 1.5 },
 };
 
 export default function SignInPage() {
