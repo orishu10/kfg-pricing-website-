@@ -1,16 +1,11 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
-import InputAdornment from '@mui/material/InputAdornment';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { login } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -32,7 +27,7 @@ export default function SignInPage() {
       navigate('/');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      setError(msg || 'Login failed');
+      setError(msg || 'Invalid username or password');
     } finally {
       setLoading(false);
     }
@@ -41,110 +36,157 @@ export default function SignInPage() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        px: 2,
+        position: 'fixed',
+        inset: 0,
+        overflow: 'hidden',
+        bgcolor: '#c9c9c9',
+        backgroundImage:
+          'repeating-linear-gradient(135deg, transparent 0px, transparent 22px, rgba(255,255,255,0.22) 22px, rgba(255,255,255,0.22) 44px)',
       }}
     >
-      <Card
-        elevation={0}
+      {/* KFG logo filling the background */}
+      <svg
+        viewBox="0 0 880 560"
+        preserveAspectRatio="xMidYMid meet"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      >
+        {/* Dark gray swoosh – inner arc */}
+        <path
+          d="M 115 508 A 415 235 -12 1 1 838 72"
+          stroke="#4a4a4a"
+          strokeWidth="36"
+          fill="none"
+          strokeLinecap="round"
+        />
+        {/* Red swoosh – outer arc */}
+        <path
+          d="M 68 478 A 415 235 -12 1 1 855 38"
+          stroke="#c41230"
+          strokeWidth="36"
+          fill="none"
+          strokeLinecap="round"
+        />
+        {/* KFG text */}
+        <text
+          x="435"
+          y="370"
+          textAnchor="middle"
+          fontSize="250"
+          fontWeight="900"
+          fill="#111111"
+          fontFamily="'Arial Black', Impact, sans-serif"
+          letterSpacing="-8"
+        >
+          KFG
+        </text>
+        {/* Tagline */}
+        <text
+          x="838"
+          y="538"
+          textAnchor="end"
+          fontSize="28"
+          fontWeight="600"
+          fill="#333333"
+          fontFamily="Arial, sans-serif"
+          fontStyle="italic"
+        >
+          Yes. We Do.
+        </text>
+      </svg>
+
+      {/* Login form – top left */}
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
         sx={{
-          width: '100%',
-          maxWidth: 420,
-          bgcolor: 'background.paper',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 3,
+          position: 'absolute',
+          top: 56,
+          left: 56,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.5,
+          zIndex: 10,
         }}
       >
-        <CardContent sx={{ p: 4 }}>
-          {/* Logo / branding */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 2,
-              }}
-            >
-              <Typography variant="h6" fontWeight={800} color="#fff">
-                KFG
-              </Typography>
-            </Box>
-            <Typography variant="h5" fontWeight={700} letterSpacing="-0.3px">
-              KFG Pricing
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Sign in to your account
-            </Typography>
-          </Box>
+        {/* Username */}
+        <Box>
+          <Typography
+            sx={{ color: '#111', fontWeight: 500, fontSize: '0.92rem', mb: 0.4 }}
+          >
+            Username:
+          </Typography>
+          <TextField
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            required
+            size="small"
+            autoFocus
+            autoComplete="username"
+            sx={{
+              width: 155,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#ffffff',
+                borderRadius: 0,
+                '& fieldset': { borderColor: '#aaa', borderRadius: 0 },
+                '&:hover fieldset': { borderColor: '#888' },
+                '&.Mui-focused fieldset': { borderColor: '#555' },
+              },
+              '& .MuiInputBase-input': { color: '#111', py: 0.7, px: 1 },
+            }}
+          />
+        </Box>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {error && (
-              <Alert severity="error" sx={{ borderRadius: 2 }}>
-                {error}
-              </Alert>
-            )}
+        {/* Password */}
+        <Box>
+          <Typography
+            sx={{ color: '#111', fontWeight: 500, fontSize: '0.92rem', mb: 0.4 }}
+          >
+            Password:
+          </Typography>
+          <TextField
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            size="small"
+            autoComplete="current-password"
+            sx={{
+              width: 155,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#ffffff',
+                borderRadius: 0,
+                '& fieldset': { borderColor: '#aaa', borderRadius: 0 },
+                '&:hover fieldset': { borderColor: '#888' },
+                '&.Mui-focused fieldset': { borderColor: '#555' },
+              },
+              '& .MuiInputBase-input': { color: '#111', py: 0.7, px: 1 },
+            }}
+          />
+        </Box>
 
-            <TextField
-              label="Username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              autoComplete="username"
-              autoFocus
-              required
-              fullWidth
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonOutlineIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+        {error && (
+          <Alert severity="error" sx={{ py: 0, px: 1, fontSize: '0.78rem', width: 155, borderRadius: 0 }}>
+            {error}
+          </Alert>
+        )}
 
-            <TextField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-              fullWidth
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={loading}
-              fullWidth
-              sx={{ mt: 1, py: 1.25, fontSize: '1rem', borderRadius: 2 }}
-            >
-              {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign In'}
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading}
+          size="small"
+          sx={{
+            width: 155,
+            mt: 0.5,
+            borderRadius: 0,
+            bgcolor: '#c41230',
+            fontWeight: 700,
+            '&:hover': { bgcolor: '#a00e27' },
+          }}
+        >
+          {loading ? <CircularProgress size={16} color="inherit" /> : 'Sign In'}
+        </Button>
+      </Box>
     </Box>
   );
 }
