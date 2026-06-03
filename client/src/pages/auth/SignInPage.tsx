@@ -34,57 +34,59 @@ export default function SignInPage() {
   }
 
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        overflow: 'hidden',
-        bgcolor: '#c9c9c9',
-        backgroundImage:
-          'repeating-linear-gradient(135deg, transparent 0px, transparent 22px, rgba(255,255,255,0.22) 22px, rgba(255,255,255,0.22) 44px)',
-      }}
-    >
-      {/* KFG logo filling the background */}
+    <Box sx={{ position: 'fixed', inset: 0, overflow: 'hidden', bgcolor: '#c8c8c8' }}>
+
+      {/* Layer 1 – diagonal stripes (background) */}
+      <Box
+        sx={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          backgroundImage:
+            'repeating-linear-gradient(135deg, transparent 0px, transparent 22px, rgba(255,255,255,0.2) 22px, rgba(255,255,255,0.2) 44px)',
+        }}
+      />
+
+      {/* Layer 2 – KFG logo */}
       <svg
         viewBox="0 0 880 560"
         preserveAspectRatio="xMidYMid meet"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        overflow="visible"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1 }}
       >
-        {/* Dark gray swoosh – inner arc */}
+        {/* Dark gray inner swoosh – cubic bezier for clean control */}
         <path
-          d="M 115 508 A 415 235 -12 1 1 838 72"
+          d="M 100 524 C 48 240 520 5 842 200"
           stroke="#4a4a4a"
-          strokeWidth="36"
+          strokeWidth="30"
           fill="none"
           strokeLinecap="round"
         />
-        {/* Red swoosh – outer arc */}
+        {/* Red outer swoosh */}
         <path
-          d="M 68 478 A 415 235 -12 1 1 855 38"
+          d="M 58 490 C 0 200 490 -28 855 168"
           stroke="#c41230"
-          strokeWidth="36"
+          strokeWidth="30"
           fill="none"
           strokeLinecap="round"
         />
-        {/* KFG text */}
+        {/* KFG text – scaled down */}
         <text
-          x="435"
-          y="370"
+          x="445"
+          y="358"
           textAnchor="middle"
-          fontSize="250"
+          fontSize="185"
           fontWeight="900"
           fill="#111111"
           fontFamily="'Arial Black', Impact, sans-serif"
-          letterSpacing="-8"
+          letterSpacing="-6"
         >
           KFG
         </text>
         {/* Tagline */}
         <text
-          x="838"
-          y="538"
+          x="828"
+          y="536"
           textAnchor="end"
-          fontSize="28"
+          fontSize="26"
           fontWeight="600"
           fill="#333333"
           fontFamily="Arial, sans-serif"
@@ -94,25 +96,22 @@ export default function SignInPage() {
         </text>
       </svg>
 
-      {/* Login form – top left */}
+      {/* Layer 3 – login form (on top of everything) */}
       <Box
         component="form"
         onSubmit={handleSubmit}
         sx={{
           position: 'absolute',
-          top: 56,
-          left: 56,
+          top: 50,
+          left: 50,
+          zIndex: 2,
           display: 'flex',
           flexDirection: 'column',
           gap: 1.5,
-          zIndex: 10,
         }}
       >
-        {/* Username */}
         <Box>
-          <Typography
-            sx={{ color: '#111', fontWeight: 500, fontSize: '0.92rem', mb: 0.4 }}
-          >
+          <Typography sx={{ color: '#111', fontWeight: 500, fontSize: '0.92rem', mb: 0.4 }}>
             Username:
           </Typography>
           <TextField
@@ -136,11 +135,8 @@ export default function SignInPage() {
           />
         </Box>
 
-        {/* Password */}
         <Box>
-          <Typography
-            sx={{ color: '#111', fontWeight: 500, fontSize: '0.92rem', mb: 0.4 }}
-          >
+          <Typography sx={{ color: '#111', fontWeight: 500, fontSize: '0.92rem', mb: 0.4 }}>
             Password:
           </Typography>
           <TextField
