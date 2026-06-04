@@ -12,7 +12,6 @@ import Grid2 from '@mui/material/Grid2';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { getCustomers, createCustomer, deleteCustomer, type Customer } from '../../api';
-import kfgBackground from "../../assets/KFG Logo - Background.svg";
 
 
 export default function CustomersPage() {

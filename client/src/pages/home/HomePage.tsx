@@ -5,8 +5,9 @@ import Button from "@mui/material/Button";
 import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import { useAuth } from "../../context/AuthContext";
-import kfgLogo from "../../assets/KFG Logo.svg";
-import kfgBackground from "../../assets/KFG Logo - Background.svg";
+import kfgLogo from "../../../public/KFG-Logo.svg";
+import kfgBackground from "../../../public/background-logo.svg";
+
 
 interface NavCardProps {
   icon: React.ReactNode;
@@ -79,6 +80,7 @@ export default function HomePage() {
           display: "flex",
           alignItems: "center",
           gap: 1.5,
+          pb:1
         }}
       >
         {username && (

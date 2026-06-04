@@ -8,8 +8,8 @@ import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import { login } from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import kfgLogo from "../../assets/KFG Logo.svg";
-import kfgBackground from "../../assets/KFG Logo - Background.svg";
+import kfgLogo from "../../../public/KFG-Logo.svg";
+import kfgBackground from "../../../public/background-logo.svg";
 
 const inputSx = {
   width: "100%",
@@ -62,7 +62,7 @@ export default function SignInPage() {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        backgroundImage: kfgBackground,
+        backgroundImage: `url(${kfgBackground})`,
       }}
     >
       {/* Top section — login form */}
