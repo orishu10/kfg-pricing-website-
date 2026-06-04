@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -9,9 +9,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { login } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import kfgLogo from "../../assets/KFG Logo.svg";
-
-const STRIPE =
-  "repeating-linear-gradient(135deg, transparent 0px, transparent 22px, rgba(255,255,255,0.2) 22px, rgba(255,255,255,0.2) 44px)";
+import kfgBackground from "../../assets/KFG Logo - Background.svg";
 
 const inputSx = {
   width: "100%",
@@ -23,12 +21,12 @@ const inputSx = {
     "&.Mui-focused fieldset": { borderColor: "#555" },
   },
   "& .MuiInputBase-input": { color: "#111", py: 1.2, px: 1.5 },
-  // Override Chrome autofill blue background
-  "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus": {
-    WebkitBoxShadow: "0 0 0 1000px #fff inset",
-    WebkitTextFillColor: "#111",
-    transition: "background-color 5000s ease-in-out 0s",
-  },
+  "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
+    {
+      WebkitBoxShadow: "0 0 0 1000px #fff inset",
+      WebkitTextFillColor: "#111",
+      transition: "background-color 5000s ease-in-out 0s",
+    },
 };
 
 export default function SignInPage() {
@@ -64,8 +62,7 @@ export default function SignInPage() {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        bgcolor: "#c8c8c8",
-        backgroundImage: STRIPE,
+        backgroundImage: kfgBackground,
       }}
     >
       {/* Top section — login form */}
