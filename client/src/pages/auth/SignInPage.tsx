@@ -63,6 +63,9 @@ export default function SignInPage() {
         flexDirection: "column",
         overflow: "hidden",
         backgroundImage: `url(${kfgBackground})`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
       }}
     >
       {/* Top section — login form */}

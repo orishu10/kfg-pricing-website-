@@ -67,7 +67,10 @@ export default function HomePage() {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        backgroundImage: kfgBackground,
+        backgroundImage: `url(${kfgBackground})`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
       }}
     >
       {/* Sign-out button — top right */}
