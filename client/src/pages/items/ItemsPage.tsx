@@ -12,10 +12,10 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {
   getCustomer, getCustomerSuppliers, getSupplierItems,
-  createItem, type Item, type Customer, type Supplier
+  createItem, type Item, type Customer, type Supplier,
 } from '../../api';
 
-export default function ItemsPage() {
+export const ItemsPage = () => {
   const { customerId, supplierId } = useParams<{ customerId: string; supplierId: string }>();
   const navigate = useNavigate();
 
@@ -27,18 +27,32 @@ export default function ItemsPage() {
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
 
-  const loadItems = () =>
-    getSupplierItems(Number(supplierId), customerId!).then(setItems).catch(() => setError('Failed to load items'));
+  const loadItems = async () => {
+    try {
+      const data = await getSupplierItems(Number(supplierId), customerId!);
+      setItems(data);
+    } catch {
+      setError('Failed to load items');
+    }
+  };
 
   useEffect(() => {
-    getCustomer(customerId!).then(setCustomer).catch(() => navigate('/customers'));
-    getCustomerSuppliers(customerId!).then(list => {
-      const found = list.find(s => s.id === Number(supplierId));
-      if (!found) navigate(`/customers/${customerId}/suppliers`);
-      else setSupplier(found);
-    });
+    const init = async () => {
+      try {
+        const [cust, suppliers] = await Promise.all([
+          getCustomer(customerId!),
+          getCustomerSuppliers(customerId!),
+        ]);
+        setCustomer(cust);
+        const found = suppliers.find(s => s.id === Number(supplierId));
+        if (!found) navigate(`/customers/${customerId}/suppliers`);
+        else setSupplier(found);
+      } catch {
+        navigate('/customers');
+      }
+    };
+    init();
     loadItems();
-    // navigate and loadItems are stable references — intentionally omitted
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId, supplierId]);
 
@@ -129,4 +143,6 @@ export default function ItemsPage() {
       )}
     </Box>
   );
-}
+};
+
+export default ItemsPage;
