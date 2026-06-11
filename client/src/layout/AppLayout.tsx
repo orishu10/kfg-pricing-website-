@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,11 +15,9 @@ const bgStyle = {
   backgroundPosition: 'center',
 } as const;
 
-export const ProtectedLayout = () => {
-  const { isAuthenticated, logout, username } = useAuth();
+export const AppLayout = () => {
+  const { logout, username } = useAuth();
   const navigate = useNavigate();
-
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', ...bgStyle }}>

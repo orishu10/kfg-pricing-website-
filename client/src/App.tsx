@@ -3,7 +3,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedLayout } from './layout/ProtectedLayout';
+import { AuthGuard } from './layout/AuthGuard';
+import { AppLayout } from './layout/AppLayout';
 import SignInPage from './pages/auth/SignInPage';
 import HomePage from './pages/home/HomePage';
 import CustomersPage from './pages/customers/CustomersPage';
@@ -18,12 +19,14 @@ export const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<SignInPage />} />
-          <Route element={<ProtectedLayout />}>
+          <Route element={<AuthGuard />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/customers" element={<CustomersPage />} />
-            <Route path="/customers/:customerId/suppliers" element={<SuppliersPage />} />
-            <Route path="/customers/:customerId/suppliers/:supplierId/items" element={<ItemsPage />} />
-            <Route path="/items/:itemId" element={<ItemDetailPage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/customers/:customerId/suppliers" element={<SuppliersPage />} />
+              <Route path="/customers/:customerId/suppliers/:supplierId/items" element={<ItemsPage />} />
+              <Route path="/items/:itemId" element={<ItemDetailPage />} />
+            </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
