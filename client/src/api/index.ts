@@ -116,33 +116,33 @@ export interface ItemPayload {
 }
 
 // Customers
-export const getCustomers = () => api.get<Customer[]>('/customers').then(r => r.data);
-export const getCustomer = (id: string) => api.get<Customer>(`/customers/${id}`).then(r => r.data);
-export const createCustomer = (data: { id: string; name: string }) =>
-  api.post<Customer>('/customers', data).then(r => r.data);
-export const updateCustomer = (id: string, data: { name: string }) =>
-  api.put<Customer>(`/customers/${id}`, data).then(r => r.data);
-export const deleteCustomer = (id: string) => api.delete(`/customers/${id}`);
-export const getCustomerSuppliers = (customerId: string) =>
-  api.get<Supplier[]>(`/customers/${customerId}/suppliers`).then(r => r.data);
+export const getCustomers = async () => (await api.get<Customer[]>('/customers')).data;
+export const getCustomer = async (id: string) => (await api.get<Customer>(`/customers/${id}`)).data;
+export const createCustomer = async (data: { id: string; name: string }) =>
+  (await api.post<Customer>('/customers', data)).data;
+export const updateCustomer = async (id: string, data: { name: string }) =>
+  (await api.put<Customer>(`/customers/${id}`, data)).data;
+export const deleteCustomer = async (id: string) => api.delete(`/customers/${id}`);
+export const getCustomerSuppliers = async (customerId: string) =>
+  (await api.get<Supplier[]>(`/customers/${customerId}/suppliers`)).data;
 
 // Suppliers
-export const getAllSuppliers = () => api.get<Supplier[]>('/suppliers').then(r => r.data);
-export const createSupplier = (data: { name: string; customer_id?: string }) =>
-  api.post<Supplier>('/suppliers', data).then(r => r.data);
-export const linkSupplierToCustomer = (supplierId: number, customerId: string) =>
+export const getAllSuppliers = async () => (await api.get<Supplier[]>('/suppliers')).data;
+export const createSupplier = async (data: { name: string; customer_id?: string }) =>
+  (await api.post<Supplier>('/suppliers', data)).data;
+export const linkSupplierToCustomer = async (supplierId: number, customerId: string) =>
   api.post(`/suppliers/${supplierId}/link/${customerId}`);
-export const getSupplierItems = (supplierId: number, customerId: string) =>
-  api.get<Item[]>(`/suppliers/${supplierId}/items?customer_id=${customerId}`).then(r => r.data);
+export const getSupplierItems = async (supplierId: number, customerId: string) =>
+  (await api.get<Item[]>(`/suppliers/${supplierId}/items?customer_id=${customerId}`)).data;
 
 // Items
-export const getItem = (id: string) => api.get<Item>(`/items/${id}`).then(r => r.data);
-export const createItem = (data: { id: string; name: string; customer_id: string; supplier_id: number }) =>
-  api.post<Item>('/items', data).then(r => r.data);
-export const updateItem = (id: string, data: ItemPayload) =>
-  api.put<Item>(`/items/${id}`, data).then(r => r.data);
-export const deleteItem = (id: string) => api.delete(`/items/${id}`);
+export const getItem = async (id: string) => (await api.get<Item>(`/items/${id}`)).data;
+export const createItem = async (data: { id: string; name: string; customer_id: string; supplier_id: number }) =>
+  (await api.post<Item>('/items', data)).data;
+export const updateItem = async (id: string, data: ItemPayload) =>
+  (await api.put<Item>(`/items/${id}`, data)).data;
+export const deleteItem = async (id: string) => api.delete(`/items/${id}`);
 
 // Auth
-export const login = (username: string, password: string) =>
-  api.post<{ token: string; username: string }>('/auth/login', { username, password }).then(r => r.data);
+export const login = async (username: string, password: string) =>
+  (await api.post<{ token: string; username: string }>('/auth/login', { username, password })).data;

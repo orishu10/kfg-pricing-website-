@@ -1,67 +1,23 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
-import { login } from "../../api";
-import { useAuth } from "../../context/AuthContext";
-import kfgLogo from "../../../public/KFG-Logo.svg";
-import kfgBackground from "../../../public/background-logo.svg";
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import { LabeledInput } from './components/labeledInput/LabeledInput';
+import { useSignInPage } from './hooks/useSignInPage';
+import kfgLogo from '../../../public/KFG-Logo.svg';
+import kfgBackground from '../../../public/background-logo.svg';
 
-const inputSx = {
-  width: "100%",
-  "& .MuiOutlinedInput-root": {
-    bgcolor: "#fff !important",
-    borderRadius: 1,
-    "& fieldset": { borderColor: "#bbb", borderRadius: 1 },
-    "&:hover fieldset": { borderColor: "#888" },
-    "&.Mui-focused fieldset": { borderColor: "#555" },
-  },
-  "& .MuiInputBase-input": { color: "#111", py: 1.2, px: 1.5 },
-  "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
-    {
-      WebkitBoxShadow: "0 0 0 1000px #fff inset",
-      WebkitTextFillColor: "#111",
-      transition: "background-color 5000s ease-in-out 0s",
-    },
-};
-
-export default function SignInPage() {
-  const navigate = useNavigate();
-  const { login: setAuth } = useAuth();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const data = await login(username.trim(), password);
-      setAuth(data.token, data.username);
-      navigate("/");
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } }).response
-        ?.data?.error;
-      setError(msg || "Invalid username or password");
-    } finally {
-      setLoading(false);
-    }
-  }
+export const SignInPage = () => {
+  const { username, setUsername, password, setPassword, error, loading, handleSubmit } = useSignInPage();
 
   return (
     <Box
       sx={{
-        position: "fixed",
+        position: 'fixed',
         inset: 0,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
         backgroundImage: `url(${kfgBackground})`,
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
@@ -73,60 +29,13 @@ export default function SignInPage() {
         <Box
           component="form"
           onSubmit={handleSubmit}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            maxWidth: 300,
-          }}
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 300 }}
         >
-          <Box>
-            <Typography
-              sx={{
-                color: "#111",
-                fontWeight: 500,
-                fontSize: "0.95rem",
-                mb: 0.5,
-              }}
-            >
-              Username:
-            </Typography>
-            <TextField
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoFocus
-              autoComplete="username"
-              sx={inputSx}
-            />
-          </Box>
-
-          <Box>
-            <Typography
-              sx={{
-                color: "#111",
-                fontWeight: 500,
-                fontSize: "0.95rem",
-                mb: 0.5,
-              }}
-            >
-              Password:
-            </Typography>
-            <TextField
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              sx={inputSx}
-            />
-          </Box>
+          <LabeledInput label="Username:" value={username} onChange={setUsername} autoFocus autoComplete="username" />
+          <LabeledInput label="Password:" value={password} onChange={setPassword} type="password" autoComplete="current-password" />
 
           {error && (
-            <Alert
-              severity="error"
-              sx={{ py: 0.25, fontSize: "0.82rem", borderRadius: 1 }}
-            >
+            <Alert severity="error" sx={{ py: 0.25, fontSize: '0.82rem', borderRadius: 1 }}>
               {error}
             </Alert>
           )}
@@ -138,17 +47,13 @@ export default function SignInPage() {
             sx={{
               borderRadius: 1,
               py: 1,
-              bgcolor: "#c41230",
+              bgcolor: '#c41230',
               fontWeight: 700,
-              fontSize: "0.95rem",
-              "&:hover": { bgcolor: "#a00e27" },
+              fontSize: '0.95rem',
+              '&:hover': { bgcolor: '#a00e27' },
             }}
           >
-            {loading ? (
-              <CircularProgress size={18} color="inherit" />
-            ) : (
-              "Sign In"
-            )}
+            {loading ? <CircularProgress size={18} color="inherit" /> : 'Sign In'}
           </Button>
         </Box>
       </Box>
@@ -157,9 +62,9 @@ export default function SignInPage() {
       <Box
         sx={{
           flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           px: 8,
           pb: 2,
           minHeight: 0,
@@ -169,13 +74,11 @@ export default function SignInPage() {
           component="img"
           src={kfgLogo}
           alt="KFG"
-          sx={{
-            width: "92%",
-            maxHeight: "100%",
-            objectFit: "contain",
-          }}
+          sx={{ width: '92%', maxHeight: '100%', objectFit: 'contain' }}
         />
       </Box>
     </Box>
   );
-}
+};
+
+export default SignInPage;

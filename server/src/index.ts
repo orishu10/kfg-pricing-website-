@@ -24,7 +24,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-async function start() {
+const start = async () => {
   try {
     const client = await pool.connect();
     await client.query('SELECT 1');
@@ -38,6 +38,6 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`✓ Server running on http://localhost:${PORT}`);
   });
-}
+};
 
 start();

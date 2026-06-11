@@ -10,7 +10,7 @@ import HomePage from './pages/home/HomePage';
 import CustomersPage from './pages/customers/CustomersPage';
 import SuppliersPage from './pages/suppliers/SuppliersPage';
 import ItemsPage from './pages/items/ItemsPage';
-import ItemDetailPage from './pages/items/ItemDetailPage';
+import ItemDetailPage from './pages/items/components/ItemDetailPage';
 
 export const App = () => (
   <ThemeProvider theme={theme}>
