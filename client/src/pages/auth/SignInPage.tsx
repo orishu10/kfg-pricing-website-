@@ -5,7 +5,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { LabeledInput } from './components/labeledInput/LabeledInput';
 import { useSignInPage } from './hooks/useSignInPage';
 import kfgLogo from '../../../public/KFG-Logo.svg';
-import kfgBackground from '../../../public/background-logo.svg';
+import kfgBackground from '../../../public/background-logo.webp';
 
 export const SignInPage = () => {
   const { username, setUsername, password, setPassword, error, loading, handleSubmit } = useSignInPage();

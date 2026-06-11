@@ -7,7 +7,7 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import { NavCard } from './components/navCard/NavCard';
 import { useAuth } from '../../context/AuthContext';
 import kfgLogo from '../../../public/KFG-Logo.svg';
-import kfgBackground from '../../../public/background-logo.svg';
+import kfgBackground from '../../../public/background-logo.webp';
 
 export const HomePage = () => {
   const navigate = useNavigate();

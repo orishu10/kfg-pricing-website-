@@ -1,86 +1,97 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getCustomer, getCustomerSuppliers, getAllSuppliers,
   createSupplier, linkSupplierToCustomer,
-  type Customer, type Supplier,
 } from '../../../api';
 
 export const useSuppliersPage = () => {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState(0);
   const [newName, setNewName] = useState('');
   const [linkId, setLinkId] = useState('');
   const [error, setError] = useState('');
 
-  const loadSuppliers = async () => {
-    try {
-      setSuppliers(await getCustomerSuppliers(customerId!));
-    } catch {
-      setError('Failed to load suppliers');
-    }
-  };
+  const customerQuery = useQuery({
+    queryKey: ['customers', customerId],
+    queryFn: () => getCustomer(customerId!),
+  });
+
+  const suppliersQuery = useQuery({
+    queryKey: ['customers', customerId, 'suppliers'],
+    queryFn: () => getCustomerSuppliers(customerId!),
+  });
+
+  const allSuppliersQuery = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: getAllSuppliers,
+  });
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        setCustomer(await getCustomer(customerId!));
-      } catch {
-        navigate('/customers');
-        return;
-      }
-      loadSuppliers();
-      setAllSuppliers(await getAllSuppliers());
-    };
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customerId]);
+    if (customerQuery.isError) navigate('/customers');
+  }, [customerQuery.isError, navigate]);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['customers', customerId, 'suppliers'] });
+    queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+  };
+
+  const createMutation = useMutation({
+    mutationFn: createSupplier,
+    onSuccess: () => {
+      setNewName('');
+      setShowForm(false);
+      invalidate();
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      setError(msg || 'Failed to create supplier');
+    },
+  });
+
+  const linkMutation = useMutation({
+    mutationFn: (supplierId: number) => linkSupplierToCustomer(supplierId, customerId!),
+    onSuccess: () => {
+      setLinkId('');
+      setShowForm(false);
+      invalidate();
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      setError(msg || 'Failed to link supplier');
+    },
+  });
 
   const toggleForm = () => {
     setShowForm((v) => !v);
     setError('');
   };
 
-  const handleAddNew = async (e: FormEvent) => {
+  const handleAddNew = (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    try {
-      await createSupplier({ name: newName.trim(), customer_id: customerId });
-      setNewName('');
-      setShowForm(false);
-      loadSuppliers();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      setError(msg || 'Failed to create supplier');
-    }
+    createMutation.mutate({ name: newName.trim(), customer_id: customerId });
   };
 
-  const handleLinkExisting = async (e: FormEvent) => {
+  const handleLinkExisting = (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    try {
-      await linkSupplierToCustomer(Number(linkId), customerId!);
-      setLinkId('');
-      setShowForm(false);
-      loadSuppliers();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      setError(msg || 'Failed to link supplier');
-    }
+    linkMutation.mutate(Number(linkId));
   };
 
+  const suppliers = suppliersQuery.data ?? [];
+  const allSuppliers = allSuppliersQuery.data ?? [];
   const linkedIds = new Set(suppliers.map((s) => s.id));
   const unlinkableSuppliers = allSuppliers.filter((s) => !linkedIds.has(s.id));
 
   return {
     customerId,
-    customer,
+    customer: customerQuery.data ?? null,
     suppliers,
     unlinkableSuppliers,
     showForm,
@@ -90,7 +101,7 @@ export const useSuppliersPage = () => {
     setNewName,
     linkId,
     setLinkId,
-    error,
+    error: error || (suppliersQuery.isError ? 'Failed to load suppliers' : ''),
     toggleForm,
     handleAddNew,
     handleLinkExisting,

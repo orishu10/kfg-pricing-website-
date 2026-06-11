@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import { pool } from './db';
 import customersRouter from './routes/customers';
@@ -13,7 +14,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
+app.use(compression());
 app.use(express.json());
+
+// GET responses revalidate with the built-in ETag: unchanged data returns
+// an empty 304 instead of the full JSON body, but is never served stale.
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET') res.set('Cache-Control', 'private, no-cache');
+  next();
+});
 
 app.use('/api/auth', authRouter);
 app.use('/api/customers', customersRouter);

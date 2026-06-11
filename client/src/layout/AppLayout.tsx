@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '../context/AuthContext';
-import kfgBackground from '../../public/background-logo.svg';
+import kfgBackground from '../../public/background-logo.webp';
 
 const bgStyle = {
   bgcolor: '#c8c8c8',
