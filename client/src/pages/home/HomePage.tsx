@@ -22,7 +22,7 @@ function NavCard({ icon, label, onClick }: NavCardProps) {
       sx={{
         width: 155,
         height: 155,
-        bgcolor: "#424143",
+        bgcolor: "#575657",
         border: "2.5px solid #c41230",
         borderRadius: 3,
         display: "flex",

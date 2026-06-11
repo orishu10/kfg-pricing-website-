@@ -1,3 +1,4 @@
+import type { Item } from "../../../api";
 import type { FormState } from "./types";
 
 export const toNum = (v: string): number | null => (v.trim() === '' ? null : parseFloat(v));
@@ -71,3 +72,44 @@ export function calcDerived(f: FormState): Partial<FormState> {
     sap_price_unit:      sap_u   != null ? sap_u.toFixed(4)    : "",
   };
 }
+
+
+export const itemToForm = (item: Item): FormState => {
+  return {
+    name: item.name ?? "",
+    supplier_incoterms: item.supplier_incoterms ?? "",
+    customer_incoterms: item.customer_incoterms ?? "",
+    logistics: fmt(item.logistics),
+    container_type: item.container_type ?? "",
+    fob: fmt(item.fob),
+    cif: fmt(item.cif),
+    dap: fmt(item.dap),
+    ddp: fmt(item.ddp),
+    cases_in_fcl: item.cases_in_fcl != null ? String(item.cases_in_fcl) : "",
+    units_in_case: item.units_in_case != null ? String(item.units_in_case) : "",
+    unit_weight: fmt(item.unit_weight),
+    cases_per_pallet:
+      item.cases_per_pallet != null ? String(item.cases_per_pallet) : "",
+    pallets_per_fcl:
+      item.pallets_per_fcl != null ? String(item.pallets_per_fcl) : "",
+    supplier_price_unit: fmt(item.supplier_price_unit),
+    supplier_price_case: fmt(item.supplier_price_case),
+    supplier_price_fcl: fmt(item.supplier_price_fcl),
+    supplier_price_1kg: fmt(item.supplier_price_1kg),
+    sub_total_1: fmt(item.sub_total_1),
+    us_tariff: fmt(item.us_tariff),
+    sub_total_2: fmt(item.sub_total_2),
+    import_factor: fmt(item.import_factor),
+    kfg_commission: fmt(item.kfg_commission),
+    total: fmt(item.total),
+    kfg_commission_total: fmt(item.kfg_commission_total),
+    tariffs_total: fmt(item.tariffs_total),
+    usd_nis: fmt(item.usd_nis),
+    cost_unit: fmt(item.cost_unit),
+    cost_case: fmt(item.cost_case),
+    price_unit: fmt(item.price_unit),
+    price_case: fmt(item.price_case),
+    sap_price_unit: fmt(item.sap_price_unit),
+    sap_price_case: fmt(item.sap_price_case),
+  };
+};
