@@ -37,8 +37,8 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
         fontFamily: '"Myriad Pro Cond", "Myriad Pro", sans-serif',
         color: '#fff',
         fontWeight: 700,
-        fontSize: '2rem',
-        letterSpacing: 0.5,
+        fontSize: '1.55rem',
+        letterSpacing: 2.5,
         textTransform: 'uppercase',
         lineHeight: 1,
       }}
