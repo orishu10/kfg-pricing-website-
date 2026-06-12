@@ -1,34 +1,28 @@
 import { useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
-import Grid2 from '@mui/material/Grid2';
-import Typography from '@mui/material/Typography';
 import { AddCustomerForm } from './components/addCustomerForm/AddCustomerForm';
-import { CustomerCard } from './components/customerCard/CustomerCard';
+import { CustomerRow } from './components/customerRow/CustomerRow';
 import { useCustomersPage } from './hooks/useCustomersPage';
+import { ConfirmDialog, EmptyState, ErrorAlert, PageHeader, SearchBar } from '../../components';
 
 export const CustomersPage = () => {
   const navigate = useNavigate();
   const {
     customers, showForm, newId, setNewId, newName, setNewName,
-    error, toggleForm, handleAdd, handleDelete,
+    search, setSearch, error, deleteTarget, setDeleteTarget,
+    toggleForm, handleAdd, handleDelete, confirmDelete,
   } = useCustomersPage();
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ color: '#222' }}>
-          Customers
-        </Typography>
-        <Button variant="contained" onClick={toggleForm}>
-          {showForm ? 'Cancel' : '+ Add Customer'}
-        </Button>
-      </Box>
+    <>
+      <PageHeader
+        title="Customers"
+        actionLabel="+ Add Customer"
+        actionActive={showForm}
+        onAction={toggleForm}
+      />
 
-      {/* Add form */}
       <Collapse in={showForm}>
         <AddCustomerForm
           newId={newId}
@@ -40,27 +34,36 @@ export const CustomersPage = () => {
         />
       </Collapse>
 
-      {!showForm && error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {!showForm && <ErrorAlert message={error} />}
 
-      {/* Customer grid */}
+      <Box sx={{ mb: 2 }}>
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or ID…" />
+      </Box>
+
       {customers.length === 0 ? (
-        <Typography color="text.secondary" textAlign="center" py={6}>
-          No customers yet.
-        </Typography>
+        <EmptyState message={search ? 'No customers match your search.' : 'No customers yet.'} />
       ) : (
-        <Grid2 container spacing={2}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {customers.map((c) => (
-            <Grid2 key={c.id} size={{ xs: 12, sm: 6, md: 4 }}>
-              <CustomerCard
-                customer={c}
-                onOpen={() => navigate(`/customers/${c.id}/suppliers`)}
-                onDelete={(e) => handleDelete(e, c.id, c.name)}
-              />
-            </Grid2>
+            <CustomerRow
+              key={c.id}
+              customer={c}
+              onOpen={() => navigate(`/customers/${c.id}/suppliers`)}
+              onDelete={(e) => handleDelete(e, c.id, c.name)}
+            />
           ))}
-        </Grid2>
+        </Box>
       )}
-    </Box>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete customer?"
+        message={`Delete "${deleteTarget?.name}"? This will also remove all their supplier links and items.`}
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 };
 

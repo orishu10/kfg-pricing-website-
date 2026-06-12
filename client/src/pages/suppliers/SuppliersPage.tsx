@@ -1,36 +1,33 @@
 import { useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
-import Grid from '@mui/material/Grid2';
-import Typography from '@mui/material/Typography';
 import { AddSupplierForm } from './components/addSupplierForm/AddSupplierForm';
-import { SupplierCard } from './components/supplierCard/SupplierCard';
+import { SupplierRow } from './components/supplierRow/SupplierRow';
 import { useSuppliersPage } from './hooks/useSuppliersPage';
+import { EmptyState, ErrorAlert, PageHeader, SearchBar } from '../../components';
 
 export const SuppliersPage = () => {
   const navigate = useNavigate();
   const {
     customerId, customer, suppliers, unlinkableSuppliers,
     showForm, tab, setTab, newName, setNewName, linkId, setLinkId,
-    error, toggleForm, handleAddNew, handleLinkExisting,
+    search, setSearch, error, toggleForm, handleAddNew, handleLinkExisting,
   } = useSuppliersPage();
 
   return (
-    <Box>
-      <Button onClick={() => navigate('/customers')} sx={{ mb: 1, p: 0, textTransform: 'none' }}>
-        ← Customers
-      </Button>
-
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          {customer?.name ?? '…'} — Suppliers
-        </Typography>
-        <Button variant="contained" onClick={toggleForm}>
-          {showForm ? 'Cancel' : '+ Add Supplier'}
-        </Button>
-      </Box>
+    <>
+      <PageHeader
+        title={`${customer?.name ?? '…'} — Suppliers`}
+        actionLabel="+ Add Supplier"
+        actionActive={showForm}
+        onAction={toggleForm}
+        backButton={
+          <Button onClick={() => navigate('/customers')} sx={{ p: 0, textTransform: 'none' }}>
+            ← Customers
+          </Button>
+        }
+      />
 
       <Collapse in={showForm}>
         <AddSupplierForm
@@ -47,25 +44,26 @@ export const SuppliersPage = () => {
         />
       </Collapse>
 
-      {!showForm && error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {!showForm && <ErrorAlert message={error} />}
+
+      <Box sx={{ mb: 2 }}>
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or ID…" />
+      </Box>
 
       {suppliers.length === 0 ? (
-        <Typography color="text.secondary" textAlign="center" py={6}>
-          No suppliers linked to this customer yet.
-        </Typography>
+        <EmptyState message={search ? 'No suppliers match your search.' : 'No suppliers linked to this customer yet.'} />
       ) : (
-        <Grid container spacing={2}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {suppliers.map((s) => (
-            <Grid size={{ xs: 12, sm: 6 }} key={s.id}>
-              <SupplierCard
-                supplier={s}
-                onOpen={() => navigate(`/customers/${customerId}/suppliers/${s.id}/items`)}
-              />
-            </Grid>
+            <SupplierRow
+              key={s.id}
+              supplier={s}
+              onOpen={() => navigate(`/customers/${customerId}/suppliers/${s.id}/items`)}
+            />
           ))}
-        </Grid>
+        </Box>
       )}
-    </Box>
+    </>
   );
 };
 

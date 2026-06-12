@@ -50,6 +50,7 @@ export const useItemDetailPage = () => {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const itemQuery = useQuery({
     queryKey: ['item', itemId],
@@ -107,11 +108,13 @@ export const useItemDetailPage = () => {
     saveMutation.mutate(formToPayload(form));
   };
 
-  const handleDelete = () => {
-    if (!confirm(`Delete item "${item?.name}"?`)) return;
+  const handleDelete = () => setDeleteOpen(true);
+
+  const confirmDelete = () => {
+    setDeleteOpen(false);
     setError('');
     deleteMutation.mutate();
   };
 
-  return { item, form, saved, error, set, handleSave, handleDelete };
+  return { item, form, saved, error, deleteOpen, setDeleteOpen, set, handleSave, handleDelete, confirmDelete };
 };

@@ -16,6 +16,7 @@ export const useSuppliersPage = () => {
   const [newName, setNewName] = useState('');
   const [linkId, setLinkId] = useState('');
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   const customerQuery = useQuery({
     queryKey: ['customers', customerId],
@@ -89,10 +90,17 @@ export const useSuppliersPage = () => {
   const linkedIds = new Set(suppliers.map((s) => s.id));
   const unlinkableSuppliers = allSuppliers.filter((s) => !linkedIds.has(s.id));
 
+  const q = search.toLowerCase();
+  const filtered = suppliers.filter(
+    (s) => s.name.toLowerCase().includes(q) || String(s.id).includes(q),
+  );
+
   return {
     customerId,
     customer: customerQuery.data ?? null,
-    suppliers,
+    suppliers: filtered,
+    search,
+    setSearch,
     unlinkableSuppliers,
     showForm,
     tab,

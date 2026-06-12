@@ -1,6 +1,5 @@
-import InputAdornment from '@mui/material/InputAdornment';
-import TextField from '@mui/material/TextField';
 import { Grid } from '@mui/system';
+import { CommonInput } from '../../../../components';
 
 interface FormTextFieldProps {
   label: string;
@@ -13,15 +12,6 @@ interface FormTextFieldProps {
 
 export const FormTextField = ({ label, value, onChange, required, currency, col }: FormTextFieldProps) => (
   <Grid size={col ? { xs: 12 } : { xs: 12, sm: 6, md: 4 }}>
-    <TextField
-      label={label}
-      fullWidth
-      required={required}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      slotProps={currency && value ? {
-        input: { endAdornment: <InputAdornment position="end">$</InputAdornment> },
-      } : undefined}
-    />
+    <CommonInput label={label} value={value} onChange={onChange} required={required} currency={currency} />
   </Grid>
 );

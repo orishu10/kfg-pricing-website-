@@ -2,12 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import { NavCard } from './components/navCard/NavCard';
 import { useAuth } from '../../context/AuthContext';
 import kfgLogo from '../../../public/KFG-Logo.svg';
 import kfgBackground from '../../../public/background-logo.webp';
+import pmsLogo  from '../../../public/Icon PMS.svg'
+import pricingLogo  from '../../../public/Icon PRICING.svg'
+import  { NavCard } from './components/NavCard';
+
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -65,16 +66,16 @@ export const HomePage = () => {
       </Box>
 
       {/* Navigation cards */}
-      <Box sx={{ flexShrink: 0, display: 'flex', justifyContent: 'center', gap: 4, pt: 6, pb: 2 }}>
+      <Box sx={{ flexShrink: 0, display: 'flex', justifyContent: 'center', gap: 10, pt: 6, pb: 2 }}>
         <NavCard
-          icon={<SettingsSuggestIcon sx={{ color: '#fff', fontSize: 58 }} />}
+          icon={pmsLogo}
           label="PMS"
           onClick={() => {
             /* PMS route TBD */
           }}
         />
         <NavCard
-          icon={<MonetizationOnIcon sx={{ color: '#fff', fontSize: 58 }} />}
+          icon={pricingLogo}
           label="PRICING"
           onClick={() => navigate('/customers')}
         />

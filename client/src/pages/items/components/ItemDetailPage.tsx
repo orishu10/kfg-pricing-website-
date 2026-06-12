@@ -12,18 +12,14 @@ import { useItemDetailPage } from "../hooks/useItemDetailPage";
 import { INCOTERMS_OPTIONS, CONTAINER_OPTIONS } from "../utils/consts";
 import { IdentityField } from "./identityField/IdentityField";
 import { Section } from "./section/Section";
+import { ConfirmDialog, ErrorAlert, LoadingPage } from "../../../components";
 
 export const ItemDetailPage = () => {
   const navigate = useNavigate();
-  const { item, form, saved, error, set, handleSave, handleDelete } =
+  const { item, form, saved, error, deleteOpen, setDeleteOpen, set, handleSave, handleDelete, confirmDelete } =
     useItemDetailPage();
 
-  if (!item)
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography>Loading…</Typography>
-      </Box>
-    );
+  if (!item) return <LoadingPage />;
 
   const updatedAt = item.updated_at
     ? new Date(item.updated_at).toLocaleString()
@@ -253,13 +249,22 @@ export const ItemDetailPage = () => {
         </Section>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
-          {error && <Alert severity="error">{error}</Alert>}
+          <ErrorAlert message={error} />
           {saved && <Alert severity="success">✓ Saved</Alert>}
           <Button variant="contained" type="submit" size="large">
             Save Changes
           </Button>
         </Box>
       </Box>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Delete item?"
+        message={`Delete "${item.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteOpen(false)}
+      />
     </Box>
   );
 };

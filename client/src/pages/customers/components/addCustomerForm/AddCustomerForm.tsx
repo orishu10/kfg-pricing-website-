@@ -1,10 +1,9 @@
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { CommonInput, ErrorAlert } from '../../../../components';
 
 interface AddCustomerFormProps {
   newId: string;
@@ -31,23 +30,23 @@ export const AddCustomerForm = ({ newId, setNewId, newName, setNewName, error, o
         New Customer
       </Typography>
       <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <TextField
+        <CommonInput
           label="Customer ID"
           size="small"
           required
           value={newId}
-          onChange={(e) => setNewId(e.target.value)}
+          onChange={setNewId}
           placeholder="e.g. CUST-001"
         />
-        <TextField
+        <CommonInput
           label="Name"
           size="small"
           required
           value={newName}
-          onChange={(e) => setNewName(e.target.value)}
+          onChange={setNewName}
           placeholder="Customer name"
         />
-        {error && <Alert severity="error">{error}</Alert>}
+        <ErrorAlert message={error} />
         <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>
           Create
         </Button>

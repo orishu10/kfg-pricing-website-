@@ -14,6 +14,7 @@ export const useItemsPage = () => {
   const [newId, setNewId] = useState('');
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   const customerQuery = useQuery({
     queryKey: ['customers', customerId],
@@ -67,11 +68,19 @@ export const useItemsPage = () => {
     });
   };
 
+  const allItems = itemsQuery.data ?? [];
+  const q = search.toLowerCase();
+  const filtered = allItems.filter(
+    (i) => i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q),
+  );
+
   return {
     customerId,
     customer: customerQuery.data ?? null,
     supplier,
-    items: itemsQuery.data ?? [],
+    items: filtered,
+    search,
+    setSearch,
     showForm,
     newId,
     setNewId,

@@ -8,6 +8,8 @@ export const useCustomersPage = () => {
   const [newId, setNewId] = useState('');
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: customers = [], isError } = useQuery({
     queryKey: ['customers'],
@@ -49,21 +51,36 @@ export const useCustomersPage = () => {
 
   const handleDelete = (e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation();
-    if (!confirm(`Delete customer "${name}"? This will also remove all their supplier links and items.`)) return;
-    setError('');
-    deleteMutation.mutate(id);
+    setDeleteTarget({ id, name });
   };
 
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setError('');
+    deleteMutation.mutate(deleteTarget.id);
+    setDeleteTarget(null);
+  };
+
+  const q = search.toLowerCase();
+  const filtered = customers.filter(
+    (c) => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q),
+  );
+
   return {
-    customers,
+    customers: filtered,
+    search,
+    setSearch,
     showForm,
     newId,
     setNewId,
     newName,
     setNewName,
     error: error || (isError ? 'Failed to load customers' : ''),
+    deleteTarget,
+    setDeleteTarget,
     toggleForm,
     handleAdd,
     handleDelete,
+    confirmDelete,
   };
 };
