@@ -34,11 +34,11 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
     <Box component="img" src={icon} alt={label} sx={{ width: 64, height: 64, objectFit: 'contain' }} />
     <Typography
       sx={{
-        fontFamily: '"Myriad Pro Cond", "Myriad Pro", sans-serif',
+        fontFamily: '"Myriad Pro", sans-serif',
         color: '#fff',
         fontWeight: 700,
-        fontSize: '1.55rem',
-        letterSpacing: 2.5,
+        fontSize: '1.75rem',
+        letterSpacing: 1,
         textTransform: 'uppercase',
         lineHeight: 1,
       }}
