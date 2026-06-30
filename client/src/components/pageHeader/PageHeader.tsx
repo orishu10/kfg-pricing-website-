@@ -15,7 +15,7 @@ export const PageHeader = ({ title, actionLabel, actionActive, onAction, backBut
   <Box>
     {backButton && <Box sx={{ mb: 1 }}>{backButton}</Box>}
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-      <Typography variant="h5" fontWeight={700} sx={{ color: '#222' }}>
+      <Typography variant="h5" fontWeight={700} color="text.primary">
         {title}
       </Typography>
       {actionLabel && onAction && (

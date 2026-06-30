@@ -4,24 +4,24 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: { main: '#c11d28' },
-    error:   { main: '#c11d28' },
+    error: { main: '#c11d28' },
     success: { main: '#2e7d32' },
     background: {
       default: '#757373',
-      paper:   '#ffffff',
+      paper: '#ffffff',
     },
     text: {
-      primary:   '#000000',
+      primary: '#000000',
       secondary: '#494445',
-      disabled:  '#757373',
+      disabled: '#757373',
     },
   },
   typography: {
     fontFamily: '"Myriad Pro", sans-serif',
-    fontWeightLight:   300,
+    fontWeightLight: 300,
     fontWeightRegular: 400,
-    fontWeightMedium:  600,
-    fontWeightBold:    700,
+    fontWeightMedium: 600,
+    fontWeightBold: 700,
   },
   shape: { borderRadius: 8 },
   components: {

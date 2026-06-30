@@ -10,32 +10,44 @@ npm run dev       # Dev server on port 5173
 npm run build     # tsc -b && vite build
 npm run lint      # ESLint flat config
 npm run preview   # Preview production build
+npm test          # Vitest (single run); npm run test:watch for watch mode
 ```
+
+Tests use Vitest and live next to the code as `*.test.ts`. The pricing
+calculations in `pages/items/utils/helpers.ts` (`calcDerived`) are covered by
+`helpers.test.ts` — keep these green when touching pricing logic. Run both
+client and server concurrently during development — the Vite dev server proxies
+`/api` to `localhost:3001`.
 
 ### Server (run from `server/`)
 ```
-npm run dev       # ts-node-dev with hot reload on port 3001
-npm run build     # tsc → dist/
-npm run start     # node dist/index.js
+npm run dev          # ts-node-dev with hot reload on port 3001
+npm run build        # tsc → dist/
+npm run start        # node dist/index.js
+npm run migrate      # apply pending DB migrations (after build)
+npm run migrate:dev  # apply pending DB migrations from source (no build)
 ```
-
-No test suite is configured. Run both concurrently during development — the Vite dev server proxies `/api` to `localhost:3001`.
 
 ### Database
-Apply migrations in order before first run:
+Migrations are applied by an idempotent runner (`server/src/migrate.ts`) that
+tracks applied files in a `schema_migrations` table. It is safe to run
+repeatedly and on every deploy — already-applied `.sql` files are skipped.
+`schema.sql` runs first, then `migration_*.sql` in order.
 ```
-psql -d kfg_project -f db/schema.sql
-psql -d kfg_project -f db/migration_001_item_fields.sql
-psql -d kfg_project -f db/migration_002_new_fields.sql
-psql -d kfg_project -f db/migration_003_users.sql
+cd server && npm run migrate:dev    # local dev
+cd server && npm run build && npm run migrate    # production
 ```
+Adding a migration: drop a new `db/migration_NNN_*.sql` file (defensive DDL —
+`IF NOT EXISTS` / `CREATE OR REPLACE`) and run the migrate command.
 
-Required `server/.env`:
+Required `server/.env` (see `server/.env.example` for the full list):
 ```
 PORT=3001
 DB_HOST=localhost  DB_PORT=5432  DB_NAME=kfg_project
 DB_USER=postgres   DB_PASSWORD=...  JWT_SECRET=...
+# Production extras: DATABASE_URL (managed Postgres), CLIENT_ORIGIN (CORS), DB_SSL
 ```
+`JWT_SECRET` is required — the server refuses to start without it.
 
 ## Architecture
 

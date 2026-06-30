@@ -43,15 +43,9 @@ export const SignInPage = () => {
           <Button
             type="submit"
             variant="contained"
+            color="primary"
             disabled={loading}
-            sx={{
-              borderRadius: 1,
-              py: 1,
-              bgcolor: '#c41230',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              '&:hover': { bgcolor: '#a00e27' },
-            }}
+            sx={{ borderRadius: 1, py: 1, fontWeight: 700, fontSize: '0.95rem' }}
           >
             {loading ? <CircularProgress size={18} color="inherit" /> : 'Sign In'}
           </Button>
