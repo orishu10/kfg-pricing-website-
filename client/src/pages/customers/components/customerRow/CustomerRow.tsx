@@ -16,9 +16,10 @@ export const CustomerRow = ({ customer, onOpen, onDelete }: CustomerRowProps) =>
     sx={{
       display: 'flex',
       alignItems: 'center',
-      bgcolor: '#fff',
+      bgcolor: 'background.paper',
       border: '1px solid rgba(0,0,0,0.08)',
-      borderLeft: '4px solid #c41230',
+      borderLeft: '4px solid',
+      borderLeftColor: 'primary.main',
       borderRadius: 1,
       px: 2,
       py: 1.5,

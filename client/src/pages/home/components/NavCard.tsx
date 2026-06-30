@@ -13,8 +13,9 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
     sx={{
       width: 155,
       height: 155,
-      bgcolor: '#757373',
-      border: '2.5px solid #c41230',
+      bgcolor: 'background.default',
+      border: '2.5px solid',
+      borderColor: 'primary.main',
       borderRadius: 2.5,
       display: 'flex',
       flexDirection: 'column',
@@ -34,7 +35,6 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
     <Box component="img" src={icon} alt={label} sx={{ width: 64, height: 64, objectFit: 'contain' }} />
     <Typography
       sx={{
-        fontFamily: '"Myriad Pro", sans-serif',
         color: '#fff',
         fontWeight: 700,
         fontSize: '1.80rem',

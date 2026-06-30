@@ -14,7 +14,7 @@ interface LabeledInputProps {
 
 export const LabeledInput = ({ label, value, onChange, type, autoFocus, autoComplete }: LabeledInputProps) => (
   <Box>
-    <Typography sx={{ color: '#111', fontWeight: 500, fontSize: '0.95rem', mb: 0.5 }}>
+    <Typography sx={{ color: 'text.primary', fontWeight: 500, fontSize: '0.95rem', mb: 0.5 }}>
       {label}
     </Typography>
     <TextField

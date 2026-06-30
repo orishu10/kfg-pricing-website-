@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import kfgBackground from '../../public/background-logo.webp';
 
 const bgStyle = {
-  bgcolor: '#c8c8c8',
+  bgcolor: 'background.default',
   backgroundImage: `url(${kfgBackground})`,
   backgroundSize: 'cover',
   backgroundRepeat: 'no-repeat',

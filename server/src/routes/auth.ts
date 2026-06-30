@@ -1,14 +1,31 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { pool } from '../db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
 
-const jwtSecret = () => process.env.JWT_SECRET || 'kfg-default-secret';
+const jwtSecret = (): string => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    // Fail loudly rather than silently signing tokens with a public default.
+    throw new Error('JWT_SECRET is not set');
+  }
+  return secret;
+};
+
+// Throttle credential-guessing: max 10 login attempts per IP per 15 minutes.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later' },
+});
 
 // POST /api/auth/login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'username and password are required' });

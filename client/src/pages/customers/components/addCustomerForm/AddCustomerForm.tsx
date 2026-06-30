@@ -19,14 +19,14 @@ export const AddCustomerForm = ({ newId, setNewId, newName, setNewName, error, o
     elevation={0}
     sx={{
       mb: 3,
-      bgcolor: '#fff',
+      bgcolor: 'background.paper',
       border: '1px solid rgba(0,0,0,0.1)',
       borderRadius: 2,
       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     }}
   >
     <CardContent>
-      <Typography variant="subtitle1" fontWeight={600} mb={2} color="#222">
+      <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.primary">
         New Customer
       </Typography>
       <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
