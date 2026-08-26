@@ -1,0 +1,13 @@
+{
+  "name": "kfg-pricing-website",
+  "private": true,
+  "version": "1.0.0",
+  "description": "KFG pricing management tool — React client + Express/Postgres server",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "cd client && npm install --include=dev && npm run build && cd ../server && npm install --include=dev && npm run build",
+    "start": "cd server && npm run migrate && npm run start"
+  }
+}
