@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import Box from '@mui/material/Box';
 import { ItemFormDialog } from './components/itemFormDialog/ItemFormDialog';
 import { useItemsPage } from './hooks/useItemsPage';
-import { DataTable, ErrorAlert, PageHeader, SearchBar, type Column } from '../../components';
+import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../components';
 import type { Item } from '../../api';
 
 const columns: Column<Item>[] = [
@@ -20,23 +19,25 @@ export const ItemsPage = () => {
   const {
     items, suppliers, search, setSearch,
     dialogOpen, openAdd, closeDialog, error, handleSubmit,
+    deleteTarget, setDeleteTarget, confirmDelete,
   } = useItemsPage();
 
   return (
     <>
-      <PageHeader title="Items" actionLabel="+ Add Item" onAction={openAdd} />
-
       {!dialogOpen && <ErrorAlert message={error} />}
 
-      <Box sx={{ mb: 2 }}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by description, supplier or ID…" />
-      </Box>
-
       <DataTable
+        title="Items"
+        onAdd={openAdd}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by description, supplier or ID…"
         columns={columns}
         rows={items}
         getRowId={(i) => i.id}
         onRowClick={(i) => navigate(`/items/${i.id}`)}
+        onEdit={(i) => navigate(`/items/${i.id}`)}
+        onDelete={(i) => setDeleteTarget({ id: i.id, name: i.name })}
         emptyMessage="No items."
       />
 
@@ -46,6 +47,15 @@ export const ItemsPage = () => {
         error={error}
         onClose={closeDialog}
         onSubmit={handleSubmit}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete item?"
+        message={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
       />
     </>
   );

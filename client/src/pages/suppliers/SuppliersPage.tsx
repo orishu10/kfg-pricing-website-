@@ -1,8 +1,6 @@
-import Box from '@mui/material/Box';
 import { useSuppliersPage } from './hooks/useSuppliersPage';
 import {
-  ConfirmDialog, DataTable, ErrorAlert, PageHeader, PartyFormDialog, SearchBar,
-  type Column,
+  ConfirmDialog, DataTable, ErrorAlert, PartyFormDialog, type Column,
 } from '../../components';
 import type { Supplier } from '../../api';
 
@@ -33,19 +31,20 @@ export const SuppliersPage = () => {
 
   return (
     <>
-      <PageHeader title="Suppliers" actionLabel="+ Add Supplier" onAction={openAdd} />
-
       {!dialogOpen && <ErrorAlert message={error} />}
 
-      <Box sx={{ mb: 2 }}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or ID…" />
-      </Box>
-
       <DataTable
+        title="Suppliers"
+        onAdd={openAdd}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name or ID…"
         columns={columns}
         rows={suppliers}
         getRowId={(s) => s.id}
         onRowClick={openEdit}
+        onEdit={openEdit}
+        onDelete={(s) => setDeleteTarget({ id: s.id, name: s.name })}
         emptyMessage="No suppliers."
       />
 

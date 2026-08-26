@@ -1,23 +1,33 @@
-import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { useState } from "react";
+import Box from "@mui/material/Box";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import { SearchBar } from "../searchBar/SearchBar";
 
 export interface Column<T> {
   key: string;
   label: string;
-  align?: 'left' | 'center' | 'right';
+  align?: "left" | "center" | "right";
   sortable?: boolean;
   /** Render monospace (e.g. for IDs) */
   mono?: boolean;
@@ -32,21 +42,38 @@ interface DataTableProps<T> {
   rows: T[];
   getRowId: (row: T) => string;
   onRowClick?: (row: T) => void;
+  /** When provided, adds an Edit entry to each row's actions menu */
+  onEdit?: (row: T) => void;
+  /** When provided, adds a Delete entry to each row's actions menu */
+  onDelete?: (row: T) => void;
   pageSize?: number;
   emptyMessage?: string;
+  // --- Toolbar (mini-header rendered above the table) ---
+  /** Title shown on the left of the toolbar */
+  title?: string;
+  /** Renders a "+" add button on the toolbar */
+  onAdd?: () => void;
+  /** Controlled search value; renders a compact search box when set with onSearchChange */
+  search?: string;
+  onSearchChange?: (v: string) => void;
+  searchPlaceholder?: string;
+  /** Renders a filter icon on the toolbar (alongside search) */
+  onFilter?: () => void;
 }
 
-const HEADER_BG = '#7c7f83';
+const HEADER_BG = "#7c7f83";
+const COL_DIVIDER = "1px solid #e0e0e0";
+const HEAD_DIVIDER = "1px solid rgba(255,255,255,0.3)";
 
 const headCellSx = {
   bgcolor: HEADER_BG,
-  color: '#fff',
+  color: "#fff",
   fontWeight: 700,
-  fontSize: '0.78rem',
-  letterSpacing: '0.5px',
-  textTransform: 'uppercase',
-  whiteSpace: 'nowrap',
-  borderBottom: 'none',
+  fontSize: "0.78rem",
+  letterSpacing: "0.5px",
+  textTransform: "uppercase",
+  whiteSpace: "nowrap",
+  borderBottom: "none",
   py: 1.25,
 } as const;
 
@@ -54,25 +81,47 @@ const pageBtnSx = (active: boolean) => ({
   minWidth: 30,
   height: 30,
   px: 1,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  border: '1px solid',
-  borderColor: active ? 'primary.main' : 'rgba(0,0,0,0.15)',
-  bgcolor: active ? 'primary.main' : '#fff',
-  color: active ? '#fff' : 'text.secondary',
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "1px solid",
+  borderColor: active ? "primary.main" : "rgba(0,0,0,0.15)",
+  bgcolor: active ? "primary.main" : "#fff",
+  color: active ? "#fff" : "text.secondary",
   borderRadius: 1,
-  cursor: 'pointer',
-  fontSize: '0.8rem',
-  userSelect: 'none',
-  '&:hover': { bgcolor: active ? 'primary.main' : 'rgba(0,0,0,0.05)' },
+  cursor: "pointer",
+  fontSize: "0.8rem",
+  userSelect: "none",
+  "&:hover": { bgcolor: active ? "primary.main" : "rgba(0,0,0,0.05)" },
 });
 
 export function DataTable<T>({
-  columns, rows, getRowId, onRowClick, pageSize = 12, emptyMessage = 'No records.',
+  columns,
+  rows,
+  getRowId,
+  onRowClick,
+  onEdit,
+  onDelete,
+  pageSize = 12,
+  emptyMessage = "No records.",
+  title,
+  onAdd,
+  search,
+  onSearchChange,
+  searchPlaceholder = "Search…",
+  onFilter,
 }: DataTableProps<T>) {
-  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
+  const [menu, setMenu] = useState<{ anchor: HTMLElement; row: T } | null>(
+    null,
+  );
+
+  const hasActions = !!(onEdit || onDelete);
+  const showToolbar = !!(title || onAdd || onSearchChange);
+  const showSearch = onSearchChange !== undefined;
 
   const rawValue = (col: Column<T>, row: T) =>
     col.value ? col.value(row) : (row as Record<string, unknown>)[col.key];
@@ -88,10 +137,12 @@ export function DataTable<T>({
         if (av == null) return 1;
         if (bv == null) return -1;
         const cmp =
-          typeof av === 'number' && typeof bv === 'number'
+          typeof av === "number" && typeof bv === "number"
             ? av - bv
-            : String(av).localeCompare(String(bv), undefined, { numeric: true });
-        return sort.dir === 'asc' ? cmp : -cmp;
+            : String(av).localeCompare(String(bv), undefined, {
+                numeric: true,
+              });
+        return sort.dir === "asc" ? cmp : -cmp;
       });
     }
   }
@@ -107,48 +158,119 @@ export function DataTable<T>({
   const toggleSort = (key: string) =>
     setSort((s) =>
       s && s.key === key
-        ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' }
-        : { key, dir: 'asc' },
+        ? { key, dir: s.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" },
     );
 
+  const closeMenu = () => setMenu(null);
+  const runAction = (fn?: (row: T) => void) => () => {
+    if (menu && fn) fn(menu.row);
+    closeMenu();
+  };
+
   return (
-    <Paper elevation={0} sx={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+    <Paper
+      elevation={0}
+      sx={{
+        border: "1px solid rgba(0,0,0,0.1)",
+        borderRadius: 2,
+        overflow: "hidden",
+      }}
+    >
+      {showToolbar && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            px: 2,
+            py: 1.25,
+            borderBottom: "1px solid rgba(0,0,0,0.08)",
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: "1.05rem",
+              color: "text.primary",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            {title}
+          </Typography>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {showSearch && (
+              <Box sx={{ width: { xs: 150, sm: 220 } }}>
+                <SearchBar
+                  value={search ?? ""}
+                  onChange={onSearchChange!}
+                  placeholder={searchPlaceholder}
+                  size="small"
+                />
+              </Box>
+            )}
+            {showSearch && (
+              <IconButton
+                size="small"
+                onClick={onFilter}
+                aria-label="Filter"
+                sx={{ color: "text.secondary" }}
+              >
+                <FilterAltIcon fontSize="small" />
+              </IconButton>
+            )}
+            {onAdd && (
+              <IconButton onClick={onAdd} aria-label="Add">
+                <AddCircleIcon />
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+      )}
+
       <TableContainer>
         <Table size="small">
           <TableHead>
             <TableRow>
-              {columns.map((col) => {
+              {columns.map((col, idx) => {
                 const active = sort?.key === col.key;
+                const showDivider = idx < columns.length - 1 || hasActions;
                 return (
                   <TableCell
                     key={col.key}
-                    align={col.align ?? 'left'}
-                    onClick={col.sortable ? () => toggleSort(col.key) : undefined}
-                    sx={{ ...headCellSx, cursor: col.sortable ? 'pointer' : 'default' }}
+                    align={col.align ?? "left"}
+                    onClick={
+                      col.sortable ? () => toggleSort(col.key) : undefined
+                    }
+                    sx={{
+                      ...headCellSx,
+                      borderRight: showDivider ? HEAD_DIVIDER : "none",
+                      cursor: col.sortable ? "pointer" : "default",
+                    }}
                   >
                     <Box
                       sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
+                        display: "inline-flex",
+                        alignItems: "center",
                         gap: 0.25,
-                        verticalAlign: 'middle',
+                        verticalAlign: "middle",
                       }}
                     >
                       {col.label}
                       {col.sortable &&
-                        (active ? (
-                          sort!.dir === 'asc' ? (
-                            <ArrowDropUpIcon sx={{ fontSize: 18 }} />
-                          ) : (
-                            <ArrowDropDownIcon sx={{ fontSize: 18 }} />
-                          )
+                        (active && sort?.dir === "asc" ? (
+                          <ArrowDropUpIcon sx={{ fontSize: 18 }} />
                         ) : (
-                          <UnfoldMoreIcon sx={{ fontSize: 14, opacity: 0.55 }} />
+                          <ArrowDropDownIcon sx={{ fontSize: 18 }} />
                         ))}
                     </Box>
                   </TableCell>
                 );
               })}
+              {hasActions && <TableCell sx={{ ...headCellSx, width: 48 }} />}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -157,48 +279,108 @@ export function DataTable<T>({
                 key={getRowId(row)}
                 hover={!!onRowClick}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                sx={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                sx={{ cursor: onRowClick ? "pointer" : "default" }}
               >
-                {columns.map((col) => (
+                {columns.map((col, idx) => {
+                  const showDivider = idx < columns.length - 1 || hasActions;
+                  return (
+                    <TableCell
+                      key={col.key}
+                      align={col.align ?? "left"}
+                      sx={{
+                        fontSize: "0.85rem",
+                        color: "text.primary",
+                        borderBottom: "1px solid #ececec",
+                        borderRight: showDivider ? COL_DIVIDER : "none",
+                        fontFamily: col.mono ? "monospace" : undefined,
+                        py: 1.15,
+                      }}
+                    >
+                      {col.render
+                        ? col.render(row)
+                        : (((row as Record<string, unknown>)[
+                            col.key
+                          ] as React.ReactNode) ?? "")}
+                    </TableCell>
+                  );
+                })}
+                {hasActions && (
                   <TableCell
-                    key={col.key}
-                    align={col.align ?? 'left'}
+                    align="center"
                     sx={{
-                      fontSize: '0.85rem',
-                      color: 'text.primary',
-                      borderBottom: '1px solid #ececec',
-                      fontFamily: col.mono ? 'monospace' : undefined,
-                      py: 1.15,
+                      borderBottom: "1px solid #ececec",
+                      py: 0.5,
+                      width: 48,
                     }}
                   >
-                    {col.render ? col.render(row) : ((row as Record<string, unknown>)[col.key] as React.ReactNode) ?? ''}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenu({ anchor: e.currentTarget, row });
+                      }}
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
                   </TableCell>
-                ))}
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
 
+      {hasActions && (
+        <Menu
+          anchorEl={menu?.anchor ?? null}
+          open={!!menu}
+          onClose={closeMenu}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          {onEdit && (
+            <MenuItem onClick={runAction(onEdit)}>
+              <ListItemIcon>
+                <EditIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Edit</ListItemText>
+            </MenuItem>
+          )}
+          {onDelete && (
+            <MenuItem
+              onClick={runAction(onDelete)}
+              sx={{ color: "error.main" }}
+            >
+              <ListItemIcon>
+                <DeleteIcon fontSize="small" color="error" />
+              </ListItemIcon>
+              <ListItemText>Delete</ListItemText>
+            </MenuItem>
+          )}
+        </Menu>
+      )}
+
       {total === 0 && (
-        <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>{emptyMessage}</Box>
+        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+          {emptyMessage}
+        </Box>
       )}
 
       {total > 0 && (
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
             gap: 2,
             px: 2,
             py: 1.5,
           }}
         >
-          <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
+          <Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
             Displaying {from} to {to} of {total} items
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Box
               sx={pageBtnSx(false)}
               onClick={() => setPage(Math.max(1, safePage - 1))}
@@ -207,7 +389,11 @@ export function DataTable<T>({
               <ChevronLeftIcon sx={{ fontSize: 18 }} />
             </Box>
             {Array.from({ length: maxPage }, (_, i) => i + 1).map((p) => (
-              <Box key={p} sx={pageBtnSx(p === safePage)} onClick={() => setPage(p)}>
+              <Box
+                key={p}
+                sx={pageBtnSx(p === safePage)}
+                onClick={() => setPage(p)}
+              >
                 {p}
               </Box>
             ))}

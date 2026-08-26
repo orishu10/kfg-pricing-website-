@@ -1,8 +1,6 @@
-import Box from '@mui/material/Box';
 import { useCustomersPage } from './hooks/useCustomersPage';
 import {
-  ConfirmDialog, DataTable, ErrorAlert, PageHeader, PartyFormDialog, SearchBar,
-  type Column,
+  ConfirmDialog, DataTable, ErrorAlert, PartyFormDialog, type Column,
 } from '../../components';
 import type { Customer } from '../../api';
 
@@ -33,19 +31,20 @@ export const CustomersPage = () => {
 
   return (
     <>
-      <PageHeader title="Customers" actionLabel="+ Add Customer" onAction={openAdd} />
-
       {!dialogOpen && <ErrorAlert message={error} />}
 
-      <Box sx={{ mb: 2 }}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or ID…" />
-      </Box>
-
       <DataTable
+        title="Customers"
+        onAdd={openAdd}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name or ID…"
         columns={columns}
         rows={customers}
         getRowId={(c) => c.id}
         onRowClick={openEdit}
+        onEdit={openEdit}
+        onDelete={(c) => setDeleteTarget({ id: c.id, name: c.name })}
         emptyMessage="No customers."
       />
 
