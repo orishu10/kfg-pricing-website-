@@ -1,7 +1,7 @@
 import type { FormState } from "./types";
 
 export const EMPTY_FORM: FormState = {
-  name: '', supplier_incoterms: '', customer_incoterms: '',
+  name: '', size: '', supplier_incoterms: '', customer_incoterms: '',
   logistics: '', container_type: '',
   fob: '', cif: '', dap: '', ddp: '',
   cases_in_fcl: '', units_in_case: '', unit_weight: '',

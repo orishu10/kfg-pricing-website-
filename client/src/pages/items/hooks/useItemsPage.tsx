@@ -1,50 +1,23 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  getCustomer, getCustomerSuppliers, getSupplierItems, createItem,
-} from '../../../api';
+import { getItems, getSuppliers, createItem, type NewItem } from '../../../api';
 
 export const useItemsPage = () => {
-  const { customerId, supplierId } = useParams<{ customerId: string; supplierId: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const [showForm, setShowForm] = useState(false);
-  const [newId, setNewId] = useState('');
-  const [newName, setNewName] = useState('');
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const customerQuery = useQuery({
-    queryKey: ['customers', customerId],
-    queryFn: () => getCustomer(customerId!),
-  });
+  const { data: items = [], isError } = useQuery({ queryKey: ['items'], queryFn: () => getItems() });
+  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: getSuppliers });
 
-  const suppliersQuery = useQuery({
-    queryKey: ['customers', customerId, 'suppliers'],
-    queryFn: () => getCustomerSuppliers(customerId!),
-  });
-
-  const itemsQuery = useQuery({
-    queryKey: ['items', customerId, supplierId],
-    queryFn: () => getSupplierItems(Number(supplierId), customerId!),
-  });
-
-  const supplier = suppliersQuery.data?.find((s) => s.id === Number(supplierId)) ?? null;
-
-  useEffect(() => {
-    if (customerQuery.isError) navigate('/customers');
-    else if (suppliersQuery.isSuccess && !supplier) navigate(`/customers/${customerId}/suppliers`);
-  }, [customerQuery.isError, suppliersQuery.isSuccess, supplier, customerId, navigate]);
+  const closeDialog = () => { setDialogOpen(false); setError(''); };
 
   const createMutation = useMutation({
-    mutationFn: createItem,
+    mutationFn: (data: NewItem) => createItem(data),
     onSuccess: () => {
-      setNewId('');
-      setNewName('');
-      setShowForm(false);
-      queryClient.invalidateQueries({ queryKey: ['items', customerId, supplierId] });
+      closeDialog();
+      queryClient.invalidateQueries({ queryKey: ['items'] });
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
@@ -52,42 +25,27 @@ export const useItemsPage = () => {
     },
   });
 
-  const toggleForm = () => {
-    setShowForm((v) => !v);
+  const openAdd = () => { setError(''); setDialogOpen(true); };
+
+  const handleSubmit = (data: NewItem) => {
     setError('');
+    createMutation.mutate(data);
   };
 
-  const handleAdd = (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    createMutation.mutate({
-      id: newId.trim(),
-      name: newName.trim(),
-      customer_id: customerId!,
-      supplier_id: Number(supplierId),
-    });
-  };
-
-  const allItems = itemsQuery.data ?? [];
   const q = search.toLowerCase();
-  const filtered = allItems.filter(
-    (i) => i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q),
+  const filtered = items.filter(
+    (i) =>
+      i.name.toLowerCase().includes(q) ||
+      i.id.toLowerCase().includes(q) ||
+      (i.supplier_name ?? '').toLowerCase().includes(q),
   );
 
   return {
-    customerId,
-    customer: customerQuery.data ?? null,
-    supplier,
     items: filtered,
-    search,
-    setSearch,
-    showForm,
-    newId,
-    setNewId,
-    newName,
-    setNewName,
-    error: error || (itemsQuery.isError ? 'Failed to load items' : ''),
-    toggleForm,
-    handleAdd,
+    suppliers,
+    search, setSearch,
+    dialogOpen, openAdd, closeDialog,
+    error: error || (isError ? 'Failed to load items' : ''),
+    handleSubmit,
   };
 };

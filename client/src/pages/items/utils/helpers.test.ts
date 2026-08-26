@@ -6,6 +6,7 @@ import type { FormState } from './types';
 // they care about, so each case reads as "given these inputs, expect this".
 const blankForm = (): FormState => ({
   name: '',
+  size: '',
   supplier_incoterms: '',
   customer_incoterms: '',
   logistics: '',

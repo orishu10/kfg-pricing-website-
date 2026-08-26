@@ -1,63 +1,52 @@
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
-import { AddItemForm } from './components/addItemForm/AddItemForm';
-import { ItemRow } from './components/itemRow/ItemRow';
+import { ItemFormDialog } from './components/itemFormDialog/ItemFormDialog';
 import { useItemsPage } from './hooks/useItemsPage';
-import { EmptyState, ErrorAlert, PageHeader, SearchBar } from '../../components';
+import { DataTable, ErrorAlert, PageHeader, SearchBar, type Column } from '../../components';
+import type { Item } from '../../api';
+
+const columns: Column<Item>[] = [
+  { key: 'id', label: '#', mono: true, align: 'center' },
+  { key: 'supplier_name', label: 'Supplier', sortable: true, render: (r) => r.supplier_name ?? r.supplier_id },
+  { key: 'name', label: 'Description', sortable: true },
+  { key: 'size', label: 'Size', render: (r) => r.size ?? '' },
+  { key: 'unit_weight', label: 'Unit Weight', align: 'right', render: (r) => r.unit_weight ?? '' },
+  { key: 'units_in_case', label: 'Units / Case', align: 'right', render: (r) => r.units_in_case ?? '' },
+  { key: 'cases_in_fcl', label: 'Cases / FCL', align: 'right', render: (r) => r.cases_in_fcl ?? '' },
+];
 
 export const ItemsPage = () => {
   const navigate = useNavigate();
   const {
-    customerId, customer, supplier, items,
-    showForm, newId, setNewId, newName, setNewName,
-    search, setSearch, error, toggleForm, handleAdd,
+    items, suppliers, search, setSearch,
+    dialogOpen, openAdd, closeDialog, error, handleSubmit,
   } = useItemsPage();
 
   return (
     <>
-      <PageHeader
-        title={`${supplier?.name ?? '…'} — Items`}
-        actionLabel="+ Add Item"
-        actionActive={showForm}
-        onAction={toggleForm}
-        backButton={
-          <Button
-            onClick={() => navigate(`/customers/${customerId}/suppliers`)}
-            sx={{ p: 0, textTransform: 'none' }}
-          >
-            ← {customer?.name ?? '…'}
-          </Button>
-        }
-      />
+      <PageHeader title="Items" actionLabel="+ Add Item" onAction={openAdd} />
 
-      <Collapse in={showForm}>
-        <AddItemForm
-          newId={newId}
-          setNewId={setNewId}
-          newName={newName}
-          setNewName={setNewName}
-          error={error}
-          onSubmit={handleAdd}
-        />
-      </Collapse>
-
-      {!showForm && <ErrorAlert message={error} />}
+      {!dialogOpen && <ErrorAlert message={error} />}
 
       <Box sx={{ mb: 2 }}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or ID…" />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by description, supplier or ID…" />
       </Box>
 
-      {items.length === 0 ? (
-        <EmptyState message={search ? 'No items match your search.' : 'No items for this supplier / customer yet.'} />
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {items.map((item) => (
-            <ItemRow key={item.id} item={item} onOpen={() => navigate(`/items/${item.id}`)} />
-          ))}
-        </Box>
-      )}
+      <DataTable
+        columns={columns}
+        rows={items}
+        getRowId={(i) => i.id}
+        onRowClick={(i) => navigate(`/items/${i.id}`)}
+        emptyMessage="No items."
+      />
+
+      <ItemFormDialog
+        open={dialogOpen}
+        suppliers={suppliers}
+        error={error}
+        onClose={closeDialog}
+        onSubmit={handleSubmit}
+      />
     </>
   );
 };

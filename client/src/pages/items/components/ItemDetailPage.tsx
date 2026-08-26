@@ -28,11 +28,7 @@ export const ItemDetailPage = () => {
   return (
     <Box>
       <Button
-        onClick={() =>
-          navigate(
-            `/customers/${item.customer_id}/suppliers/${item.supplier_id}/items`,
-          )
-        }
+        onClick={() => navigate("/items")}
         sx={{ mb: 1, p: 0, textTransform: "none" }}
       >
         ← Items
@@ -67,12 +63,8 @@ export const ItemDetailPage = () => {
         <Section title="Identity">
           <IdentityField label="Item ID" value={item.id} />
           <IdentityField
-            label="Customer"
-            value={item.customer_name ?? item.customer_id}
-          />
-          <IdentityField
             label="Supplier"
-            value={item.supplier_name ?? String(item.supplier_id)}
+            value={item.supplier_name ?? item.supplier_id}
           />
           <IdentityField label="Last Updated" value={updatedAt} />
         </Section>
@@ -83,6 +75,11 @@ export const ItemDetailPage = () => {
             value={form.name}
             onChange={set("name")}
             required
+          />
+          <FormTextField
+            label="Size"
+            value={form.size}
+            onChange={set("size")}
           />
           <FormSelectField
             label="Supplier Incoterms"

@@ -1,64 +1,68 @@
-import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Collapse from '@mui/material/Collapse';
-import { AddCustomerForm } from './components/addCustomerForm/AddCustomerForm';
-import { CustomerRow } from './components/customerRow/CustomerRow';
 import { useCustomersPage } from './hooks/useCustomersPage';
-import { ConfirmDialog, EmptyState, ErrorAlert, PageHeader, SearchBar } from '../../components';
+import {
+  ConfirmDialog, DataTable, ErrorAlert, PageHeader, PartyFormDialog, SearchBar,
+  type Column,
+} from '../../components';
+import type { Customer } from '../../api';
+
+const columns: Column<Customer>[] = [
+  { key: 'id', label: '#', mono: true, align: 'center' },
+  { key: 'name', label: 'Customer', sortable: true },
+  { key: 'short_name', label: 'Short Name', sortable: true, render: (r) => r.short_name ?? '' },
+  { key: 'address', label: 'Address', render: (r) => r.address ?? '' },
+  { key: 'city', label: 'City', sortable: true, render: (r) => r.city ?? '' },
+  { key: 'country', label: 'Country', sortable: true, render: (r) => r.country ?? '' },
+  { key: 'incoterms', label: 'Incoterms', sortable: true, render: (r) => r.incoterms ?? '' },
+];
 
 export const CustomersPage = () => {
-  const navigate = useNavigate();
   const {
-    customers, showForm, newId, setNewId, newName, setNewName,
-    search, setSearch, error, deleteTarget, setDeleteTarget,
-    toggleForm, handleAdd, handleDelete, confirmDelete,
+    customers, search, setSearch,
+    dialogOpen, editing, openAdd, openEdit, closeDialog,
+    error, handleSubmit,
+    deleteTarget, setDeleteTarget, confirmDelete,
   } = useCustomersPage();
+
+  const requestDelete = () => {
+    if (!editing) return;
+    const target = { id: editing.id, name: editing.name };
+    closeDialog();
+    setDeleteTarget(target);
+  };
 
   return (
     <>
-      <PageHeader
-        title="Customers"
-        actionLabel="+ Add Customer"
-        actionActive={showForm}
-        onAction={toggleForm}
-      />
+      <PageHeader title="Customers" actionLabel="+ Add Customer" onAction={openAdd} />
 
-      <Collapse in={showForm}>
-        <AddCustomerForm
-          newId={newId}
-          setNewId={setNewId}
-          newName={newName}
-          setNewName={setNewName}
-          error={error}
-          onSubmit={handleAdd}
-        />
-      </Collapse>
-
-      {!showForm && <ErrorAlert message={error} />}
+      {!dialogOpen && <ErrorAlert message={error} />}
 
       <Box sx={{ mb: 2 }}>
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name or ID…" />
       </Box>
 
-      {customers.length === 0 ? (
-        <EmptyState message={search ? 'No customers match your search.' : 'No customers yet.'} />
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {customers.map((c) => (
-            <CustomerRow
-              key={c.id}
-              customer={c}
-              onOpen={() => navigate(`/customers/${c.id}/suppliers`)}
-              onDelete={(e) => handleDelete(e, c.id, c.name)}
-            />
-          ))}
-        </Box>
-      )}
+      <DataTable
+        columns={columns}
+        rows={customers}
+        getRowId={(c) => c.id}
+        onRowClick={openEdit}
+        emptyMessage="No customers."
+      />
+
+      <PartyFormDialog
+        open={dialogOpen}
+        entity="Customer"
+        initial={editing}
+        error={error}
+        onClose={closeDialog}
+        onSubmit={handleSubmit}
+        onDelete={requestDelete}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete customer?"
-        message={`Delete "${deleteTarget?.name}"? This will also remove all their supplier links and items.`}
+        message={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

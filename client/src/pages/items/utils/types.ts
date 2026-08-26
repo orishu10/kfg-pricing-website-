@@ -1,5 +1,6 @@
 export interface FormState {
   name: string;
+  size: string;
   supplier_incoterms: string;
   customer_incoterms: string;
   logistics: string;

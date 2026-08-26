@@ -12,6 +12,7 @@ import { AppLayout } from './layout/AppLayout';
 // Each page loads as its own chunk only when first visited
 const SignInPage = lazy(() => import('./pages/auth/SignInPage'));
 const HomePage = lazy(() => import('./pages/home/HomePage'));
+const DbmPage = lazy(() => import('./pages/dbm/DbmPage'));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
 const SuppliersPage = lazy(() => import('./pages/suppliers/SuppliersPage'));
 const ItemsPage = lazy(() => import('./pages/items/ItemsPage'));
@@ -34,9 +35,10 @@ export const App = () => (
             <Route element={<AuthGuard />}>
               <Route path="/" element={<HomePage />} />
               <Route element={<AppLayout />}>
+                <Route path="/dbm" element={<DbmPage />} />
                 <Route path="/customers" element={<CustomersPage />} />
-                <Route path="/customers/:customerId/suppliers" element={<SuppliersPage />} />
-                <Route path="/customers/:customerId/suppliers/:supplierId/items" element={<ItemsPage />} />
+                <Route path="/suppliers" element={<SuppliersPage />} />
+                <Route path="/items" element={<ItemsPage />} />
                 <Route path="/items/:itemId" element={<ItemDetailPage />} />
               </Route>
             </Route>

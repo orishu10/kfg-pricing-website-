@@ -1,117 +1,86 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  getCustomer, getCustomerSuppliers, getAllSuppliers,
-  createSupplier, linkSupplierToCustomer,
+  getSuppliers, createSupplier, updateSupplier, deleteSupplier,
+  type Supplier, type PartyPayload,
 } from '../../../api';
 
 export const useSuppliersPage = () => {
-  const { customerId } = useParams<{ customerId: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const [showForm, setShowForm] = useState(false);
-  const [tab, setTab] = useState(0);
-  const [newName, setNewName] = useState('');
-  const [linkId, setLinkId] = useState('');
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Supplier | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-  const customerQuery = useQuery({
-    queryKey: ['customers', customerId],
-    queryFn: () => getCustomer(customerId!),
-  });
-
-  const suppliersQuery = useQuery({
-    queryKey: ['customers', customerId, 'suppliers'],
-    queryFn: () => getCustomerSuppliers(customerId!),
-  });
-
-  const allSuppliersQuery = useQuery({
+  const { data: suppliers = [], isError } = useQuery({
     queryKey: ['suppliers'],
-    queryFn: getAllSuppliers,
+    queryFn: getSuppliers,
   });
 
-  useEffect(() => {
-    if (customerQuery.isError) navigate('/customers');
-  }, [customerQuery.isError, navigate]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['suppliers'] });
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['customers', customerId, 'suppliers'] });
-    queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+  const onError = (fallback: string) => (err: unknown) => {
+    const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+    setError(msg || fallback);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditing(null);
+    setError('');
   };
 
   const createMutation = useMutation({
-    mutationFn: createSupplier,
-    onSuccess: () => {
-      setNewName('');
-      setShowForm(false);
-      invalidate();
-    },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      setError(msg || 'Failed to create supplier');
-    },
+    mutationFn: (data: { id: string } & PartyPayload) => createSupplier(data),
+    onSuccess: () => { closeDialog(); invalidate(); },
+    onError: onError('Failed to create supplier'),
   });
 
-  const linkMutation = useMutation({
-    mutationFn: (supplierId: number) => linkSupplierToCustomer(supplierId, customerId!),
-    onSuccess: () => {
-      setLinkId('');
-      setShowForm(false);
-      invalidate();
-    },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      setError(msg || 'Failed to link supplier');
-    },
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: PartyPayload }) => updateSupplier(id, data),
+    onSuccess: () => { closeDialog(); invalidate(); },
+    onError: onError('Failed to update supplier'),
   });
 
-  const toggleForm = () => {
-    setShowForm((v) => !v);
+  const deleteMutation = useMutation({
+    mutationFn: deleteSupplier,
+    onSuccess: invalidate,
+    onError: () => setError('Failed to delete supplier'),
+  });
+
+  const openAdd = () => { setEditing(null); setError(''); setDialogOpen(true); };
+  const openEdit = (s: Supplier) => { setEditing(s); setError(''); setDialogOpen(true); };
+
+  const handleSubmit = (id: string, data: PartyPayload) => {
     setError('');
+    if (editing) updateMutation.mutate({ id: editing.id, data });
+    else createMutation.mutate({ id, ...data });
   };
 
-  const handleAddNew = (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    createMutation.mutate({ name: newName.trim(), customer_id: customerId });
+  const handleDelete = (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    setDeleteTarget({ id, name });
   };
 
-  const handleLinkExisting = (e: FormEvent) => {
-    e.preventDefault();
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
     setError('');
-    linkMutation.mutate(Number(linkId));
+    deleteMutation.mutate(deleteTarget.id);
+    setDeleteTarget(null);
   };
-
-  const suppliers = suppliersQuery.data ?? [];
-  const allSuppliers = allSuppliersQuery.data ?? [];
-  const linkedIds = new Set(suppliers.map((s) => s.id));
-  const unlinkableSuppliers = allSuppliers.filter((s) => !linkedIds.has(s.id));
 
   const q = search.toLowerCase();
   const filtered = suppliers.filter(
-    (s) => s.name.toLowerCase().includes(q) || String(s.id).includes(q),
+    (s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q),
   );
 
   return {
-    customerId,
-    customer: customerQuery.data ?? null,
     suppliers: filtered,
-    search,
-    setSearch,
-    unlinkableSuppliers,
-    showForm,
-    tab,
-    setTab,
-    newName,
-    setNewName,
-    linkId,
-    setLinkId,
-    error: error || (suppliersQuery.isError ? 'Failed to load suppliers' : ''),
-    toggleForm,
-    handleAddNew,
-    handleLinkExisting,
+    search, setSearch,
+    dialogOpen, editing, openAdd, openEdit, closeDialog,
+    error: error || (isError ? 'Failed to load suppliers' : ''),
+    handleSubmit,
+    deleteTarget, setDeleteTarget, handleDelete, confirmDelete,
   };
 };

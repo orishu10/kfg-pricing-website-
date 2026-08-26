@@ -7,6 +7,7 @@ export const fmt = (v: string | number | null | undefined): string => (v == null
 
 export const itemToForm = (item: Item): FormState => ({
   name: item.name ?? '',
+  size: item.size ?? '',
   supplier_incoterms: item.supplier_incoterms ?? '',
   customer_incoterms: item.customer_incoterms ?? '',
   logistics: fmt(item.logistics),

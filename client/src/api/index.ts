@@ -6,16 +6,32 @@ const api = axios.create({
 
 export default api;
 
-export interface Customer {
+// Shared profile fields — customers and suppliers have the identical field set.
+export interface PartyProfile {
+  short_name: string | null;
+  phone: string | null;
+  incoterms: string | null;
+  address: string | null;
+  city: string | null;
+  zip_code: string | null;
+  country: string | null;
+}
+
+export interface Customer extends PartyProfile {
   id: string;
   name: string;
   created_at: string;
 }
 
-export interface Supplier {
-  id: number;
+export interface Supplier extends PartyProfile {
+  id: string;
   name: string;
   created_at: string;
+}
+
+// What we SEND when creating/updating a customer or supplier
+export interface PartyPayload extends PartyProfile {
+  name: string;
 }
 
 export type N = string | null; // numeric fields come back as strings from pg
@@ -24,10 +40,9 @@ export interface Item {
   // Identity
   id: string;
   name: string;
-  customer_id: string;
-  supplier_id: number;
+  supplier_id: string;
   supplier_name?: string;
-  customer_name?: string;
+  size: string | null;
   created_at: string;
   updated_at: string | null;
 
@@ -81,6 +96,7 @@ export interface Item {
 // What we SEND to the server on PUT (numeric fields as number | null)
 export interface ItemPayload {
   name: string;
+  size: string | null;
   supplier_incoterms: string | null;
   customer_incoterms: string | null;
   logistics: number | null;
@@ -115,30 +131,39 @@ export interface ItemPayload {
   sap_price_case: number | null;
 }
 
+// New-item form fields (id is auto-generated server-side)
+export interface NewItem {
+  name: string;
+  supplier_id: string;
+  size: string | null;
+  unit_weight: number | null;
+  units_in_case: number | null;
+  cases_in_fcl: number | null;
+}
+
 // Customers
 export const getCustomers = async () => (await api.get<Customer[]>('/customers')).data;
 export const getCustomer = async (id: string) => (await api.get<Customer>(`/customers/${id}`)).data;
-export const createCustomer = async (data: { id: string; name: string }) =>
+export const createCustomer = async (data: { id: string } & PartyPayload) =>
   (await api.post<Customer>('/customers', data)).data;
-export const updateCustomer = async (id: string, data: { name: string }) =>
+export const updateCustomer = async (id: string, data: PartyPayload) =>
   (await api.put<Customer>(`/customers/${id}`, data)).data;
 export const deleteCustomer = async (id: string) => api.delete(`/customers/${id}`);
-export const getCustomerSuppliers = async (customerId: string) =>
-  (await api.get<Supplier[]>(`/customers/${customerId}/suppliers`)).data;
 
 // Suppliers
-export const getAllSuppliers = async () => (await api.get<Supplier[]>('/suppliers')).data;
-export const createSupplier = async (data: { name: string; customer_id?: string }) =>
+export const getSuppliers = async () => (await api.get<Supplier[]>('/suppliers')).data;
+export const getSupplier = async (id: string) => (await api.get<Supplier>(`/suppliers/${id}`)).data;
+export const createSupplier = async (data: { id: string } & PartyPayload) =>
   (await api.post<Supplier>('/suppliers', data)).data;
-export const linkSupplierToCustomer = async (supplierId: number, customerId: string) =>
-  api.post(`/suppliers/${supplierId}/link/${customerId}`);
-export const getSupplierItems = async (supplierId: number, customerId: string) =>
-  (await api.get<Item[]>(`/suppliers/${supplierId}/items?customer_id=${customerId}`)).data;
+export const updateSupplier = async (id: string, data: PartyPayload) =>
+  (await api.put<Supplier>(`/suppliers/${id}`, data)).data;
+export const deleteSupplier = async (id: string) => api.delete(`/suppliers/${id}`);
 
 // Items
+export const getItems = async (supplierId?: string) =>
+  (await api.get<Item[]>('/items', { params: supplierId ? { supplier_id: supplierId } : undefined })).data;
 export const getItem = async (id: string) => (await api.get<Item>(`/items/${id}`)).data;
-export const createItem = async (data: { id: string; name: string; customer_id: string; supplier_id: number }) =>
-  (await api.post<Item>('/items', data)).data;
+export const createItem = async (data: NewItem) => (await api.post<Item>('/items', data)).data;
 export const updateItem = async (id: string, data: ItemPayload) =>
   (await api.put<Item>(`/items/${id}`, data)).data;
 export const deleteItem = async (id: string) => api.delete(`/items/${id}`);

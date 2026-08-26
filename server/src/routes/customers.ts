@@ -3,12 +3,17 @@ import { pool } from '../db';
 
 const router = Router();
 
+// Empty strings → null so optional VARCHAR fields store cleanly
+const n = (v: unknown) => (v === '' || v === undefined ? null : v);
+
+const PROFILE_FIELDS = [
+  'short_name', 'phone', 'incoterms', 'address', 'city', 'zip_code', 'country',
+] as const;
+
 // GET /api/customers
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM customers ORDER BY name ASC'
-    );
+    const result = await pool.query('SELECT * FROM customers ORDER BY name ASC');
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch customers' });
@@ -18,10 +23,7 @@ router.get('/', async (_req: Request, res: Response) => {
 // GET /api/customers/:id
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM customers WHERE id = $1',
-      [req.params.id]
-    );
+    const result = await pool.query('SELECT * FROM customers WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
     }
@@ -37,10 +39,13 @@ router.post('/', async (req: Request, res: Response) => {
   if (!id || !name) {
     return res.status(400).json({ error: 'id and name are required' });
   }
+  const b = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO customers (id, name) VALUES ($1, $2) RETURNING *',
-      [id, name]
+      `INSERT INTO customers (id, name, short_name, phone, incoterms, address, city, zip_code, country)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING *`,
+      [id, name, ...PROFILE_FIELDS.map((f) => n(b[f]))]
     );
     res.status(201).json(result.rows[0]);
   } catch (err: any) {
@@ -57,10 +62,21 @@ router.put('/:id', async (req: Request, res: Response) => {
   if (!name) {
     return res.status(400).json({ error: 'name is required' });
   }
+  const b = req.body;
   try {
     const result = await pool.query(
-      'UPDATE customers SET name = $1 WHERE id = $2 RETURNING *',
-      [name, req.params.id]
+      `UPDATE customers SET
+        name       = $1,
+        short_name = $2,
+        phone      = $3,
+        incoterms  = $4,
+        address    = $5,
+        city       = $6,
+        zip_code   = $7,
+        country    = $8
+       WHERE id = $9
+       RETURNING *`,
+      [name, ...PROFILE_FIELDS.map((f) => n(b[f])), req.params.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
@@ -74,33 +90,13 @@ router.put('/:id', async (req: Request, res: Response) => {
 // DELETE /api/customers/:id
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const result = await pool.query(
-      'DELETE FROM customers WHERE id = $1 RETURNING *',
-      [req.params.id]
-    );
+    const result = await pool.query('DELETE FROM customers WHERE id = $1 RETURNING *', [req.params.id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
     }
     res.json({ message: 'Customer deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete customer' });
-  }
-});
-
-// GET /api/customers/:id/suppliers — all suppliers linked to this customer
-router.get('/:id/suppliers', async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query(
-      `SELECT s.*
-       FROM suppliers s
-       JOIN customer_suppliers cs ON cs.supplier_id = s.id
-       WHERE cs.customer_id = $1
-       ORDER BY s.name ASC`,
-      [req.params.id]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch suppliers for customer' });
   }
 });
 

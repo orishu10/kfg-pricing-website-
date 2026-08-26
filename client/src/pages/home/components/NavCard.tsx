@@ -2,7 +2,8 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 interface NavCardProps {
-  icon: string;
+  /** Image path (rendered as <img>) or a React node such as an MUI icon */
+  icon: string | React.ReactNode;
   label: string;
   onClick: () => void;
 }
@@ -32,7 +33,13 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
       '&:active': { transform: 'translateY(0)' },
     }}
   >
-    <Box component="img" src={icon} alt={label} sx={{ width: 64, height: 64, objectFit: 'contain' }} />
+    {typeof icon === 'string' ? (
+      <Box component="img" src={icon} alt={label} sx={{ width: 64, height: 64, objectFit: 'contain' }} />
+    ) : (
+      <Box sx={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        {icon}
+      </Box>
+    )}
     <Typography
       sx={{
         color: '#fff',

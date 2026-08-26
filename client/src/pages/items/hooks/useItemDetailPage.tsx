@@ -8,6 +8,7 @@ import type { FormState } from '../utils/types';
 
 const formToPayload = (form: FormState): ItemPayload => ({
   name: form.name,
+  size: form.size || null,
   supplier_incoterms: form.supplier_incoterms || null,
   customer_incoterms: form.customer_incoterms || null,
   logistics: toNum(form.logistics),
@@ -58,13 +59,15 @@ export const useItemDetailPage = () => {
   });
   const item = itemQuery.data ?? null;
 
-  // Initialize the form whenever a (re)fetched item arrives
-  useEffect(() => {
-    if (item) {
-      const f = itemToForm(item);
-      setForm({ ...f, ...calcDerived(f) });
-    }
-  }, [item]);
+  // Initialize the form whenever a (re)fetched item arrives (reset during render,
+  // keyed on the item's identity + last-updated signature).
+  const [syncedSig, setSyncedSig] = useState<string | null>(null);
+  const itemSig = item ? `${item.id}:${item.updated_at ?? item.created_at}` : null;
+  if (item && itemSig !== syncedSig) {
+    setSyncedSig(itemSig);
+    const f = itemToForm(item);
+    setForm({ ...f, ...calcDerived(f) });
+  }
 
   useEffect(() => {
     if (itemQuery.isError) navigate('/');
@@ -81,7 +84,7 @@ export const useItemDetailPage = () => {
     mutationFn: (payload: ItemPayload) => updateItem(itemId!, payload),
     onSuccess: (updated: Item) => {
       queryClient.setQueryData(['item', itemId], updated);
-      queryClient.invalidateQueries({ queryKey: ['items', updated.customer_id, String(updated.supplier_id)] });
+      queryClient.invalidateQueries({ queryKey: ['items'] });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     },
@@ -95,8 +98,8 @@ export const useItemDetailPage = () => {
     mutationFn: () => deleteItem(itemId!),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: ['item', itemId] });
-      queryClient.invalidateQueries({ queryKey: ['items', item?.customer_id, String(item?.supplier_id)] });
-      navigate(`/customers/${item?.customer_id}/suppliers/${item?.supplier_id}/items`);
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      navigate('/items');
     },
     onError: () => setError('Failed to delete item'),
   });

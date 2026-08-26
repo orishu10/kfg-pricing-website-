@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import StorageIcon from "@mui/icons-material/Storage";
 import { useAuth } from "../../context/AuthContext";
 import kfgLogo from "../../../public/KFG-Logo.svg";
 import kfgBackground from "../../../public/background-logo.webp";
@@ -81,12 +82,13 @@ export const HomePage = () => {
           pb: 2,
         }}
       >
-        <NavCard icon={pmsLogo} label="PMS" onClick={() => {}} />
         <NavCard
-          icon={pricingLogo}
-          label="PRICING"
-          onClick={() => navigate("/customers")}
+          icon={<StorageIcon sx={{ fontSize: 56 }} />}
+          label="DBM"
+          onClick={() => navigate("/dbm")}
         />
+        <NavCard icon={pricingLogo} label="PRICING" onClick={() => {}} />
+        <NavCard icon={pmsLogo} label="PMS" onClick={() => {}} />
       </Box>
 
       {/* KFG logo */}
