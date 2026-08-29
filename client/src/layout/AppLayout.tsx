@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
+import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuth } from '../context/AuthContext';
 import kfgBackground from '../../public/background-logo.webp';
@@ -24,10 +28,30 @@ const bgStyle = {
   backgroundPosition: 'center',
 } as const;
 
+const NAV = [
+  { label: 'Customers', path: '/customers' },
+  { label: 'Suppliers', path: '/suppliers' },
+  { label: 'Items', path: '/items' },
+  { label: 'Pricing', path: '/pricing' },
+] as const;
+
 export const AppLayout = () => {
   const { logout, username } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [navAnchorEl, setNavAnchorEl] = useState<null | HTMLElement>(null);
+
+  // Highlight the tab whose route matches the current path (including sub-routes
+  // like /pricing/new). Falls back to `false` on hub pages (/, /dbm) so no tab
+  // shows as selected.
+  const activeTab =
+    NAV.find((n) => pathname === n.path || pathname.startsWith(`${n.path}/`))?.path ?? false;
+
+  const go = (path: string) => {
+    setNavAnchorEl(null);
+    navigate(path);
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', ...bgStyle }}>
@@ -36,16 +60,54 @@ export const AppLayout = () => {
         elevation={0}
         sx={{ bgcolor: 'rgba(255,255,255,0.45)', borderBottom: '1px solid rgba(0,0,0,0.1)' }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Box
-            component="img"
-            src={kfgLogo}
-            alt="KFG"
-            onClick={() => navigate('/')}
-            sx={{ height: 40, cursor: 'pointer' }}
-          />
+        <Toolbar sx={{ justifyContent: 'space-between', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+            <Box
+              component="img"
+              src={kfgLogo}
+              alt="KFG"
+              onClick={() => navigate('/')}
+              sx={{ height: 40, cursor: 'pointer' }}
+            />
+
+            {/* Desktop nav tabs */}
+            <Tabs
+              value={activeTab}
+              onChange={(_, v) => navigate(v)}
+              textColor="inherit"
+              sx={{ display: { xs: 'none', md: 'flex' }, minHeight: 48, '& .MuiTab-root': { color: '#494445' } }}
+            >
+              {NAV.map((n) => (
+                <Tab key={n.path} label={n.label} value={n.path} sx={{ textTransform: 'none', fontWeight: 600 }} />
+              ))}
+            </Tabs>
+          </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Mobile nav menu */}
+            <Tooltip title="Menu">
+              <IconButton
+                onClick={(e) => setNavAnchorEl(e.currentTarget)}
+                sx={{ color: '#494445', display: { xs: 'inline-flex', md: 'none' } }}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Tooltip>
+            <Menu
+              anchorEl={navAnchorEl}
+              open={Boolean(navAnchorEl)}
+              onClose={() => setNavAnchorEl(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              slotProps={{ paper: { sx: { minWidth: 180, mt: 1 } } }}
+            >
+              {NAV.map((n) => (
+                <MenuItem key={n.path} selected={activeTab === n.path} onClick={() => go(n.path)}>
+                  {n.label}
+                </MenuItem>
+              ))}
+            </Menu>
+
             <Tooltip title="Home">
               <IconButton onClick={() => navigate('/')} sx={{ color: '#494445' }}>
                 <HomeIcon />
