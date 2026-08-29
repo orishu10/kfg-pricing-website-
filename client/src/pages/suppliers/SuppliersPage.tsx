@@ -18,7 +18,7 @@ export const SuppliersPage = () => {
   const {
     suppliers, search, setSearch,
     dialogOpen, editing, openAdd, openEdit, closeDialog,
-    error, handleSubmit,
+    error, handleSubmit, handleImport,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useSuppliersPage();
 
@@ -35,6 +35,8 @@ export const SuppliersPage = () => {
 
       <DataTable
         title="Suppliers"
+        exportFileName="suppliers"
+        onImport={handleImport}
         onAdd={openAdd}
         search={search}
         onSearchChange={setSearch}

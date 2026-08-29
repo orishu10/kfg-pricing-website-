@@ -1,76 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
 import StorageIcon from "@mui/icons-material/Storage";
-import { useAuth } from "../../context/AuthContext";
 import kfgLogo from "../../../public/KFG-Logo.svg";
-import kfgBackground from "../../../public/background-logo.webp";
 import pmsLogo from "../../../public/Icon PMS.svg";
 import pricingLogo from "../../../public/Icon PRICING.svg";
 import { NavCard } from "./components/NavCard";
 
 export const HomePage = () => {
   const navigate = useNavigate();
-  const { logout, username } = useAuth();
 
   return (
     <Box
       sx={{
-        position: "fixed",
-        inset: 0,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
-        backgroundImage: `url(${kfgBackground})`,
-        backgroundSize: "cover",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
+        minHeight: 0,
+        flex: 1,
       }}
     >
-      {/* Sign-out button — top right */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 14,
-          right: 18,
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          pb: 1,
-        }}
-      >
-        {username && (
-          <Typography
-            sx={{
-              color: "text.secondary",
-              fontSize: "0.85rem",
-              fontWeight: 500,
-            }}
-          >
-            {username}
-          </Typography>
-        )}
-        <Button
-          size="small"
-          onClick={logout}
-          sx={{
-            color: "text.secondary",
-            borderColor: "rgba(0,0,0,0.25)",
-            border: "1px solid",
-            borderRadius: 2,
-            textTransform: "none",
-            fontSize: "0.8rem",
-            px: 1.5,
-            py: 0.4,
-            "&:hover": { bgcolor: "rgba(0,0,0,0.08)" },
-          }}
-        >
-          Sign Out
-        </Button>
-      </Box>
-
       {/* Navigation cards */}
       <Box
         sx={{
@@ -87,7 +34,7 @@ export const HomePage = () => {
           label="DBM"
           onClick={() => navigate("/dbm")}
         />
-        <NavCard icon={pricingLogo} label="PRICING" onClick={() => {}} />
+        <NavCard icon={pricingLogo} label="PRICING" onClick={() => navigate("/pricing")} />
         <NavCard icon={pmsLogo} label="PMS" onClick={() => {}} />
       </Box>
 

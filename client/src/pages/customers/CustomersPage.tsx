@@ -18,7 +18,7 @@ export const CustomersPage = () => {
   const {
     customers, search, setSearch,
     dialogOpen, editing, openAdd, openEdit, closeDialog,
-    error, handleSubmit,
+    error, handleSubmit, handleImport,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useCustomersPage();
 
@@ -35,6 +35,8 @@ export const CustomersPage = () => {
 
       <DataTable
         title="Customers"
+        exportFileName="customers"
+        onImport={handleImport}
         onAdd={openAdd}
         search={search}
         onSearchChange={setSearch}

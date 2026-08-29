@@ -9,6 +9,7 @@ import { pool } from './db';
 import customersRouter from './routes/customers';
 import suppliersRouter from './routes/suppliers';
 import itemsRouter from './routes/items';
+import pricingRouter from './routes/pricing';
 import authRouter from './routes/auth';
 
 dotenv.config();
@@ -64,6 +65,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/suppliers', suppliersRouter);
 app.use('/api/items', itemsRouter);
+app.use('/api/pricing', pricingRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

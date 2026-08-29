@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Box from "@mui/material/Box";
+import Tooltip from "@mui/material/Tooltip";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -22,7 +23,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import { SearchBar } from "../searchBar/SearchBar";
+import { ErrorAlert } from "../errorAlert/ErrorAlert";
+import { downloadXlsx, parseXlsx, type CellValue } from "../../utils/xlsx";
 
 export interface Column<T> {
   key: string;
@@ -59,6 +64,14 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   /** Renders a filter icon on the toolbar (alongside search) */
   onFilter?: () => void;
+  /** When set, shows a download icon that exports the rows as this .xlsx file */
+  exportFileName?: string;
+  /**
+   * When provided, shows an upload icon. Receives one object per data row,
+   * keyed by the column `key` of each header that matched the file. The page
+   * validates required fields and performs the actual creation.
+   */
+  onImport?: (rows: Record<string, string>[]) => void;
 }
 
 const HEADER_BG = "#7c7f83";
@@ -110,6 +123,8 @@ export function DataTable<T>({
   onSearchChange,
   searchPlaceholder = "Search…",
   onFilter,
+  exportFileName,
+  onImport,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     null,
@@ -118,9 +133,17 @@ export function DataTable<T>({
   const [menu, setMenu] = useState<{ anchor: HTMLElement; row: T } | null>(
     null,
   );
+  const [importError, setImportError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasActions = !!(onEdit || onDelete);
-  const showToolbar = !!(title || onAdd || onSearchChange);
+  const showToolbar = !!(
+    title ||
+    onAdd ||
+    onSearchChange ||
+    exportFileName ||
+    onImport
+  );
   const showSearch = onSearchChange !== undefined;
 
   const rawValue = (col: Column<T>, row: T) =>
@@ -168,6 +191,46 @@ export function DataTable<T>({
     closeMenu();
   };
 
+  const handleExport = () => {
+    const headers = columns.map((c) => c.label);
+    const data: CellValue[][] = ordered.map((row) =>
+      columns.map((col) => {
+        const v = rawValue(col, row);
+        return v == null ? "" : (v as CellValue);
+      }),
+    );
+    downloadXlsx(exportFileName!, title ?? exportFileName!, headers, data);
+  };
+
+  const handleImportFile = async (file: File) => {
+    setImportError("");
+    try {
+      const matrix = await parseXlsx(file);
+      if (matrix.length < 2) throw new Error("The file has no data rows");
+
+      const header = matrix[0].map((h) => h.trim().toLowerCase());
+      const colIndex = columns.map((c) => header.indexOf(c.label.toLowerCase()));
+      if (colIndex.every((i) => i < 0)) {
+        throw new Error("The file's columns don't match this table");
+      }
+
+      const rows = matrix
+        .slice(1)
+        .filter((r) => r.some((cell) => cell.trim() !== ""))
+        .map((r) => {
+          const obj: Record<string, string> = {};
+          columns.forEach((col, i) => {
+            if (colIndex[i] >= 0) obj[col.key] = (r[colIndex[i]] ?? "").trim();
+          });
+          return obj;
+        });
+
+      onImport!(rows);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Failed to read the file");
+    }
+  };
+
   return (
     <Paper
       elevation={0}
@@ -189,17 +252,56 @@ export function DataTable<T>({
             borderBottom: "1px solid rgba(0,0,0,0.08)",
           }}
         >
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "1.05rem",
-              color: "text.primary",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-            }}
-          >
-            {title}
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: "1.05rem",
+                color: "text.primary",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              {title}
+            </Typography>
+            {exportFileName && (
+              <Tooltip title="Download as Excel">
+                <IconButton
+                  size="small"
+                  onClick={handleExport}
+                  aria-label="Download as Excel"
+                  sx={{ color: "text.secondary" }}
+                >
+                  <FileDownloadIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {onImport && (
+              <>
+                <Tooltip title="Upload from Excel">
+                  <IconButton
+                    size="small"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Upload from Excel"
+                    sx={{ color: "text.secondary" }}
+                  >
+                    <FileUploadIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImportFile(file);
+                    e.target.value = "";
+                  }}
+                />
+              </>
+            )}
+          </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {showSearch && (
@@ -213,21 +315,35 @@ export function DataTable<T>({
               </Box>
             )}
             {showSearch && (
-              <IconButton
-                size="small"
-                onClick={onFilter}
-                aria-label="Filter"
-                sx={{ color: "text.secondary" }}
-              >
-                <FilterAltIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Filter">
+                <IconButton
+                  size="small"
+                  onClick={onFilter}
+                  aria-label="Filter"
+                  sx={{ color: "text.secondary" }}
+                >
+                  <FilterAltIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
             {onAdd && (
-              <IconButton onClick={onAdd} aria-label="Add">
-                <AddCircleIcon />
-              </IconButton>
+              <Tooltip title={title ? `Add ${title.replace(/s$/, "")}` : "Add"}>
+                <IconButton
+                  onClick={onAdd}
+                  aria-label="Add"
+                  sx={{ color: "text.secondary" }}
+                >
+                  <AddCircleIcon />
+                </IconButton>
+              </Tooltip>
             )}
           </Box>
+        </Box>
+      )}
+
+      {importError && (
+        <Box sx={{ px: 2, pt: 1.5 }}>
+          <ErrorAlert message={importError} />
         </Box>
       )}
 

@@ -58,6 +58,37 @@ export const useSuppliersPage = () => {
     else createMutation.mutate({ id, ...data });
   };
 
+  const handleImport = async (rows: Record<string, string>[]) => {
+    setError('');
+    let ok = 0;
+    const failed: string[] = [];
+    for (const r of rows) {
+      const id = (r.id ?? '').trim();
+      const name = (r.name ?? '').trim();
+      if (!id || !name) { failed.push(id || name || 'row'); continue; }
+      try {
+        await createSupplier({
+          id, name,
+          short_name: r.short_name || null,
+          phone: null,
+          incoterms: r.incoterms || null,
+          address: r.address || null,
+          city: r.city || null,
+          zip_code: null,
+          country: r.country || null,
+        });
+        ok++;
+      } catch {
+        failed.push(id);
+      }
+    }
+    invalidate();
+    if (failed.length) {
+      const shown = failed.slice(0, 5).join(', ');
+      setError(`Imported ${ok}. Failed ${failed.length}: ${shown}${failed.length > 5 ? '…' : ''}`);
+    }
+  };
+
   const handleDelete = (e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation();
     setDeleteTarget({ id, name });
@@ -80,7 +111,7 @@ export const useSuppliersPage = () => {
     search, setSearch,
     dialogOpen, editing, openAdd, openEdit, closeDialog,
     error: error || (isError ? 'Failed to load suppliers' : ''),
-    handleSubmit,
+    handleSubmit, handleImport,
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete,
   };
 };

@@ -12,8 +12,8 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
   <Box
     onClick={onClick}
     sx={{
-      width: 155,
-      height: 155,
+      width: 180,
+      height: 180,
       bgcolor: 'background.default',
       border: '2.5px solid',
       borderColor: 'primary.main',
@@ -25,10 +25,11 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
       gap: 1.5,
       cursor: 'pointer',
       userSelect: 'none',
+      boxShadow: '5px 6px 14px rgba(0,0,0,0.38)',
       transition: 'transform 0.15s, box-shadow 0.15s',
       '&:hover': {
         transform: 'translateY(-3px)',
-        boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
+        boxShadow: '6px 10px 22px rgba(0,0,0,0.42)',
       },
       '&:active': { transform: 'translateY(0)' },
     }}
@@ -44,7 +45,7 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
       sx={{
         color: '#fff',
         fontWeight: 700,
-        fontSize: '1.80rem',
+        fontSize: '1.55rem',
         letterSpacing: 1,
         textTransform: 'uppercase',
         lineHeight: 1,

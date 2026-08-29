@@ -6,10 +6,12 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
 import { CommonInput, CommonSelect, ErrorAlert } from '../../../../components';
-import type { NewItem, Supplier } from '../../../../api';
+import type { Item, NewItem, Supplier } from '../../../../api';
 
 interface ItemFormDialogProps {
   open: boolean;
+  /** Existing item to edit, or null to add a new one */
+  initial: Item | null;
   suppliers: Supplier[];
   error: string;
   onClose: () => void;
@@ -22,14 +24,28 @@ const EMPTY = {
 
 const num = (v: string) => (v.trim() === '' ? null : Number(v));
 
-export const ItemFormDialog = ({ open, suppliers, error, onClose, onSubmit }: ItemFormDialogProps) => {
-  const [form, setForm] = useState(EMPTY);
+const toForm = (it: Item | null) =>
+  it
+    ? {
+        supplier_id: it.supplier_id,
+        name: it.name ?? '',
+        size: it.size ?? '',
+        unit_weight: it.unit_weight ?? '',
+        units_in_case: it.units_in_case != null ? String(it.units_in_case) : '',
+        cases_in_fcl: it.cases_in_fcl != null ? String(it.cases_in_fcl) : '',
+      }
+    : EMPTY;
 
-  // Reset the form each time the dialog opens.
-  const [wasOpen, setWasOpen] = useState(false);
-  if (open !== wasOpen) {
-    setWasOpen(open);
-    if (open) setForm(EMPTY);
+export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSubmit }: ItemFormDialogProps) => {
+  const [form, setForm] = useState(EMPTY);
+  const isEdit = initial !== null;
+
+  // Reset when the dialog opens or switches which item it edits.
+  const formKey = open ? (initial ? initial.id : '__new__') : null;
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  if (formKey !== activeKey) {
+    setActiveKey(formKey);
+    if (open) setForm(toForm(initial));
   }
 
   const set = (key: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
@@ -50,7 +66,7 @@ export const ItemFormDialog = ({ open, suppliers, error, onClose, onSubmit }: It
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add Item</DialogTitle>
+      <DialogTitle>{isEdit ? `Edit Item ${initial?.id}` : 'Add Item'}</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent dividers>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>

@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { ItemFormDialog } from './components/itemFormDialog/ItemFormDialog';
 import { useItemsPage } from './hooks/useItemsPage';
 import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../components';
@@ -15,10 +14,9 @@ const columns: Column<Item>[] = [
 ];
 
 export const ItemsPage = () => {
-  const navigate = useNavigate();
   const {
     items, suppliers, search, setSearch,
-    dialogOpen, openAdd, closeDialog, error, handleSubmit,
+    dialogOpen, editing, openAdd, openEdit, closeDialog, error, handleSubmit, handleImport,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useItemsPage();
 
@@ -28,6 +26,8 @@ export const ItemsPage = () => {
 
       <DataTable
         title="Items"
+        exportFileName="items"
+        onImport={handleImport}
         onAdd={openAdd}
         search={search}
         onSearchChange={setSearch}
@@ -35,14 +35,15 @@ export const ItemsPage = () => {
         columns={columns}
         rows={items}
         getRowId={(i) => i.id}
-        onRowClick={(i) => navigate(`/items/${i.id}`)}
-        onEdit={(i) => navigate(`/items/${i.id}`)}
+        onRowClick={openEdit}
+        onEdit={openEdit}
         onDelete={(i) => setDeleteTarget({ id: i.id, name: i.name })}
         emptyMessage="No items."
       />
 
       <ItemFormDialog
         open={dialogOpen}
+        initial={editing}
         suppliers={suppliers}
         error={error}
         onClose={closeDialog}

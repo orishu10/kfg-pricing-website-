@@ -16,7 +16,7 @@ const DbmPage = lazy(() => import('./pages/dbm/DbmPage'));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
 const SuppliersPage = lazy(() => import('./pages/suppliers/SuppliersPage'));
 const ItemsPage = lazy(() => import('./pages/items/ItemsPage'));
-const ItemDetailPage = lazy(() => import('./pages/items/components/ItemDetailPage'));
+const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
 
 const PageLoader = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -33,13 +33,13 @@ export const App = () => (
           <Routes>
             <Route path="/login" element={<SignInPage />} />
             <Route element={<AuthGuard />}>
-              <Route path="/" element={<HomePage />} />
               <Route element={<AppLayout />}>
+                <Route path="/" element={<HomePage />} />
                 <Route path="/dbm" element={<DbmPage />} />
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/suppliers" element={<SuppliersPage />} />
                 <Route path="/items" element={<ItemsPage />} />
-                <Route path="/items/:itemId" element={<ItemDetailPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" />} />

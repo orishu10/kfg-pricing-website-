@@ -58,85 +58,33 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/items/:id
+// PUT /api/items/:id — DBM catalog fields only. Pricing lives in /api/pricing.
 router.put('/:id', async (req: Request, res: Response) => {
-  const {
-    name, size,
-    supplier_incoterms, customer_incoterms,
-    logistics, container_type,
-    fob, cif, dap, ddp,
-    cases_in_fcl, units_in_case, unit_weight,
-    cases_per_pallet, pallets_per_fcl,
-    supplier_price_unit, supplier_price_case, supplier_price_fcl, supplier_price_1kg,
-    sub_total_1, us_tariff, sub_total_2,
-    import_factor, kfg_commission, total,
-    kfg_commission_total, tariffs_total, usd_nis,
-    cost_unit, cost_case,
-    price_unit, price_case,
-    sap_price_unit, sap_price_case,
-  } = req.body;
+  const { name, supplier_id, size, unit_weight, units_in_case, cases_in_fcl } = req.body;
 
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
     const result = await pool.query(
       `UPDATE items SET
-        name                  = $1,
-        size                  = $2,
-        supplier_incoterms    = $3,
-        customer_incoterms    = $4,
-        logistics             = $5,
-        container_type        = $6,
-        fob                   = $7,
-        cif                   = $8,
-        dap                   = $9,
-        ddp                   = $10,
-        cases_in_fcl          = $11,
-        units_in_case         = $12,
-        unit_weight           = $13,
-        cases_per_pallet      = $14,
-        pallets_per_fcl       = $15,
-        supplier_price_unit   = $16,
-        supplier_price_case   = $17,
-        supplier_price_fcl    = $18,
-        supplier_price_1kg    = $19,
-        sub_total_1           = $20,
-        us_tariff             = $21,
-        sub_total_2           = $22,
-        import_factor         = $23,
-        kfg_commission        = $24,
-        total                 = $25,
-        kfg_commission_total  = $26,
-        tariffs_total         = $27,
-        usd_nis               = $28,
-        cost_unit             = $29,
-        cost_case             = $30,
-        price_unit            = $31,
-        price_case            = $32,
-        sap_price_unit        = $33,
-        sap_price_case        = $34
-       WHERE id = $35
+        name          = $1,
+        supplier_id   = COALESCE($2, supplier_id),
+        size          = $3,
+        unit_weight   = $4,
+        units_in_case = $5,
+        cases_in_fcl  = $6
+       WHERE id = $7
        RETURNING *`,
       [
-        name, n(size),
-        n(supplier_incoterms), n(customer_incoterms),
-        n(logistics), n(container_type),
-        n(fob), n(cif), n(dap), n(ddp),
-        n(cases_in_fcl), n(units_in_case), n(unit_weight),
-        n(cases_per_pallet), n(pallets_per_fcl),
-        n(supplier_price_unit), n(supplier_price_case), n(supplier_price_fcl), n(supplier_price_1kg),
-        n(sub_total_1), n(us_tariff), n(sub_total_2),
-        n(import_factor), n(kfg_commission), n(total),
-        n(kfg_commission_total), n(tariffs_total), n(usd_nis),
-        n(cost_unit), n(cost_case),
-        n(price_unit), n(price_case),
-        n(sap_price_unit), n(sap_price_case),
+        name, n(supplier_id), n(size),
+        n(unit_weight), n(units_in_case), n(cases_in_fcl),
         req.params.id,
       ]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Item not found' });
     res.json(result.rows[0]);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === '23503') return res.status(400).json({ error: 'Invalid supplier_id' });
     res.status(500).json({ error: 'Failed to update item' });
   }
 });

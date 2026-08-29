@@ -93,44 +93,6 @@ export interface Item {
   sap_price_case: N;
 }
 
-// What we SEND to the server on PUT (numeric fields as number | null)
-export interface ItemPayload {
-  name: string;
-  size: string | null;
-  supplier_incoterms: string | null;
-  customer_incoterms: string | null;
-  logistics: number | null;
-  container_type: string | null;
-  fob: number | null;
-  cif: number | null;
-  dap: number | null;
-  ddp: number | null;
-  cases_in_fcl: number | null;
-  units_in_case: number | null;
-  unit_weight: number | null;
-  cases_per_pallet: number | null;
-  pallets_per_fcl: number | null;
-  supplier_price_unit: number | null;
-  supplier_price_case: number | null;
-  supplier_price_fcl: number | null;
-  supplier_price_1kg: number | null;
-  sub_total_1: number | null;
-  us_tariff: number | null;
-  sub_total_2: number | null;
-  import_factor: number | null;
-  kfg_commission: number | null;
-  total: number | null;
-  kfg_commission_total: number | null;
-  tariffs_total: number | null;
-  usd_nis: number | null;
-  cost_unit: number | null;
-  cost_case: number | null;
-  price_unit: number | null;
-  price_case: number | null;
-  sap_price_unit: number | null;
-  sap_price_case: number | null;
-}
-
 // New-item form fields (id is auto-generated server-side)
 export interface NewItem {
   name: string;
@@ -159,14 +121,106 @@ export const updateSupplier = async (id: string, data: PartyPayload) =>
   (await api.put<Supplier>(`/suppliers/${id}`, data)).data;
 export const deleteSupplier = async (id: string) => api.delete(`/suppliers/${id}`);
 
+// DBM item catalog fields (pricing lives in the Pricing module)
+export interface ItemUpdate {
+  name: string;
+  supplier_id: string;
+  size: string | null;
+  unit_weight: number | null;
+  units_in_case: number | null;
+  cases_in_fcl: number | null;
+}
+
 // Items
 export const getItems = async (supplierId?: string) =>
   (await api.get<Item[]>('/items', { params: supplierId ? { supplier_id: supplierId } : undefined })).data;
 export const getItem = async (id: string) => (await api.get<Item>(`/items/${id}`)).data;
 export const createItem = async (data: NewItem) => (await api.post<Item>('/items', data)).data;
-export const updateItem = async (id: string, data: ItemPayload) =>
+export const updateItem = async (id: string, data: ItemUpdate) =>
   (await api.put<Item>(`/items/${id}`, data)).data;
 export const deleteItem = async (id: string) => api.delete(`/items/${id}`);
+
+// Pricing — a customer × item cost/price record (numeric NUMERIC cols come back
+// as strings from pg, like Item).
+export interface Pricing {
+  id: string;
+  customer_id: string;
+  item_id: string;
+  kfg_sku: string | null;
+  status: string | null;
+
+  // joined (read-only)
+  customer_name?: string;
+  supplier_name?: string;
+  description?: string;
+  size?: string | null;
+
+  currency: string | null;
+  pack_size: string | null;
+  currency_pair: string | null;
+  ex_rate: N;
+  ex_current: N;
+
+  unit_weight: N;
+  units_in_case: number | null;
+  cases_in_fcl: number | null;
+  cases_per_pallet: number | null;
+  pallets_per_fcl: number | null;
+  pallets: number | null;
+  route: string | null;
+  container_type: string | null;
+  incoterms_supplier: string | null;
+
+  fob: N; cif: N; dap: N; ddp: N;
+
+  supplier_price_unit: N;
+  supplier_price_case: N;
+  supplier_price_fcl: N;
+  supplier_price_1kg: N;
+  price_unit_ils: N;
+  price_unit_usd: N;
+  price_case_ils: N;
+  price_case_usd: N;
+  price_fcl_usd: N;
+
+  sub_total_1: N;
+  sub_total_2: N;
+  us_tariff: N;
+  us_tariff_pct: N;
+  import_factor: N;
+  kfg_commission: N;
+  kfg_commission_pct: N;
+  kfg_commission_total: N;
+  tariffs_total: N;
+  total: N;
+  usd_nis: N;
+  supervision_cost: N;
+  supervision_fees: N;
+
+  cost_unit: N; cost_case: N; cost_1kg: N;
+  price_unit: N; price_case: N; price_1kg: N;
+  sap_price_unit: N; sap_price_case: N; sap_price_1kg: N;
+
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+// What we SEND on create/update. The form holds strings and converts numeric
+// fields before sending; customer_id + item_id are required.
+export type PricingInput = { customer_id: string; item_id: string } & Record<
+  string,
+  string | number | null | undefined
+>;
+
+export const getPricings = async () => (await api.get<Pricing[]>('/pricing')).data;
+export const getPricing = async (id: string) => (await api.get<Pricing>(`/pricing/${id}`)).data;
+export const createPricing = async (data: PricingInput) =>
+  (await api.post<Pricing>('/pricing', data)).data;
+export const updatePricing = async (id: string, data: PricingInput) =>
+  (await api.put<Pricing>(`/pricing/${id}`, data)).data;
+export const deletePricing = async (id: string) => api.delete(`/pricing/${id}`);
 
 // Auth
 export const login = async (username: string, password: string) =>
