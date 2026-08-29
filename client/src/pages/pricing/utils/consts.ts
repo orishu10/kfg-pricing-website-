@@ -34,3 +34,13 @@ export type PricingForm = Record<(typeof PRICING_KEYS)[number], string>;
 export const EMPTY_PRICING: PricingForm = Object.fromEntries(
   PRICING_KEYS.map((k) => [k, '']),
 ) as PricingForm;
+
+// Text/identity fields — may stay empty (stored as NULL). Everything else is a
+// numeric field that defaults to 0 when left blank (never empty).
+export const TEXT_KEYS: readonly string[] = [
+  'customer_id', 'item_id', 'kfg_sku', 'status',
+  'currency', 'pack_size', 'currency_pair', 'route', 'container_type', 'incoterms_supplier',
+  'supplier_name', 'description',
+];
+
+export const NUMERIC_KEYS: readonly string[] = PRICING_KEYS.filter((k) => !TEXT_KEYS.includes(k));

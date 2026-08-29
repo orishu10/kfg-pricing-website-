@@ -24,6 +24,30 @@ const EMPTY = {
 
 const num = (v: string) => (v.trim() === '' ? null : Number(v));
 
+// Every field is required. Numeric fields must also be valid, non-negative numbers.
+const FIELD_LABELS: Record<keyof typeof EMPTY, string> = {
+  supplier_id: 'Supplier',
+  name: 'Description',
+  size: 'Size',
+  unit_weight: 'Unit Weight',
+  units_in_case: 'Units / Case',
+  cases_in_fcl: 'Cases / FCL',
+};
+const NUMERIC_FIELDS: (keyof typeof EMPTY)[] = ['unit_weight', 'units_in_case', 'cases_in_fcl'];
+
+const validate = (form: typeof EMPTY): Partial<Record<keyof typeof EMPTY, string>> => {
+  const errors: Partial<Record<keyof typeof EMPTY, string>> = {};
+  (Object.keys(FIELD_LABELS) as (keyof typeof EMPTY)[]).forEach((key) => {
+    if (form[key].trim() === '') {
+      errors[key] = `${FIELD_LABELS[key]} is required`;
+    } else if (NUMERIC_FIELDS.includes(key)) {
+      const n = Number(form[key]);
+      if (Number.isNaN(n) || n < 0) errors[key] = 'Enter a valid number';
+    }
+  });
+  return errors;
+};
+
 const toForm = (it: Item | null) =>
   it
     ? {
@@ -38,6 +62,7 @@ const toForm = (it: Item | null) =>
 
 export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSubmit }: ItemFormDialogProps) => {
   const [form, setForm] = useState(EMPTY);
+  const [submitted, setSubmitted] = useState(false);
   const isEdit = initial !== null;
 
   // Reset when the dialog opens or switches which item it edits.
@@ -45,13 +70,23 @@ export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSub
   const [activeKey, setActiveKey] = useState<string | null>(null);
   if (formKey !== activeKey) {
     setActiveKey(formKey);
-    if (open) setForm(toForm(initial));
+    if (open) {
+      setForm(toForm(initial));
+      setSubmitted(false);
+    }
   }
+
+  const errors = validate(form);
+  const hasErrors = Object.keys(errors).length > 0;
+  // Only surface field errors once the user has attempted to submit.
+  const errFor = (key: keyof typeof form) => (submitted ? errors[key] : undefined);
 
   const set = (key: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
+    if (hasErrors) return;
     onSubmit({
       supplier_id: form.supplier_id,
       name: form.name.trim(),
@@ -77,12 +112,14 @@ export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSub
               value={form.supplier_id}
               onChange={set('supplier_id')}
               options={supplierOptions}
+              error={!!errFor('supplier_id')}
+              helperText={errFor('supplier_id')}
             />
-            <CommonInput label="Description" size="small" required value={form.name} onChange={set('name')} />
-            <CommonInput label="Size" size="small" value={form.size} onChange={set('size')} placeholder="e.g. 12/800gr" />
-            <CommonInput label="Unit Weight" size="small" type="number" value={form.unit_weight} onChange={set('unit_weight')} />
-            <CommonInput label="Units / Case" size="small" type="number" value={form.units_in_case} onChange={set('units_in_case')} />
-            <CommonInput label="Cases / FCL" size="small" type="number" value={form.cases_in_fcl} onChange={set('cases_in_fcl')} />
+            <CommonInput label="Description" size="small" required value={form.name} onChange={set('name')} error={!!errFor('name')} helperText={errFor('name')} />
+            <CommonInput label="Size" size="small" required value={form.size} onChange={set('size')} placeholder="e.g. 12/800gr" error={!!errFor('size')} helperText={errFor('size')} />
+            <CommonInput label="Unit Weight" size="small" required type="number" value={form.unit_weight} onChange={set('unit_weight')} error={!!errFor('unit_weight')} helperText={errFor('unit_weight')} />
+            <CommonInput label="Units / Case" size="small" required type="number" value={form.units_in_case} onChange={set('units_in_case')} error={!!errFor('units_in_case')} helperText={errFor('units_in_case')} />
+            <CommonInput label="Cases / FCL" size="small" required type="number" value={form.cases_in_fcl} onChange={set('cases_in_fcl')} error={!!errFor('cases_in_fcl')} helperText={errFor('cases_in_fcl')} />
           </Box>
           <Box sx={{ mt: 2 }}>
             <ErrorAlert message={error} />
@@ -92,7 +129,7 @@ export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSub
           <Button onClick={onClose} variant="outlined">
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={!form.supplier_id || !form.name.trim()}>
+          <Button type="submit" variant="contained" disabled={submitted && hasErrors}>
             Save
           </Button>
         </DialogActions>

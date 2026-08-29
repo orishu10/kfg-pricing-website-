@@ -17,6 +17,7 @@ const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
 const SuppliersPage = lazy(() => import('./pages/suppliers/SuppliersPage'));
 const ItemsPage = lazy(() => import('./pages/items/ItemsPage'));
 const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
+const PricingFormPage = lazy(() => import('./pages/pricing/components/PricingFormPage'));
 
 const PageLoader = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -40,6 +41,8 @@ export const App = () => (
                 <Route path="/suppliers" element={<SuppliersPage />} />
                 <Route path="/items" element={<ItemsPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/pricing/new" element={<PricingFormPage />} />
+                <Route path="/pricing/:pricingId" element={<PricingFormPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" />} />

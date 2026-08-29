@@ -1,6 +1,5 @@
-import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { usePricingPage } from './hooks/usePricingPage';
-import { PricingFormDialog } from './components/PricingFormDialog';
 import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../components';
 import { fmtDate } from './utils/helpers';
 import type { Pricing } from '../../api';
@@ -22,17 +21,15 @@ const columns: Column<Pricing>[] = [
 ];
 
 export const PricingPage = () => {
-  const { username } = useAuth();
+  const navigate = useNavigate();
   const {
-    pricings, items, customers, search, setSearch,
-    dialogOpen, editing, openAdd, openEdit, closeDialog,
-    error, handleSubmit,
+    pricings, search, setSearch, error,
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete,
   } = usePricingPage();
 
   return (
     <>
-      {!dialogOpen && <ErrorAlert message={error} />}
+      <ErrorAlert message={error} />
 
       <DataTable
         title="Pricing"
@@ -40,25 +37,14 @@ export const PricingPage = () => {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by SKU, customer, supplier or description…"
-        onAdd={openAdd}
+        onAdd={() => navigate('/pricing/new')}
         columns={columns}
         rows={pricings}
         getRowId={(p) => p.id}
-        onRowClick={openEdit}
-        onEdit={openEdit}
+        onRowClick={(p) => navigate(`/pricing/${p.id}`)}
+        onEdit={(p) => navigate(`/pricing/${p.id}`)}
         onDelete={handleDelete}
         emptyMessage="No pricing records."
-      />
-
-      <PricingFormDialog
-        open={dialogOpen}
-        initial={editing}
-        items={items}
-        customers={customers}
-        username={username}
-        error={error}
-        onClose={closeDialog}
-        onSubmit={handleSubmit}
       />
 
       <ConfirmDialog
