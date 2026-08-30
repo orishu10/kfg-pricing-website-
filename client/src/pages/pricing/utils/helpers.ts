@@ -1,8 +1,33 @@
-import type { PricingForm } from './consts';
+import { EMPTY_PRICING, PRICING_KEYS, type PricingForm } from './consts';
+import type { Pricing } from '../../../api';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-// Formats an ISO date as "01-JAN-25" for the table's Last Updated column.
+export const pricingToForm = (p: Pricing): PricingForm => {
+  const out = { ...EMPTY_PRICING };
+  PRICING_KEYS.forEach((k) => {
+    const v = (p as unknown as Record<string, unknown>)[k];
+    out[k] = v == null ? '' : String(v);
+  });
+  return out;
+};
+
+export const symbol = (currency: string | null | undefined): string =>
+  currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '₪';
+
+export const fetchFxRate = async (pair: string): Promise<number | null> => {
+  const target = pair.includes('EUR') ? 'EUR' : 'USD';
+  try {
+    const res = await fetch(`https://open.er-api.com/v6/latest/${target}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { rates?: Record<string, number> };
+    const rate = data.rates?.ILS;
+    return typeof rate === 'number' && rate > 0 ? rate : null;
+  } catch {
+    return null;
+  }
+};
+
 export const fmtDate = (iso: string | null): string => {
   if (!iso) return '';
   const d = new Date(iso);
@@ -10,10 +35,6 @@ export const fmtDate = (iso: string | null): string => {
   return `${String(d.getDate()).padStart(2, '0')}-${MONTHS[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
 };
 
-// Computes the cost/price build-up from the item volumes (read-only) plus the
-// pricing inputs. Mirrors the item helpers' calcDerived chain. Fields whose
-// formulas aren't defined yet (currency ₪/$, supervision, 1KG, SAP-case) are
-// left to manual entry and NOT touched here.
 export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const num = (k: keyof PricingForm) => parseFloat(f[k]) || 0;
   const int = (k: keyof PricingForm) => parseInt(f[k], 10) || 0;
@@ -28,12 +49,19 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const ddp = num('ddp');
   const tar = num('us_tariff');
   const kfg = num('kfg_commission');
+  const ex = num('ex_rate');
+  const sup = num('supervision_cost');
 
   const spCase = unit > 0 && uic > 0 ? unit * uic : null;
   const spFcl = spCase != null && cifcl > 0 ? spCase * cifcl : null;
   const sp1kg = unit > 0 && wt > 0 ? unit / wt : null;
+
+  const puUsd = ex > 0 && unit > 0 ? unit / ex : null;
+  const pcUsd = ex > 0 && spCase != null ? spCase / ex : null;
+  const pfUsd = pcUsd != null && cifcl > 0 ? pcUsd * cifcl : null;
+
   const incoSum = fob + cif + dap + ddp;
-  const st1 = incoSum > 0 || spFcl != null ? incoSum + (spFcl ?? 0) : null;
+  const st1 = incoSum > 0 || spFcl != null || sup > 0 ? incoSum + (spFcl ?? 0) + sup : null;
   const st2 = st1 != null ? st1 + tar : null;
   const imp = spFcl != null && spFcl > 0 ? incoSum / spFcl : null;
   const kfgTot = st1 != null ? kfg + st1 : null;
@@ -51,6 +79,9 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     supplier_price_case: s(spCase),
     supplier_price_fcl: s(spFcl),
     supplier_price_1kg: s(sp1kg),
+    price_unit_usd: s(puUsd),
+    price_case_usd: s(pcUsd),
+    price_fcl_usd: s(pfUsd),
     sub_total_1: s(st1),
     sub_total_2: s(st2),
     import_factor: s(imp),

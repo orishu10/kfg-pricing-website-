@@ -16,7 +16,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import kfgBackground from '../../public/background-logo.webp';
 import kfgLogo from '../../public/KFG-Logo.svg';
 

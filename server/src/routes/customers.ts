@@ -7,7 +7,7 @@ const router = Router();
 const n = (v: unknown) => (v === '' || v === undefined ? null : v);
 
 const PROFILE_FIELDS = [
-  'short_name', 'phone', 'incoterms', 'address', 'city', 'zip_code', 'country',
+  'short_name', 'phone', 'incoterms', 'currency', 'address', 'city', 'zip_code', 'country',
 ] as const;
 
 // GET /api/customers
@@ -42,8 +42,8 @@ router.post('/', async (req: Request, res: Response) => {
   const b = req.body;
   try {
     const result = await pool.query(
-      `INSERT INTO customers (id, name, short_name, phone, incoterms, address, city, zip_code, country)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO customers (id, name, short_name, phone, incoterms, currency, address, city, zip_code, country)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [id, name, ...PROFILE_FIELDS.map((f) => n(b[f]))]
     );
@@ -70,11 +70,12 @@ router.put('/:id', async (req: Request, res: Response) => {
         short_name = $2,
         phone      = $3,
         incoterms  = $4,
-        address    = $5,
-        city       = $6,
-        zip_code   = $7,
-        country    = $8
-       WHERE id = $9
+        currency   = $5,
+        address    = $6,
+        city       = $7,
+        zip_code   = $8,
+        country    = $9
+       WHERE id = $10
        RETURNING *`,
       [name, ...PROFILE_FIELDS.map((f) => n(b[f])), req.params.id]
     );

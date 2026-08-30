@@ -8,13 +8,14 @@ export const useItemsPage = () => {
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
+  const [dupSource, setDupSource] = useState<Item | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: items = [], isError } = useQuery({ queryKey: ['items'], queryFn: () => getItems() });
   const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: getSuppliers });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['items'] });
-  const closeDialog = () => { setDialogOpen(false); setEditing(null); setError(''); };
+  const closeDialog = () => { setDialogOpen(false); setEditing(null); setDupSource(null); setError(''); };
 
   const onError = (fallback: string) => (err: unknown) => {
     const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
@@ -39,8 +40,9 @@ export const useItemsPage = () => {
     onError: () => setError('Failed to delete item'),
   });
 
-  const openAdd = () => { setEditing(null); setError(''); setDialogOpen(true); };
-  const openEdit = (item: Item) => { setEditing(item); setError(''); setDialogOpen(true); };
+  const openAdd = () => { setEditing(null); setDupSource(null); setError(''); setDialogOpen(true); };
+  const openEdit = (item: Item) => { setEditing(item); setDupSource(null); setError(''); setDialogOpen(true); };
+  const openDuplicate = (item: Item) => { setEditing(null); setDupSource(item); setError(''); setDialogOpen(true); };
 
   const handleSubmit = (data: NewItem) => {
     setError('');
@@ -103,7 +105,9 @@ export const useItemsPage = () => {
     items: filtered,
     suppliers,
     search, setSearch,
-    dialogOpen, editing, openAdd, openEdit, closeDialog,
+    dialogOpen, openAdd, openEdit, openDuplicate, closeDialog,
+    dialogInitial: editing ?? dupSource,
+    isEditing: !!editing,
     error: error || (isError ? 'Failed to load items' : ''),
     handleSubmit, handleImport,
     deleteTarget, setDeleteTarget, confirmDelete,

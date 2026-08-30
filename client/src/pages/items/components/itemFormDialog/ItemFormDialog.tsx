@@ -10,8 +10,8 @@ import type { Item, NewItem, Supplier } from '../../../../api';
 
 interface ItemFormDialogProps {
   open: boolean;
-  /** Existing item to edit, or null to add a new one */
   initial: Item | null;
+  isEdit: boolean;
   suppliers: Supplier[];
   error: string;
   onClose: () => void;
@@ -24,7 +24,6 @@ const EMPTY = {
 
 const num = (v: string) => (v.trim() === '' ? null : Number(v));
 
-// Every field is required. Numeric fields must also be valid, non-negative numbers.
 const FIELD_LABELS: Record<keyof typeof EMPTY, string> = {
   supplier_id: 'Supplier',
   name: 'Description',
@@ -60,13 +59,11 @@ const toForm = (it: Item | null) =>
       }
     : EMPTY;
 
-export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSubmit }: ItemFormDialogProps) => {
+export const ItemFormDialog = ({ open, initial, isEdit, suppliers, error, onClose, onSubmit }: ItemFormDialogProps) => {
   const [form, setForm] = useState(EMPTY);
   const [submitted, setSubmitted] = useState(false);
-  const isEdit = initial !== null;
 
-  // Reset when the dialog opens or switches which item it edits.
-  const formKey = open ? (initial ? initial.id : '__new__') : null;
+  const formKey = open ? `${isEdit ? 'edit' : 'new'}:${initial ? initial.id : '__blank__'}` : null;
   const [activeKey, setActiveKey] = useState<string | null>(null);
   if (formKey !== activeKey) {
     setActiveKey(formKey);
@@ -78,7 +75,6 @@ export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSub
 
   const errors = validate(form);
   const hasErrors = Object.keys(errors).length > 0;
-  // Only surface field errors once the user has attempted to submit.
   const errFor = (key: keyof typeof form) => (submitted ? errors[key] : undefined);
 
   const set = (key: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
@@ -101,7 +97,7 @@ export const ItemFormDialog = ({ open, initial, suppliers, error, onClose, onSub
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEdit ? `Edit Item ${initial?.id}` : 'Add Item'}</DialogTitle>
+      <DialogTitle>{isEdit ? `Edit Item ${initial?.id}` : initial ? 'Duplicate Item' : 'Add Item'}</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent dividers>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>

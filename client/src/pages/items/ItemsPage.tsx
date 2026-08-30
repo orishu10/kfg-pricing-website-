@@ -16,7 +16,8 @@ const columns: Column<Item>[] = [
 export const ItemsPage = () => {
   const {
     items, suppliers, search, setSearch,
-    dialogOpen, editing, openAdd, openEdit, closeDialog, error, handleSubmit, handleImport,
+    dialogOpen, dialogInitial, isEditing, openAdd, openEdit, openDuplicate, closeDialog,
+    error, handleSubmit, handleImport,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useItemsPage();
 
@@ -37,13 +38,15 @@ export const ItemsPage = () => {
         getRowId={(i) => i.id}
         onRowClick={openEdit}
         onEdit={openEdit}
+        onDuplicate={openDuplicate}
         onDelete={(i) => setDeleteTarget({ id: i.id, name: i.name })}
         emptyMessage="No items."
       />
 
       <ItemFormDialog
         open={dialogOpen}
-        initial={editing}
+        initial={dialogInitial}
+        isEdit={isEditing}
         suppliers={suppliers}
         error={error}
         onClose={closeDialog}

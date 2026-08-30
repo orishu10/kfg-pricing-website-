@@ -12,6 +12,11 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Popover from "@mui/material/Popover";
+import Badge from "@mui/material/Badge";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
@@ -20,11 +25,16 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
+import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
+import CloseIcon from "@mui/icons-material/Close";
+import Checkbox from "@mui/material/Checkbox";
 import { SearchBar } from "../searchBar/SearchBar";
 import { ErrorAlert } from "../errorAlert/ErrorAlert";
 import { downloadXlsx, parseXlsx, type CellValue } from "../../utils/xlsx";
@@ -34,11 +44,8 @@ export interface Column<T> {
   label: string;
   align?: "left" | "center" | "right";
   sortable?: boolean;
-  /** Render monospace (e.g. for IDs) */
   mono?: boolean;
-  /** Custom cell content; defaults to row[key] */
   render?: (row: T) => React.ReactNode;
-  /** Value used for sorting; defaults to row[key] */
   value?: (row: T) => string | number | null;
 }
 
@@ -47,30 +54,19 @@ interface DataTableProps<T> {
   rows: T[];
   getRowId: (row: T) => string;
   onRowClick?: (row: T) => void;
-  /** When provided, adds an Edit entry to each row's actions menu */
   onEdit?: (row: T) => void;
-  /** When provided, adds a Delete entry to each row's actions menu */
+  onDuplicate?: (row: T) => void;
   onDelete?: (row: T) => void;
+  selectable?: boolean;
+  renderBulkActions?: (selected: T[], clear: () => void) => React.ReactNode;
   pageSize?: number;
   emptyMessage?: string;
-  // --- Toolbar (mini-header rendered above the table) ---
-  /** Title shown on the left of the toolbar */
   title?: string;
-  /** Renders a "+" add button on the toolbar */
   onAdd?: () => void;
-  /** Controlled search value; renders a compact search box when set with onSearchChange */
   search?: string;
   onSearchChange?: (v: string) => void;
   searchPlaceholder?: string;
-  /** Renders a filter icon on the toolbar (alongside search) */
-  onFilter?: () => void;
-  /** When set, shows a download icon that exports the rows as this .xlsx file */
   exportFileName?: string;
-  /**
-   * When provided, shows an upload icon. Receives one object per data row,
-   * keyed by the column `key` of each header that matched the file. The page
-   * validates required fields and performs the actual creation.
-   */
   onImport?: (rows: Record<string, string>[]) => void;
 }
 
@@ -114,7 +110,10 @@ export function DataTable<T>({
   getRowId,
   onRowClick,
   onEdit,
+  onDuplicate,
   onDelete,
+  selectable,
+  renderBulkActions,
   pageSize = 12,
   emptyMessage = "No records.",
   title,
@@ -122,7 +121,6 @@ export function DataTable<T>({
   search,
   onSearchChange,
   searchPlaceholder = "Search…",
-  onFilter,
   exportFileName,
   onImport,
 }: DataTableProps<T>) {
@@ -134,9 +132,22 @@ export function DataTable<T>({
     null,
   );
   const [importError, setImportError] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<Record<string, string[]>>({});
+  const [filterCol, setFilterCol] = useState<{ key: string; anchor: HTMLElement } | null>(null);
+  const [optSearch, setOptSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const hasActions = !!(onEdit || onDelete);
+  const clearSelection = () => setSelected(new Set());
+  const toggleRow = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const hasActions = !!(onEdit || onDuplicate || onDelete);
   const showToolbar = !!(
     title ||
     onAdd ||
@@ -149,7 +160,51 @@ export function DataTable<T>({
   const rawValue = (col: Column<T>, row: T) =>
     col.value ? col.value(row) : (row as Record<string, unknown>)[col.key];
 
-  let ordered = rows;
+  const displayText = (col: Column<T>, row: T): string => {
+    if (col.render) {
+      const node = col.render(row);
+      if (typeof node === "string" || typeof node === "number") return String(node);
+    }
+    const v = rawValue(col, row);
+    return v == null ? "" : String(v);
+  };
+
+  const optionsFor = (col: Column<T>) =>
+    Array.from(new Set(rows.map((r) => displayText(col, r)).filter((s) => s !== ""))).sort(
+      (a, b) => a.localeCompare(b, undefined, { numeric: true }),
+    );
+
+  const activeFilters = Object.entries(filters).filter(([, v]) => v.length > 0);
+
+  const filtered =
+    activeFilters.length === 0
+      ? rows
+      : rows.filter((row) =>
+          activeFilters.every(([key, vals]) => {
+            const col = columns.find((c) => c.key === key);
+            return col ? vals.includes(displayText(col, row)) : true;
+          }),
+        );
+
+  const setFilter = (key: string, values: string[]) => {
+    setFilters((f) => ({ ...f, [key]: values }));
+    setPage(1);
+  };
+  const clearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+  const openFilter = (key: string, anchor: HTMLElement) => {
+    setFilterCol({ key, anchor });
+    setOptSearch("");
+  };
+  const closeFilter = () => setFilterCol(null);
+  const toggleValue = (key: string, val: string) => {
+    const cur = filters[key] ?? [];
+    setFilter(key, cur.includes(val) ? cur.filter((v) => v !== val) : [...cur, val]);
+  };
+
+  let ordered = filtered;
   if (sort) {
     const col = columns.find((c) => c.key === sort.key);
     if (col) {
@@ -177,6 +232,19 @@ export function DataTable<T>({
   const pageRows = ordered.slice(start, start + pageSize);
   const from = total === 0 ? 0 : start + 1;
   const to = Math.min(start + pageSize, total);
+
+  const pageIds = pageRows.map(getRowId);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const somePageSelected = pageIds.some((id) => selected.has(id));
+  const toggleAllPage = () =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (allPageSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  const selectedRows = rows.filter((r) => selected.has(getRowId(r)));
+  const selecting = !!selectable && selectedRows.length > 0;
 
   const toggleSort = (key: string) =>
     setSort((s) =>
@@ -240,7 +308,7 @@ export function DataTable<T>({
         overflow: "hidden",
       }}
     >
-      {showToolbar && (
+      {(showToolbar || selecting) && (
         <Box
           sx={{
             display: "flex",
@@ -252,6 +320,24 @@ export function DataTable<T>({
             borderBottom: "1px solid rgba(0,0,0,0.08)",
           }}
         >
+          {selecting ? (
+            <>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "text.primary" }}>
+                  {selectedRows.length} selected
+                </Typography>
+                <Tooltip title="Clear selection">
+                  <IconButton size="small" onClick={clearSelection} aria-label="Clear selection">
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                {renderBulkActions?.(selectedRows, clearSelection)}
+              </Box>
+            </>
+          ) : (
+            <>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Typography
               sx={{
@@ -314,15 +400,17 @@ export function DataTable<T>({
                 />
               </Box>
             )}
-            {showSearch && (
-              <Tooltip title="Filter">
+            {activeFilters.length > 0 && (
+              <Tooltip title="Clear all filters">
                 <IconButton
                   size="small"
-                  onClick={onFilter}
-                  aria-label="Filter"
-                  sx={{ color: "text.secondary" }}
+                  onClick={clearFilters}
+                  aria-label="Clear all filters"
+                  sx={{ color: "primary.main" }}
                 >
-                  <FilterAltIcon fontSize="small" />
+                  <Badge badgeContent={activeFilters.length} color="primary">
+                    <FilterAltIcon fontSize="small" />
+                  </Badge>
                 </IconButton>
               </Tooltip>
             )}
@@ -338,6 +426,8 @@ export function DataTable<T>({
               </Tooltip>
             )}
           </Box>
+            </>
+          )}
         </Box>
       )}
 
@@ -347,10 +437,126 @@ export function DataTable<T>({
         </Box>
       )}
 
+      {(() => {
+        if (!filterCol) return null;
+        const col = columns.find((c) => c.key === filterCol.key);
+        if (!col) return null;
+        const selected = filters[col.key] ?? [];
+        const all = optionsFor(col);
+        const q = optSearch.trim().toLowerCase();
+        const shown = q ? all.filter((o) => o.toLowerCase().includes(q)) : all;
+        const allShownSelected = shown.length > 0 && shown.every((o) => selected.includes(o));
+        const toggleAllShown = () =>
+          setFilter(
+            col.key,
+            allShownSelected
+              ? selected.filter((v) => !shown.includes(v))
+              : Array.from(new Set([...selected, ...shown])),
+          );
+        return (
+          <Popover
+            open
+            anchorEl={filterCol.anchor}
+            onClose={closeFilter}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            transformOrigin={{ vertical: "top", horizontal: "left" }}
+            slotProps={{ paper: { sx: { width: 260 } } }}
+          >
+            <Box sx={{ p: 1.5, pb: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: "0.8rem", mb: 1 }}>
+                Filter by {col.label}
+              </Typography>
+              <TextField
+                value={optSearch}
+                onChange={(e) => setOptSearch(e.target.value)}
+                size="small"
+                fullWidth
+                placeholder="Search values…"
+                autoFocus
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Box>
+            <Box sx={{ maxHeight: 260, overflowY: "auto", px: 0.5 }}>
+              {shown.length === 0 ? (
+                <Box sx={{ px: 1.5, py: 1, color: "text.secondary", fontSize: "0.8rem" }}>
+                  No values
+                </Box>
+              ) : (
+                <>
+                  <MenuItem dense onClick={toggleAllShown}>
+                    <Checkbox
+                      size="small"
+                      checked={allShownSelected}
+                      indeterminate={!allShownSelected && shown.some((o) => selected.includes(o))}
+                    />
+                    <ListItemText primaryTypographyProps={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                      Select all
+                    </ListItemText>
+                  </MenuItem>
+                  {shown.map((opt) => (
+                    <MenuItem key={opt} dense onClick={() => toggleValue(col.key, opt)}>
+                      <Checkbox size="small" checked={selected.includes(opt)} />
+                      <ListItemText primaryTypographyProps={{ fontSize: "0.85rem" }}>
+                        {opt}
+                      </ListItemText>
+                    </MenuItem>
+                  ))}
+                </>
+              )}
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                px: 1.5,
+                py: 1,
+                borderTop: "1px solid rgba(0,0,0,0.08)",
+              }}
+            >
+              <Button
+                size="small"
+                onClick={() => setFilter(col.key, [])}
+                disabled={selected.length === 0}
+                sx={{ textTransform: "none" }}
+              >
+                Clear
+              </Button>
+              <Button size="small" variant="contained" onClick={closeFilter} sx={{ textTransform: "none" }}>
+                Done
+              </Button>
+            </Box>
+          </Popover>
+        );
+      })()}
+
       <TableContainer>
         <Table size="small">
           <TableHead>
             <TableRow>
+              {selectable && (
+                <TableCell padding="checkbox" sx={{ ...headCellSx, borderRight: HEAD_DIVIDER, width: 44 }}>
+                  <Checkbox
+                    size="small"
+                    sx={{
+                      color: "rgba(255,255,255,0.85)",
+                      "&.Mui-checked": { color: "#fff" },
+                      "&.MuiCheckbox-indeterminate": { color: "#fff" },
+                    }}
+                    checked={allPageSelected}
+                    indeterminate={somePageSelected && !allPageSelected}
+                    onChange={toggleAllPage}
+                  />
+                </TableCell>
+              )}
               {columns.map((col, idx) => {
                 const active = sort?.key === col.key;
                 const showDivider = idx < columns.length - 1 || hasActions;
@@ -382,6 +588,27 @@ export function DataTable<T>({
                         ) : (
                           <ArrowDropDownIcon sx={{ fontSize: 18 }} />
                         ))}
+                      {col.sortable && (
+                        <IconButton
+                          size="small"
+                          aria-label={`Filter ${col.label}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openFilter(col.key, e.currentTarget);
+                          }}
+                          sx={{
+                            ml: 0.25,
+                            p: 0.25,
+                            color: (filters[col.key]?.length ?? 0) > 0 ? "#fff" : "rgba(255,255,255,0.6)",
+                          }}
+                        >
+                          {(filters[col.key]?.length ?? 0) > 0 ? (
+                            <FilterAltIcon sx={{ fontSize: 16 }} />
+                          ) : (
+                            <FilterAltOutlinedIcon sx={{ fontSize: 16 }} />
+                          )}
+                        </IconButton>
+                      )}
                     </Box>
                   </TableCell>
                 );
@@ -397,6 +624,16 @@ export function DataTable<T>({
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 sx={{ cursor: onRowClick ? "pointer" : "default" }}
               >
+                {selectable && (
+                  <TableCell padding="checkbox" sx={{ borderBottom: "1px solid #ececec", borderRight: COL_DIVIDER }}>
+                    <Checkbox
+                      size="small"
+                      checked={selected.has(getRowId(row))}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => toggleRow(getRowId(row))}
+                    />
+                  </TableCell>
+                )}
                 {columns.map((col, idx) => {
                   const showDivider = idx < columns.length - 1 || hasActions;
                   return (
@@ -462,6 +699,14 @@ export function DataTable<T>({
               <ListItemText>Edit</ListItemText>
             </MenuItem>
           )}
+          {onDuplicate && (
+            <MenuItem onClick={runAction(onDuplicate)}>
+              <ListItemIcon>
+                <ContentCopyIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Duplicate</ListItemText>
+            </MenuItem>
+          )}
           {onDelete && (
             <MenuItem
               onClick={runAction(onDelete)}
@@ -478,7 +723,7 @@ export function DataTable<T>({
 
       {total === 0 && (
         <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-          {emptyMessage}
+          {activeFilters.length ? "No records match your filters." : emptyMessage}
         </Box>
       )}
 

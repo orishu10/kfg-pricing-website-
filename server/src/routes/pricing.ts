@@ -5,11 +5,11 @@ const router = Router();
 
 const n = (v: unknown) => (v === '' || v === undefined ? null : v);
 
-// Writable value columns (id auto-generates; created_at/updated_at are managed;
-// created_by/updated_by are handled separately below).
+// Writable columns; id/created_at/updated_at/created_by/updated_by are handled separately.
 const COLUMNS = [
   'customer_id', 'item_id', 'kfg_sku', 'status',
-  'currency', 'pack_size', 'currency_pair', 'ex_rate', 'ex_current',
+  // ex_current is display-only (live FX rate) and intentionally NOT persisted.
+  'currency', 'pack_size', 'currency_pair', 'ex_rate',
   'unit_weight', 'units_in_case', 'cases_in_fcl',
   'cases_per_pallet', 'pallets_per_fcl', 'pallets', 'route', 'container_type', 'incoterms_supplier',
   'fob', 'cif', 'dap', 'ddp',

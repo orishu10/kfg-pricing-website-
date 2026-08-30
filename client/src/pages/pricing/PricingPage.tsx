@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { usePricingPage } from './hooks/usePricingPage';
+import { PricingBulkActions } from './components/PricingBulkActions';
 import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../components';
 import { fmtDate } from './utils/helpers';
 import type { Pricing } from '../../api';
@@ -41,8 +42,13 @@ export const PricingPage = () => {
         columns={columns}
         rows={pricings}
         getRowId={(p) => p.id}
+        selectable
+        renderBulkActions={(selected, clear) => (
+          <PricingBulkActions rows={selected} onDone={clear} />
+        )}
         onRowClick={(p) => navigate(`/pricing/${p.id}`)}
         onEdit={(p) => navigate(`/pricing/${p.id}`)}
+        onDuplicate={(p) => navigate(`/pricing/new?from=${p.id}`)}
         onDelete={handleDelete}
         emptyMessage="No pricing records."
       />

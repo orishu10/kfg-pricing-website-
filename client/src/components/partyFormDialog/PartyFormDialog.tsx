@@ -5,25 +5,26 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import { CommonInput } from '../commonInput/CommonInput';
 import { ErrorAlert } from '../errorAlert/ErrorAlert';
 import type { Customer, PartyPayload, Supplier } from '../../api';
 
+const CURRENCY_OPTIONS = ['USD', 'EUR', 'ILS'];
+
 interface PartyFormDialogProps {
   open: boolean;
-  /** Word used in the dialog title, e.g. "Customer" or "Supplier" */
   entity: string;
-  /** Existing record to edit, or null to add a new one */
   initial: Customer | Supplier | null;
   error: string;
   onClose: () => void;
   onSubmit: (id: string, payload: PartyPayload) => void;
-  /** Shown only in edit mode; triggers the delete flow */
   onDelete?: () => void;
 }
 
 const EMPTY = {
-  id: '', name: '', short_name: '', phone: '', incoterms: '',
+  id: '', name: '', short_name: '', phone: '', incoterms: '', currency: '',
   address: '', city: '', zip_code: '', country: '',
 };
 
@@ -35,6 +36,7 @@ const toForm = (initial: Customer | Supplier | null) =>
         short_name: initial.short_name ?? '',
         phone: initial.phone ?? '',
         incoterms: initial.incoterms ?? '',
+        currency: (initial as Customer).currency ?? '',
         address: initial.address ?? '',
         city: initial.city ?? '',
         zip_code: initial.zip_code ?? '',
@@ -46,7 +48,6 @@ export const PartyFormDialog = ({ open, entity, initial, error, onClose, onSubmi
   const [form, setForm] = useState(EMPTY);
   const isEdit = initial !== null;
 
-  // Reset the form whenever the dialog opens or switches which record it edits.
   const formKey = open ? (initial ? initial.id : '__new__') : null;
   const [activeKey, setActiveKey] = useState<string | null>(null);
   if (formKey !== activeKey) {
@@ -56,14 +57,17 @@ export const PartyFormDialog = ({ open, entity, initial, error, onClose, onSubmi
 
   const set = (key: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
 
+  const isCustomer = entity === 'Customer';
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { id, name, short_name, phone, incoterms, address, city, zip_code, country } = form;
+    const { id, name, short_name, phone, incoterms, currency, address, city, zip_code, country } = form;
     onSubmit(id.trim(), {
       name: name.trim(),
       short_name: short_name.trim() || null,
       phone: phone.trim() || null,
       incoterms: incoterms.trim() || null,
+      ...(isCustomer ? { currency: currency.trim() || null } : {}),
       address: address.trim() || null,
       city: city.trim() || null,
       zip_code: zip_code.trim() || null,
@@ -96,6 +100,21 @@ export const PartyFormDialog = ({ open, entity, initial, error, onClose, onSubmi
             <CommonInput label="Short Name" size="small" value={form.short_name} onChange={set('short_name')} />
             <CommonInput label="Phone" size="small" value={form.phone} onChange={set('phone')} />
             <CommonInput label="Incoterms" size="small" value={form.incoterms} onChange={set('incoterms')} />
+            {isCustomer && (
+              <TextField
+                select
+                label="Currency"
+                size="small"
+                fullWidth
+                value={form.currency}
+                onChange={(e) => set('currency')(e.target.value)}
+              >
+                <MenuItem value=""><em>—</em></MenuItem>
+                {CURRENCY_OPTIONS.map((c) => (
+                  <MenuItem key={c} value={c}>{c}</MenuItem>
+                ))}
+              </TextField>
+            )}
             <CommonInput label="Address" size="small" value={form.address} onChange={set('address')} />
             <CommonInput label="City" size="small" value={form.city} onChange={set('city')} />
             <CommonInput label="ZIP Code" size="small" value={form.zip_code} onChange={set('zip_code')} />

@@ -7,7 +7,6 @@ interface PageHeaderProps {
   actionLabel?: string;
   actionActive?: boolean;
   onAction?: () => void;
-  /** Rendered left of the title, typically a back-navigation button */
   backButton?: React.ReactNode;
 }
 

@@ -9,8 +9,8 @@ const columns: Column<Supplier>[] = [
   { key: 'name', label: 'Supplier', sortable: true },
   { key: 'short_name', label: 'Short Name', sortable: true, render: (r) => r.short_name ?? '' },
   { key: 'address', label: 'Address', render: (r) => r.address ?? '' },
-  { key: 'city', label: 'City', sortable: true, render: (r) => r.city ?? '' },
-  { key: 'country', label: 'Country', sortable: true, render: (r) => r.country ?? '' },
+  { key: 'city', label: 'City', render: (r) => r.city ?? '' },
+  { key: 'country', label: 'Country', render: (r) => r.country ?? '' },
   { key: 'incoterms', label: 'Incoterms', sortable: true, render: (r) => r.incoterms ?? '' },
 ];
 

@@ -20,6 +20,7 @@ export interface PartyProfile {
 export interface Customer extends PartyProfile {
   id: string;
   name: string;
+  currency: string | null; // USD / EUR / ILS — drives the pricing form
   created_at: string;
 }
 
@@ -29,9 +30,10 @@ export interface Supplier extends PartyProfile {
   created_at: string;
 }
 
-// What we SEND when creating/updating a customer or supplier
+// currency is customer-only; suppliers leave it undefined.
 export interface PartyPayload extends PartyProfile {
   name: string;
+  currency?: string | null;
 }
 
 export type N = string | null; // numeric fields come back as strings from pg
@@ -140,8 +142,7 @@ export const updateItem = async (id: string, data: ItemUpdate) =>
   (await api.put<Item>(`/items/${id}`, data)).data;
 export const deleteItem = async (id: string) => api.delete(`/items/${id}`);
 
-// Pricing — a customer × item cost/price record (numeric NUMERIC cols come back
-// as strings from pg, like Item).
+// Pricing — a customer × item cost/price record (numeric cols are strings, like Item).
 export interface Pricing {
   id: string;
   customer_id: string;
@@ -159,7 +160,6 @@ export interface Pricing {
   pack_size: string | null;
   currency_pair: string | null;
   ex_rate: N;
-  ex_current: N;
 
   unit_weight: N;
   units_in_case: number | null;
@@ -207,8 +207,7 @@ export interface Pricing {
   updated_at: string | null;
 }
 
-// What we SEND on create/update. The form holds strings and converts numeric
-// fields before sending; customer_id + item_id are required.
+// customer_id + item_id are required; other fields are form strings.
 export type PricingInput = { customer_id: string; item_id: string } & Record<
   string,
   string | number | null | undefined

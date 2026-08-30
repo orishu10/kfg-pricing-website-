@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -9,26 +9,29 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import InputAdornment from '@mui/material/InputAdornment';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../components';
 import { fmt } from '../../items/utils/helpers';
 import {
-  EMPTY_PRICING, PRICING_KEYS, NUMERIC_KEYS, type PricingForm,
-  PRICING_STATUS, CONTAINER_OPTIONS, INCOTERMS_OPTIONS, CURRENCY_OPTIONS, CURRENCY_PAIR_OPTIONS,
+  EMPTY_PRICING, NUMERIC_KEYS, type PricingForm,
+  PRICING_STATUS, CONTAINER_OPTIONS, INCOTERMS_OPTIONS, CURRENCY_PAIR_OPTIONS,
 } from '../utils/consts';
-import { derivePricing } from '../utils/helpers';
+import { derivePricing, pricingToForm, fetchFxRate, symbol } from '../utils/helpers';
 import {
   getPricing, getItems, getCustomers, createPricing, updatePricing,
-  type Pricing, type PricingInput,
+  type PricingInput,
 } from '../../../api';
 
 type Opt = string | { label: string; value: string };
 
-// Pastel panel backgrounds matching the printed pricing sheet.
 const C = {
   log: '#e9e4f2', green: '#e6efe1', pink: '#f6e2e2', blue: '#dcecf4',
   grey: '#e6e6e6', tariff: '#e7dbf1', yellow: '#f6efc0',
 };
+
+// The chosen supplier incoterm locks every LOG price field after its stage (0 + read-only).
+const INCOTERM_STAGE: Record<string, number> = { FCA: 0, FOB: 1, CIF: 2, DAP: 3, DDP: 4 };
+const PRICE_STAGE = { fob: 1, cif: 2, dap: 3, ddp: 4 } as const;
 
 const LABEL_SX = { fontSize: '0.66rem', fontWeight: 700, color: '#3a3a3a', mb: 0.25 } as const;
 const INPUT_SX = { bgcolor: '#fff', '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.75 } } as const;
@@ -124,18 +127,12 @@ const Caption = ({ children }: { children: React.ReactNode }) => (
   <Typography sx={{ fontSize: '0.6rem', color: '#777', mb: 0.5 }}>{children}</Typography>
 );
 
-const pricingToForm = (p: Pricing): PricingForm => {
-  const out = { ...EMPTY_PRICING };
-  PRICING_KEYS.forEach((k) => {
-    const v = (p as unknown as Record<string, unknown>)[k];
-    out[k] = v == null ? '' : String(v);
-  });
-  return out;
-};
-
 export const PricingFormPage = () => {
   const { pricingId } = useParams<{ pricingId: string }>();
+  const [searchParams] = useSearchParams();
+  const fromId = searchParams.get('from');
   const isEdit = !!pricingId;
+  const sourceId = pricingId ?? fromId ?? undefined;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { username } = useAuth();
@@ -144,15 +141,16 @@ export const PricingFormPage = () => {
 
   const { data: items = [] } = useQuery({ queryKey: ['items'], queryFn: () => getItems() });
   const { data: customers = [] } = useQuery({ queryKey: ['customers'], queryFn: getCustomers });
-  const pricingQuery = useQuery({
-    queryKey: ['pricing', pricingId],
-    queryFn: () => getPricing(pricingId!),
-    enabled: isEdit,
+  const sourceQuery = useQuery({
+    queryKey: ['pricing', sourceId],
+    queryFn: () => getPricing(sourceId!),
+    enabled: !!sourceId,
   });
 
-  // Seed the form for edit once the record loads (during render, keyed on identity).
-  const p = pricingQuery.data;
-  const sig = isEdit ? (p ? `${p.id}:${p.updated_at ?? ''}` : null) : '__new__';
+  const p = sourceQuery.data;
+  const sig = sourceId
+    ? p ? `${isEdit ? 'edit' : 'dup'}:${p.id}:${p.updated_at ?? ''}` : null
+    : '__new__';
   const [synced, setSynced] = useState<string | null>(null);
   if (sig && sig !== synced) {
     setSynced(sig);
@@ -180,6 +178,42 @@ export const PricingFormPage = () => {
       };
       return { ...next, ...derivePricing(next) };
     });
+
+  const onCustomer = (id: string) =>
+    setForm((prev) => {
+      const c = customers.find((x) => x.id === id);
+      const cur = c?.currency ?? '';
+      const next: PricingForm = {
+        ...prev,
+        customer_id: id,
+        currency: cur,
+        currency_pair:
+          cur === 'EUR' ? 'ILS > EUR' : cur === 'USD' ? 'ILS > USD' : prev.currency_pair,
+      };
+      return { ...next, ...derivePricing(next) };
+    });
+
+  const onIncoterm = (v: string) =>
+    setForm((prev) => {
+      const stage = v in INCOTERM_STAGE ? INCOTERM_STAGE[v] : Infinity;
+      const next: PricingForm = { ...prev, incoterms_supplier: v };
+      (['fob', 'cif', 'dap', 'ddp'] as const).forEach((k) => {
+        if (PRICE_STAGE[k] > stage) next[k] = '0';
+      });
+      return { ...next, ...derivePricing(next) };
+    });
+
+  useEffect(() => {
+    const pair = form.currency_pair;
+    if (!pair) return;
+    let active = true;
+    fetchFxRate(pair).then((rate) => {
+      if (active && rate != null) setForm((prev) => ({ ...prev, ex_current: rate.toFixed(4) }));
+    });
+    return () => {
+      active = false;
+    };
+  }, [form.currency_pair]);
 
   const onError = (fallback: string) => (err: unknown) => {
     const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
@@ -210,7 +244,6 @@ export const PricingFormPage = () => {
       return;
     }
     setError('');
-    // Optional numeric fields default to 0 when left blank (never empty).
     const payload: PricingInput = { ...form, created_by: username ?? '', updated_by: username ?? '' };
     NUMERIC_KEYS.forEach((k) => {
       if ((payload[k] ?? '').toString().trim() === '') payload[k] = '0';
@@ -219,14 +252,24 @@ export const PricingFormPage = () => {
     else createMutation.mutate(payload);
   };
 
-  if (isEdit && pricingQuery.isLoading) return <LoadingPage />;
+  if (sourceId && sourceQuery.isLoading) return <LoadingPage />;
 
   const itemOptions = items.map((i) => ({ label: i.size ? `${i.name} — ${i.size}` : i.name, value: i.id }));
   const customerOptions = customers.map((c) => ({ label: c.name, value: c.id }));
 
+  const sym = symbol(form.currency);
+  const selStage = form.incoterms_supplier in INCOTERM_STAGE
+    ? INCOTERM_STAGE[form.incoterms_supplier]
+    : Infinity;
+  const locked = {
+    fob: PRICE_STAGE.fob > selStage,
+    cif: PRICE_STAGE.cif > selStage,
+    dap: PRICE_STAGE.dap > selStage,
+    ddp: PRICE_STAGE.ddp > selStage,
+  };
+
   return (
     <Box component="form" onSubmit={handleSubmit}>
-      {/* Header bar */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, gap: 2, flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/pricing')} sx={{ textTransform: 'none' }}>
@@ -249,15 +292,14 @@ export const PricingFormPage = () => {
       <Box sx={{ mb: 2 }}><ErrorAlert message={error} /></Box>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'start' }}>
-        {/* LEFT */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <Panel label="DESCRIPTION">
             <Box sx={gridSx(3)}>
               <Sel label="Item" required value={form.item_id} onChange={onItem} options={itemOptions} />
-              <Sel label="Currency" value={form.currency} onChange={set('currency')} options={CURRENCY_OPTIONS} />
+              <Fld label="Currency" value={form.currency} readOnly />
               <Fld label="Pack Size" value={form.pack_size} readOnly />
               <Fld label="Supplier" value={form.supplier_name} readOnly />
-              <Sel label="Customer" required value={form.customer_id} onChange={set('customer_id')} options={customerOptions} />
+              <Sel label="Customer" required value={form.customer_id} onChange={onCustomer} options={customerOptions} />
               <Fld label="KFG SKU #" value={form.kfg_sku} onChange={set('kfg_sku')} />
             </Box>
           </Panel>
@@ -270,20 +312,20 @@ export const PricingFormPage = () => {
               <Fld label="Cases / FCL" value={form.cases_in_fcl} readOnly />
             </Box>
             <Box sx={gridSx(4)}>
-              <Fld label="FOB" value={form.fob} onChange={set('fob')} unit="$" />
-              <Fld label="CIF" value={form.cif} onChange={set('cif')} unit="$" />
-              <Fld label="DAP" value={form.dap} onChange={set('dap')} unit="$" />
-              <Fld label="DDP" value={form.ddp} onChange={set('ddp')} unit="$" />
+              <Fld label="FOB" value={form.fob} onChange={set('fob')} readOnly={locked.fob} unit="$" />
+              <Fld label="CIF" value={form.cif} onChange={set('cif')} readOnly={locked.cif} unit="$" />
+              <Fld label="DAP" value={form.dap} onChange={set('dap')} readOnly={locked.dap} unit="$" />
+              <Fld label="DDP" value={form.ddp} onChange={set('ddp')} readOnly={locked.ddp} unit="$" />
             </Box>
           </Panel>
 
           <Panel label="SUPPLIER" color={C.green}>
             <Box sx={gridSx(5)}>
               <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit="₪" />
-              <Fld label="Price - Unit" value={form.price_unit_usd} onChange={set('price_unit_usd')} unit="$" />
+              <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
               <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit="₪" />
-              <Fld label="Price - Case" value={form.price_case_usd} onChange={set('price_case_usd')} unit="$" />
-              <Fld label="Price - FCL" value={form.price_fcl_usd} onChange={set('price_fcl_usd')} unit="$" />
+              <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
+              <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
             </Box>
           </Panel>
 
@@ -340,7 +382,6 @@ export const PricingFormPage = () => {
           </Box>
         </Box>
 
-        {/* RIGHT */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Panel>
             <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, mb: 1 }}>Currency Exchange</Typography>
@@ -349,7 +390,7 @@ export const PricingFormPage = () => {
             </Box>
             <Box sx={gridSx(2)}>
               <Fld label="Ex Rate" required value={form.ex_rate} onChange={set('ex_rate')} />
-              <Fld label="Ex Current" value={form.ex_current} onChange={set('ex_current')} />
+              <Fld label="Ex Current" value={form.ex_current} readOnly />
             </Box>
           </Panel>
 
@@ -362,7 +403,7 @@ export const PricingFormPage = () => {
           </Panel>
 
           <Panel color={C.green}>
-            <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={set('incoterms_supplier')} options={INCOTERMS_OPTIONS} />
+            <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={onIncoterm} options={INCOTERMS_OPTIONS} />
           </Panel>
 
           <Panel>
