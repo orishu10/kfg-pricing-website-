@@ -33,6 +33,18 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: { root: { textTransform: 'none', fontWeight: 600 } },
     },
+    MuiSelect: {
+      defaultProps: {
+        // Open the dropdown directly below the field instead of overlaying it.
+        // Cap the height so long lists scroll rather than growing past the
+        // viewport (which forces MUI to shift the menu back over the field).
+        MenuProps: {
+          anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+          transformOrigin: { vertical: 'top', horizontal: 'left' },
+          slotProps: { paper: { sx: { maxHeight: 320 } } },
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: { root: { backgroundImage: 'none' } },
     },

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import StorageIcon from "@mui/icons-material/Storage";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import kfgLogo from "../../../public/KFG-Logo.svg";
 import pmsLogo from "../../../public/Icon PMS.svg";
 import pricingLogo from "../../../public/Icon PRICING.svg";
@@ -24,7 +25,8 @@ export const HomePage = () => {
           flexShrink: 0,
           display: "flex",
           justifyContent: "center",
-          gap: 10,
+          flexWrap: "wrap",
+          gap: { xs: 4, md: 6 },
           pt: 6,
           pb: 2,
         }}
@@ -35,7 +37,12 @@ export const HomePage = () => {
           onClick={() => navigate("/dbm")}
         />
         <NavCard icon={pricingLogo} label="PRICING" onClick={() => navigate("/pricing")} />
-        <NavCard icon={pmsLogo} label="PMS" onClick={() => {}} />
+        <NavCard icon={pmsLogo} label="LOGISTICS" onClick={() => {}} />
+        <NavCard
+          icon={<AssessmentIcon sx={{ fontSize: 56 }} />}
+          label="REPORTS"
+          onClick={() => {}}
+        />
       </Box>
 
       {/* KFG logo */}

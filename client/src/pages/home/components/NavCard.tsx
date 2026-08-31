@@ -12,8 +12,8 @@ export const NavCard = ({ icon, label, onClick }: NavCardProps) => (
   <Box
     onClick={onClick}
     sx={{
-      width: 180,
-      height: 180,
+      width: 210,
+      height: 150,
       bgcolor: 'background.default',
       border: '2.5px solid',
       borderColor: 'primary.main',
