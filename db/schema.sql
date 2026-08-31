@@ -192,6 +192,7 @@ CREATE TABLE IF NOT EXISTS pricing (
     sap_price_unit       NUMERIC(14, 4),
     sap_price_case       NUMERIC(14, 4),
     sap_price_1kg        NUMERIC(14, 4),
+    weight_unit          VARCHAR(10)  DEFAULT 'KG',
 
     -- Attribution
     created_by           VARCHAR(100),

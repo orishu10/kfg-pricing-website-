@@ -7,8 +7,6 @@ import { fmtDate } from '../../pricing/utils/helpers';
 import { daysUntil, isUrgent, EXPIRY_WINDOW } from './utils/helpers';
 import type { Route } from '../../../api';
 
-const money = (v: string | null) => (v == null || v === '' ? '' : Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 }));
-
 const validityCell = (r: Route) => {
   const days = daysUntil(r.validity);
   const showChip = days != null && days >= 0 && days <= EXPIRY_WINDOW;
@@ -30,14 +28,10 @@ const validityCell = (r: Route) => {
 const columns: Column<Route>[] = [
   { key: 'id', label: '#', mono: true, align: 'center' },
   { key: 'reference', label: 'Reference', mono: true, render: (r) => r.reference ?? '' },
-  { key: 'agent', label: 'Agent', sortable: true, render: (r) => r.agent ?? '' },
   { key: 'shipping_line', label: 'Shipping Line', sortable: true, render: (r) => r.shipping_line ?? '' },
   { key: 'origin', label: 'Origin', sortable: true, render: (r) => r.origin ?? '' },
-  { key: 'origin_port', label: 'POL', sortable: true, render: (r) => r.origin_port ?? '' },
   { key: 'destination', label: 'Destination', sortable: true, render: (r) => r.destination ?? '' },
-  { key: 'destination_port', label: 'POD', sortable: true, render: (r) => r.destination_port ?? '' },
   { key: 'tt', label: 'TT', align: 'center', render: (r) => r.tt ?? '' },
-  { key: 'cif_usd', label: 'CIF $', align: 'right', render: (r) => money(r.cif_usd) },
   {
     key: 'validity',
     label: 'Validity',

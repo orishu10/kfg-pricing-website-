@@ -1,13 +1,31 @@
-import { EMPTY_PRICING, PRICING_KEYS, type PricingForm } from './consts';
-import type { Pricing } from '../../../api';
+import { EMPTY_PRICING, PRICING_KEYS, TEXT_KEYS, type PricingForm } from './consts';
+import { getFxRates, type Pricing } from '../../../api';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const LB_PER_KG = 2.20462;
+
+const INTEGER_KEYS: readonly string[] = [
+  'units_in_case', 'cases_in_fcl', 'cases_per_pallet', 'pallets_per_fcl', 'pallets',
+];
+const RATE_KEYS: readonly string[] = ['ex_rate', 'ex_current'];
+
+const toFixedStr = (v: string | number | null | undefined, digits: number): string => {
+  if (v == null || v === '') return '';
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isNaN(n) ? String(v) : n.toFixed(digits);
+};
+
+export const to2 = (v: string | number | null | undefined): string => toFixedStr(v, 2);
+export const to4 = (v: string | number | null | undefined): string => toFixedStr(v, 4);
 
 export const pricingToForm = (p: Pricing): PricingForm => {
   const out = { ...EMPTY_PRICING };
   PRICING_KEYS.forEach((k) => {
     const v = (p as unknown as Record<string, unknown>)[k];
-    out[k] = v == null ? '' : String(v);
+    if (v == null) { out[k] = ''; return; }
+    if (TEXT_KEYS.includes(k) || INTEGER_KEYS.includes(k)) out[k] = String(v);
+    else if (RATE_KEYS.includes(k)) out[k] = to4(v as string | number);
+    else out[k] = to2(v as string | number);
   });
   return out;
 };
@@ -18,10 +36,8 @@ export const symbol = (currency: string | null | undefined): string =>
 export const fetchFxRate = async (pair: string): Promise<number | null> => {
   const target = pair.includes('EUR') ? 'EUR' : 'USD';
   try {
-    const res = await fetch(`https://open.er-api.com/v6/latest/${target}`);
-    if (!res.ok) return null;
-    const data = (await res.json()) as { rates?: Record<string, number> };
-    const rate = data.rates?.ILS;
+    const rates = await getFxRates();
+    const rate = rates[target];
     return typeof rate === 'number' && rate > 0 ? rate : null;
   } catch {
     return null;
@@ -33,6 +49,15 @@ export const fmtDate = (iso: string | null): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${String(d.getDate()).padStart(2, '0')}-${MONTHS[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+};
+
+export const fmtDateTime = (iso: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${fmtDate(iso)} ${hh}:${mm}`;
 };
 
 export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
@@ -47,8 +72,8 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const cif = num('cif');
   const dap = num('dap');
   const ddp = num('ddp');
-  const tar = num('us_tariff');
-  const kfg = num('kfg_commission');
+  const tarPct = num('us_tariff_pct');
+  const kfgPct = num('kfg_commission_pct');
   const ex = num('ex_rate');
   const sup = num('supervision_cost');
 
@@ -62,6 +87,12 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
 
   const incoSum = fob + cif + dap + ddp;
   const st1 = incoSum > 0 || spFcl != null || sup > 0 ? incoSum + (spFcl ?? 0) + sup : null;
+
+  const tarVal = pfUsd != null ? (tarPct / 100) * pfUsd : null;
+  const kfgVal = st1 != null ? (kfgPct / 100) * st1 : null;
+  const tar = tarVal ?? 0;
+  const kfg = kfgVal ?? 0;
+
   const st2 = st1 != null ? st1 + tar : null;
   const imp = spFcl != null && spFcl > 0 ? incoSum / spFcl : null;
   const kfgTot = st1 != null ? kfg + st1 : null;
@@ -73,7 +104,12 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const pUnit = pCase != null && uic > 0 ? pCase / uic : null;
   const sapU = spCase != null && uic > 0 ? spCase / uic : null;
 
-  const s = (v: number | null) => (v != null ? v.toFixed(4) : '');
+  const wtEff = f.weight_unit === 'LB' ? wt * LB_PER_KG : wt;
+  const c1kg = cUnit != null && wtEff > 0 ? cUnit / wtEff : null;
+  const p1kg = pUnit != null && wtEff > 0 ? pUnit / wtEff : null;
+  const sap1kg = sapU != null && wtEff > 0 ? sapU / wtEff : null;
+
+  const s = (v: number | null) => (v != null ? v.toFixed(2) : '');
 
   return {
     supplier_price_case: s(spCase),
@@ -84,6 +120,8 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     price_fcl_usd: s(pfUsd),
     sub_total_1: s(st1),
     sub_total_2: s(st2),
+    us_tariff: s(tarVal),
+    kfg_commission: s(kfgVal),
     import_factor: s(imp),
     kfg_commission_total: s(kfgTot),
     tariffs_total: s(tarTot),
@@ -93,5 +131,8 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     price_case: s(pCase),
     price_unit: s(pUnit),
     sap_price_unit: s(sapU),
+    cost_1kg: s(c1kg),
+    price_1kg: s(p1kg),
+    sap_price_1kg: s(sap1kg),
   };
 };

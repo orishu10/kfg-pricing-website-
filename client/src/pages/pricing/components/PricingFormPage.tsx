@@ -11,15 +11,14 @@ import InputAdornment from '@mui/material/InputAdornment';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../components';
-import { fmt } from '../../items/utils/helpers';
 import {
   EMPTY_PRICING, NUMERIC_KEYS, type PricingForm,
-  PRICING_STATUS, CONTAINER_OPTIONS, INCOTERMS_OPTIONS, CURRENCY_PAIR_OPTIONS,
+  PRICING_STATUS, INCOTERMS_OPTIONS, CURRENCY_PAIR_OPTIONS, WEIGHT_UNIT_OPTIONS,
 } from '../utils/consts';
-import { derivePricing, pricingToForm, fetchFxRate, symbol } from '../utils/helpers';
+import { derivePricing, pricingToForm, fetchFxRate, symbol, fmtDateTime, to2, to4 } from '../utils/helpers';
 import {
-  getPricing, getItems, getCustomers, createPricing, updatePricing,
-  type PricingInput,
+  getPricing, getItems, getCustomers, getRoutes, createPricing, updatePricing,
+  type PricingInput, type Route,
 } from '../../../api';
 
 type Opt = string | { label: string; value: string };
@@ -28,10 +27,6 @@ const C = {
   log: '#e9e4f2', green: '#e6efe1', pink: '#f6e2e2', blue: '#dcecf4',
   grey: '#e6e6e6', tariff: '#e7dbf1', yellow: '#f6efc0',
 };
-
-// The chosen supplier incoterm locks every LOG price field after its stage (0 + read-only).
-const INCOTERM_STAGE: Record<string, number> = { FCA: 0, FOB: 1, CIF: 2, DAP: 3, DDP: 4 };
-const PRICE_STAGE = { fob: 1, cif: 2, dap: 3, ddp: 4 } as const;
 
 const LABEL_SX = { fontSize: '0.66rem', fontWeight: 700, color: '#3a3a3a', mb: 0.25 } as const;
 const INPUT_SX = { bgcolor: '#fff', '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.75 } } as const;
@@ -72,8 +67,8 @@ const Fld = ({ label, value, onChange, readOnly, unit, required }: {
   </Box>
 );
 
-const Sel = ({ label, value, onChange, options, required }: {
-  label?: string; value: string; onChange: (v: string) => void; options: Opt[]; required?: boolean;
+const Sel = ({ label, value, onChange, options, required, hideEmpty }: {
+  label?: string; value: string; onChange: (v: string) => void; options: Opt[]; required?: boolean; hideEmpty?: boolean;
 }) => (
   <Box sx={{ minWidth: 0 }}>
     <FieldLabel label={label} required={required} />
@@ -86,7 +81,7 @@ const Sel = ({ label, value, onChange, options, required }: {
       error={required && value === ''}
       sx={INPUT_SX}
     >
-      <MenuItem value=""><em>—</em></MenuItem>
+      {!hideEmpty && <MenuItem value=""><em>—</em></MenuItem>}
       {options.map((op) =>
         typeof op === 'string' ? (
           <MenuItem key={op} value={op}>{op}</MenuItem>
@@ -98,13 +93,14 @@ const Sel = ({ label, value, onChange, options, required }: {
   </Box>
 );
 
-const Panel = ({ label, color, children }: {
-  label?: string; color?: string; children: React.ReactNode;
+const Panel = ({ label, color, fill, children }: {
+  label?: string; color?: string; fill?: boolean; children: React.ReactNode;
 }) => (
   <Box
     sx={{
       position: 'relative', bgcolor: color ?? '#fff', border: '1px solid rgba(0,0,0,0.18)',
       borderRadius: 1.5, pt: label ? 2.4 : 1.5, px: 1.5, pb: 1.5,
+      ...(fill ? { height: '100%' } : {}),
     }}
   >
     {label && (
@@ -141,6 +137,7 @@ export const PricingFormPage = () => {
 
   const { data: items = [] } = useQuery({ queryKey: ['items'], queryFn: () => getItems() });
   const { data: customers = [] } = useQuery({ queryKey: ['customers'], queryFn: getCustomers });
+  const { data: routes = [] } = useQuery({ queryKey: ['routes'], queryFn: getRoutes });
   const sourceQuery = useQuery({
     queryKey: ['pricing', sourceId],
     queryFn: () => getPricing(sourceId!),
@@ -169,7 +166,7 @@ export const PricingFormPage = () => {
       const next: PricingForm = {
         ...prev,
         item_id: id,
-        unit_weight: it ? fmt(it.unit_weight) : '',
+        unit_weight: it ? to2(it.unit_weight) : '',
         units_in_case: it && it.units_in_case != null ? String(it.units_in_case) : '',
         cases_in_fcl: it && it.cases_in_fcl != null ? String(it.cases_in_fcl) : '',
         pack_size: it?.size ?? '',
@@ -193,13 +190,18 @@ export const PricingFormPage = () => {
       return { ...next, ...derivePricing(next) };
     });
 
-  const onIncoterm = (v: string) =>
+  const onRoute = (id: string) =>
     setForm((prev) => {
-      const stage = v in INCOTERM_STAGE ? INCOTERM_STAGE[v] : Infinity;
-      const next: PricingForm = { ...prev, incoterms_supplier: v };
-      (['fob', 'cif', 'dap', 'ddp'] as const).forEach((k) => {
-        if (PRICE_STAGE[k] > stage) next[k] = '0';
-      });
+      const r = routes.find((x) => x.id === id);
+      const next: PricingForm = {
+        ...prev,
+        route: id,
+        container_type: r?.container_type ?? '',
+        fob: r ? to2(r.fob_usd) : '',
+        cif: r ? to2(r.cif_usd) : '',
+        dap: r ? to2(r.dap_usd) : '',
+        ddp: r ? to2(r.ddp_usd) : '',
+      };
       return { ...next, ...derivePricing(next) };
     });
 
@@ -208,7 +210,7 @@ export const PricingFormPage = () => {
     if (!pair) return;
     let active = true;
     fetchFxRate(pair).then((rate) => {
-      if (active && rate != null) setForm((prev) => ({ ...prev, ex_current: rate.toFixed(4) }));
+      if (active && rate != null) setForm((prev) => ({ ...prev, ex_current: to4(rate) }));
     });
     return () => {
       active = false;
@@ -257,16 +259,17 @@ export const PricingFormPage = () => {
   const itemOptions = items.map((i) => ({ label: i.size ? `${i.name} — ${i.size}` : i.name, value: i.id }));
   const customerOptions = customers.map((c) => ({ label: c.name, value: c.id }));
 
-  const sym = symbol(form.currency);
-  const selStage = form.incoterms_supplier in INCOTERM_STAGE
-    ? INCOTERM_STAGE[form.incoterms_supplier]
-    : Infinity;
-  const locked = {
-    fob: PRICE_STAGE.fob > selStage,
-    cif: PRICE_STAGE.cif > selStage,
-    dap: PRICE_STAGE.dap > selStage,
-    ddp: PRICE_STAGE.ddp > selStage,
+  const routeLabel = (r: Route) => {
+    const leg = r.origin && r.destination ? `${r.origin} → ${r.destination}` : r.origin_port ?? '';
+    return [r.reference || r.id, leg].filter(Boolean).join(' · ');
   };
+  const routeOptions: Opt[] = routes.map((r) => ({ label: routeLabel(r), value: r.id }));
+  if (form.route && !routes.some((r) => r.id === form.route)) {
+    routeOptions.unshift({ label: form.route, value: form.route });
+  }
+
+  const sym = symbol(form.currency);
+  const weightUnit = form.weight_unit || 'KG';
 
   return (
     <Box component="form" onSubmit={handleSubmit}>
@@ -288,9 +291,15 @@ export const PricingFormPage = () => {
 
       <Box sx={{ mb: 2 }}><ErrorAlert message={error} /></Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'start' }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Panel label="DESCRIPTION">
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 340px' },
+            columnGap: 2, rowGap: 2.5, alignItems: 'stretch',
+          }}
+        >
+          <Panel label="DESCRIPTION" fill>
             <Box sx={gridSx(3)}>
               <Sel label="Item" required value={form.item_id} onChange={onItem} options={itemOptions} />
               <Fld label="Currency" value={form.currency} readOnly />
@@ -300,87 +309,7 @@ export const PricingFormPage = () => {
               <Fld label="KFG SKU #" value={form.kfg_sku} onChange={set('kfg_sku')} />
             </Box>
           </Panel>
-
-          <Panel label="LOG" color={C.log}>
-            <Box sx={{ ...gridSx(4), mb: 1.25 }}>
-              <Fld label="Unit Weight" value={form.unit_weight} readOnly />
-              <Fld label="Units / Case" value={form.units_in_case} readOnly />
-              <Fld label="Cases / Pallet" value={form.cases_per_pallet} onChange={set('cases_per_pallet')} />
-              <Fld label="Cases / FCL" value={form.cases_in_fcl} readOnly />
-            </Box>
-            <Box sx={gridSx(4)}>
-              <Fld label="FOB" value={form.fob} onChange={set('fob')} readOnly={locked.fob} unit="$" />
-              <Fld label="CIF" value={form.cif} onChange={set('cif')} readOnly={locked.cif} unit="$" />
-              <Fld label="DAP" value={form.dap} onChange={set('dap')} readOnly={locked.dap} unit="$" />
-              <Fld label="DDP" value={form.ddp} onChange={set('ddp')} readOnly={locked.ddp} unit="$" />
-            </Box>
-          </Panel>
-
-          <Panel label="SUPPLIER" color={C.green}>
-            <Box sx={gridSx(5)}>
-              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit="₪" />
-              <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
-              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit="₪" />
-              <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
-              <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
-            </Box>
-          </Panel>
-
-          <Box sx={gridSx(3, 1.5)}>
-            <Panel label="SUBTOTAL 1" color={C.pink}>
-              <Caption>LOG + Supplier + Supervision</Caption>
-              <Fld value={form.sub_total_1} readOnly unit="₪" />
-            </Panel>
-            <Panel label="SUBTOTAL 2" color={C.pink}>
-              <Caption>LOG + Supplier + US Tariff</Caption>
-              <Fld value={form.sub_total_2} readOnly unit="₪" />
-            </Panel>
-            <Panel label="TOTAL" color={C.blue}>
-              <Caption>Subtotal 2 + KFG</Caption>
-              <Fld value={form.total} readOnly unit="₪" />
-            </Panel>
-          </Box>
-
-          <Box sx={gridSx(2, 1.5)}>
-            <Panel label="KFG COMMISSION" color={C.grey}>
-              <Box sx={gridSx(2)}>
-                <Fld value={form.kfg_commission_pct} onChange={set('kfg_commission_pct')} unit="%" />
-                <Fld value={form.kfg_commission} onChange={set('kfg_commission')} unit="₪" />
-              </Box>
-            </Panel>
-            <Panel label="US TARIFF" color={C.tariff}>
-              <Box sx={gridSx(2)}>
-                <Fld value={form.us_tariff_pct} onChange={set('us_tariff_pct')} unit="%" />
-                <Fld value={form.us_tariff} onChange={set('us_tariff')} unit="$" />
-              </Box>
-            </Panel>
-          </Box>
-
-          <Panel label="SUPERVISION">
-            <Box sx={gridSx(2)}>
-              <Fld label="Cost" value={form.supervision_cost} onChange={set('supervision_cost')} unit="₪" />
-              <Fld label="Fees" value={form.supervision_fees} onChange={set('supervision_fees')} unit="₪" />
-            </Box>
-          </Panel>
-
-          <Box sx={gridSx(3, 1.5)}>
-            <Panel color={C.pink}>
-              <Fld label="Cost - Unit" value={form.cost_unit} readOnly unit="₪" />
-              <Box sx={{ mt: 1 }}><Fld label="Cost - Case" value={form.cost_case} readOnly unit="₪" /></Box>
-            </Panel>
-            <Panel color={C.blue}>
-              <Fld label="Price - Unit" value={form.price_unit} readOnly unit="₪" />
-              <Box sx={{ mt: 1 }}><Fld label="Price - Case" value={form.price_case} readOnly unit="₪" /></Box>
-            </Panel>
-            <Panel color={C.yellow}>
-              <Fld label="SAP Price - Unit" value={form.sap_price_unit} readOnly unit="₪" />
-              <Box sx={{ mt: 1 }}><Fld label="SAP Price - Case" value={form.sap_price_case} onChange={set('sap_price_case')} unit="₪" /></Box>
-            </Panel>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Panel>
+          <Panel fill>
             <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, mb: 1 }}>Currency Exchange</Typography>
             <Box sx={{ mb: 1.25 }}>
               <Sel value={form.currency_pair} onChange={set('currency_pair')} options={CURRENCY_PAIR_OPTIONS} />
@@ -391,49 +320,140 @@ export const PricingFormPage = () => {
             </Box>
           </Panel>
 
-          <Panel color={C.log}>
-            <Box sx={{ mb: 1.25 }}><Fld label="Route" value={form.route} onChange={set('route')} /></Box>
+          <Panel label="LOG" color={C.log} fill>
+            <Box sx={{ ...gridSx(4), mb: 1.25 }}>
+              <Fld label="Unit Weight" value={form.unit_weight} readOnly />
+              <Fld label="Units / Case" value={form.units_in_case} readOnly />
+              <Fld label="Cases / Pallet" value={form.cases_per_pallet} onChange={set('cases_per_pallet')} />
+              <Fld label="Cases / FCL" value={form.cases_in_fcl} readOnly />
+            </Box>
+            <Box sx={gridSx(4)}>
+              <Fld label="FOB" value={form.fob} readOnly unit="$" />
+              <Fld label="CIF" value={form.cif} readOnly unit="$" />
+              <Fld label="DAP" value={form.dap} readOnly unit="$" />
+              <Fld label="DDP" value={form.ddp} readOnly unit="$" />
+            </Box>
+          </Panel>
+          <Panel color={C.log} fill>
+            <Box sx={{ mb: 1.25 }}>
+              <Sel label="Route" value={form.route} onChange={onRoute} options={routeOptions} />
+            </Box>
             <Box sx={gridSx(2)}>
-              <Sel label="Container Type" value={form.container_type} onChange={set('container_type')} options={CONTAINER_OPTIONS} />
+              <Fld label="Container Type" value={form.container_type} readOnly />
               <Fld label="Pallets" value={form.pallets} onChange={set('pallets')} />
             </Box>
           </Panel>
+        </Box>
 
-          <Panel color={C.green}>
-            <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={onIncoterm} options={INCOTERMS_OPTIONS} />
-          </Panel>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'end' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Panel label="SUPPLIER" color={C.green}>
+              <Box sx={gridSx(5)}>
+                <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit="₪" />
+                <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
+                <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit="₪" />
+                <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
+                <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
+              </Box>
+            </Panel>
 
-          <Panel>
-            <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, mb: 1 }}>1KG INDICATOR</Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box sx={{ bgcolor: C.pink, borderRadius: 1, p: 1 }}>
-                <Fld label="Cost - 1KG" value={form.cost_1kg} onChange={set('cost_1kg')} unit="₪" />
-              </Box>
-              <Box sx={{ bgcolor: C.blue, borderRadius: 1, p: 1 }}>
-                <Fld label="Price - 1KG" value={form.price_1kg} onChange={set('price_1kg')} unit="₪" />
-              </Box>
-              <Box sx={{ bgcolor: C.yellow, borderRadius: 1, p: 1 }}>
-                <Fld label="SAP Price - 1KG" value={form.sap_price_1kg} onChange={set('sap_price_1kg')} unit="₪" />
-              </Box>
+            <Box sx={gridSx(3, 1.5)}>
+              <Panel label="SUBTOTAL 1" color={C.pink}>
+                <Caption>LOG + Supplier + Supervision</Caption>
+                <Fld value={form.sub_total_1} readOnly unit="₪" />
+              </Panel>
+              <Panel label="SUBTOTAL 2" color={C.pink}>
+                <Caption>LOG + Supplier + US Tariff</Caption>
+                <Fld value={form.sub_total_2} readOnly unit="₪" />
+              </Panel>
+              <Panel label="TOTAL" color={C.blue}>
+                <Caption>Subtotal 2 + KFG</Caption>
+                <Fld value={form.total} readOnly unit="₪" />
+              </Panel>
             </Box>
-          </Panel>
 
-          <Panel>
-            <Fld label="Import Factor" value={form.import_factor} readOnly unit="%" />
-          </Panel>
-
-          {isEdit && (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
-                <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Created by</Typography>
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>{p?.created_by || '—'}</Typography>
-              </Box>
-              <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
-                <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Last Updated by</Typography>
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>{p?.updated_by || '—'}</Typography>
-              </Box>
+            <Box sx={gridSx(2, 1.5)}>
+              <Panel label="KFG COMMISSION" color={C.grey}>
+                <Box sx={gridSx(2)}>
+                  <Fld value={form.kfg_commission_pct} onChange={set('kfg_commission_pct')} unit="%" />
+                  <Fld value={form.kfg_commission} readOnly unit="₪" />
+                </Box>
+              </Panel>
+              <Panel label="US TARIFF" color={C.tariff}>
+                <Box sx={gridSx(2)}>
+                  <Fld value={form.us_tariff_pct} onChange={set('us_tariff_pct')} unit="%" />
+                  <Fld value={form.us_tariff} readOnly unit="$" />
+                </Box>
+              </Panel>
             </Box>
-          )}
+
+            <Panel label="SUPERVISION">
+              <Box sx={gridSx(2)}>
+                <Fld label="Cost" value={form.supervision_cost} onChange={set('supervision_cost')} unit="₪" />
+                <Fld label="Fees" value={form.supervision_fees} onChange={set('supervision_fees')} unit="₪" />
+              </Box>
+            </Panel>
+
+            <Box sx={gridSx(3, 1.5)}>
+              <Panel color={C.pink}>
+                <Fld label="Cost - Unit" value={form.cost_unit} readOnly unit="₪" />
+                <Box sx={{ mt: 1 }}><Fld label="Cost - Case" value={form.cost_case} readOnly unit="₪" /></Box>
+              </Panel>
+              <Panel color={C.blue}>
+                <Fld label="Price - Unit" value={form.price_unit} readOnly unit="₪" />
+                <Box sx={{ mt: 1 }}><Fld label="Price - Case" value={form.price_case} readOnly unit="₪" /></Box>
+              </Panel>
+              <Panel color={C.yellow}>
+                <Fld label="SAP Price - Unit" value={form.sap_price_unit} readOnly unit="₪" />
+                <Box sx={{ mt: 1 }}><Fld label="SAP Price - Case" value={form.sap_price_case} onChange={set('sap_price_case')} unit="₪" /></Box>
+              </Panel>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Panel color={C.green}>
+              <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={set('incoterms_supplier')} options={INCOTERMS_OPTIONS} />
+            </Panel>
+
+            <Panel>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700 }}>{`1${weightUnit} INDICATOR`}</Typography>
+                <Box sx={{ width: 90 }}>
+                  <Sel value={weightUnit} onChange={set('weight_unit')} options={WEIGHT_UNIT_OPTIONS} hideEmpty />
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ bgcolor: C.pink, borderRadius: 1, p: 1 }}>
+                  <Fld label={`Cost - 1${weightUnit}`} value={form.cost_1kg} readOnly unit="₪" />
+                </Box>
+                <Box sx={{ bgcolor: C.blue, borderRadius: 1, p: 1 }}>
+                  <Fld label={`Price - 1${weightUnit}`} value={form.price_1kg} readOnly unit="₪" />
+                </Box>
+                <Box sx={{ bgcolor: C.yellow, borderRadius: 1, p: 1 }}>
+                  <Fld label={`SAP Price - 1${weightUnit}`} value={form.sap_price_1kg} readOnly unit="₪" />
+                </Box>
+              </Box>
+            </Panel>
+
+            <Panel>
+              <Fld label="Import Factor" value={form.import_factor} readOnly unit="%" />
+            </Panel>
+
+            {isEdit && (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
+                  <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Created by</Typography>
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{p?.created_by || '—'}</Typography>
+                  <Typography sx={{ fontSize: '0.66rem', color: '#999' }}>{fmtDateTime(p?.created_at ?? null) || '—'}</Typography>
+                </Box>
+                <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
+                  <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Last Updated by</Typography>
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{p?.updated_by || '—'}</Typography>
+                  <Typography sx={{ fontSize: '0.66rem', color: '#999' }}>{fmtDateTime(p?.updated_at ?? null) || '—'}</Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
 

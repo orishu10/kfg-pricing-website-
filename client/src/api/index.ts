@@ -200,6 +200,7 @@ export interface Pricing {
   cost_unit: N; cost_case: N; cost_1kg: N;
   price_unit: N; price_case: N; price_1kg: N;
   sap_price_unit: N; sap_price_case: N; sap_price_1kg: N;
+  weight_unit: string | null;
 
   created_by: string | null;
   updated_by: string | null;
@@ -257,6 +258,75 @@ export const createRoute = async (data: RouteInput) =>
 export const updateRoute = async (id: string, data: RouteInput) =>
   (await api.put<Route>(`/routes/${id}`, data)).data;
 export const deleteRoute = async (id: string) => api.delete(`/routes/${id}`);
+
+export interface WeeklyShipment {
+  id: string;
+  con: string | null;
+  customer: string | null;
+  supplier: string | null;
+  description: string | null;
+  pup: string | null;
+  pol: string | null;
+  pod: string | null;
+  vessel: string | null;
+  voyage: string | null;
+  etd: string | null;
+  eta: string | null;
+  booked: boolean;
+
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export type WeeklyShipmentInput = Record<string, string | number | boolean | null | undefined>;
+
+export const getWeeklyShipments = async () =>
+  (await api.get<WeeklyShipment[]>('/weekly-shipments')).data;
+export const getWeeklyShipment = async (id: string) =>
+  (await api.get<WeeklyShipment>(`/weekly-shipments/${id}`)).data;
+export const createWeeklyShipment = async (data: WeeklyShipmentInput) =>
+  (await api.post<WeeklyShipment>('/weekly-shipments', data)).data;
+export const updateWeeklyShipment = async (id: string, data: WeeklyShipmentInput) =>
+  (await api.put<WeeklyShipment>(`/weekly-shipments/${id}`, data)).data;
+export const deleteWeeklyShipment = async (id: string) => api.delete(`/weekly-shipments/${id}`);
+
+export interface Schedule {
+  id: string;
+  vessel: string | null;
+  voyage: string | null;
+  pol: string | null;
+  pod: string | null;
+  etd: string | null;
+  eta: string | null;
+  tt: string | null;
+  ddl_con: string | null;
+  ddl_docs: string | null;
+  ddl_port: string | null;
+
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export type ScheduleInput = Record<string, string | number | null | undefined>;
+
+export const getSchedules = async () => (await api.get<Schedule[]>('/schedules')).data;
+export const getSchedule = async (id: string) => (await api.get<Schedule>(`/schedules/${id}`)).data;
+export const createSchedule = async (data: ScheduleInput) =>
+  (await api.post<Schedule>('/schedules', data)).data;
+export const updateSchedule = async (id: string, data: ScheduleInput) =>
+  (await api.put<Schedule>(`/schedules/${id}`, data)).data;
+export const deleteSchedule = async (id: string) => api.delete(`/schedules/${id}`);
+
+export interface FxRates {
+  USD: number | null;
+  EUR: number | null;
+}
+
+export const getFxRates = async () => (await api.get<FxRates>('/fx')).data;
 
 // Auth
 export const login = async (username: string, password: string) =>

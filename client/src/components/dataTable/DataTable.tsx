@@ -74,6 +74,7 @@ interface DataTableProps<T> {
   disableFilters?: boolean;
   /** Custom content rendered centered in the toolbar (e.g. a week picker). */
   headerCenter?: React.ReactNode;
+  fitWidth?: boolean;
 }
 
 const HEADER_BG = "#7c7f83";
@@ -131,6 +132,7 @@ export function DataTable<T>({
   onImport,
   disableFilters,
   headerCenter,
+  fitWidth,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     null,
@@ -553,8 +555,8 @@ export function DataTable<T>({
         );
       })()}
 
-      <TableContainer>
-        <Table size="small">
+      <TableContainer sx={fitWidth ? { overflowX: "hidden" } : undefined}>
+        <Table size="small" sx={fitWidth ? { width: "100%", tableLayout: "fixed" } : undefined}>
           <TableHead>
             <TableRow>
               {selectable && (
@@ -585,6 +587,7 @@ export function DataTable<T>({
                     }
                     sx={{
                       ...headCellSx,
+                      whiteSpace: fitWidth ? "normal" : headCellSx.whiteSpace,
                       borderRight: showDivider ? HEAD_DIVIDER : "none",
                       cursor: col.sortable ? "pointer" : "default",
                     }}

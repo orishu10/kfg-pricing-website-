@@ -1,6 +1,7 @@
 export const PRICING_STATUS = ['Active', 'Inactive'];
 export const CONTAINER_OPTIONS = ['REF40HC', 'REF20HC', 'DRY40HC', 'DRY20HC'];
 export const INCOTERMS_OPTIONS = ['FCA', 'FOB', 'CIF', 'DAP', 'DDP'];
+export const WEIGHT_UNIT_OPTIONS = ['KG', 'LB'];
 export const CURRENCY_OPTIONS = ['USD', 'ILS', 'EUR', 'GBP'];
 export const CURRENCY_PAIR_OPTIONS = ['ILS > USD', 'ILS > EUR'];
 
@@ -18,6 +19,7 @@ export const PRICING_KEYS = [
   'cost_unit', 'cost_case', 'cost_1kg',
   'price_unit', 'price_case', 'price_1kg',
   'sap_price_unit', 'sap_price_case', 'sap_price_1kg',
+  'weight_unit',
 ] as const;
 
 export type PricingForm = Record<(typeof PRICING_KEYS)[number], string>;
@@ -26,11 +28,10 @@ export const EMPTY_PRICING: PricingForm = Object.fromEntries(
   PRICING_KEYS.map((k) => [k, '']),
 ) as PricingForm;
 
-// Text fields may stay empty (NULL); all other keys are numeric and default to 0.
 export const TEXT_KEYS: readonly string[] = [
   'customer_id', 'item_id', 'kfg_sku', 'status',
   'currency', 'pack_size', 'currency_pair', 'route', 'container_type', 'incoterms_supplier',
-  'supplier_name', 'description',
+  'supplier_name', 'description', 'weight_unit',
 ];
 
 export const NUMERIC_KEYS: readonly string[] = PRICING_KEYS.filter((k) => !TEXT_KEYS.includes(k));

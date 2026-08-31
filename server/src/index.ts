@@ -11,6 +11,9 @@ import suppliersRouter from './routes/suppliers';
 import itemsRouter from './routes/items';
 import pricingRouter from './routes/pricing';
 import routesRouter from './routes/routes';
+import weeklyShipmentsRouter from './routes/weeklyShipments';
+import schedulesRouter from './routes/schedules';
+import fxRouter from './routes/fx';
 import authRouter from './routes/auth';
 
 dotenv.config();
@@ -35,7 +38,7 @@ app.use(
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         'style-src': ["'self'", "'unsafe-inline'"],
         'img-src': ["'self'", 'data:', 'blob:'],
-        'connect-src': ["'self'", 'https://open.er-api.com'],
+        'connect-src': ["'self'"],
       },
     },
   })
@@ -68,6 +71,9 @@ app.use('/api/suppliers', suppliersRouter);
 app.use('/api/items', itemsRouter);
 app.use('/api/pricing', pricingRouter);
 app.use('/api/routes', routesRouter);
+app.use('/api/weekly-shipments', weeklyShipmentsRouter);
+app.use('/api/schedules', schedulesRouter);
+app.use('/api/fx', fxRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

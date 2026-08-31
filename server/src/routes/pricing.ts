@@ -19,7 +19,7 @@ const COLUMNS = [
   'kfg_commission', 'kfg_commission_pct', 'kfg_commission_total', 'tariffs_total', 'total', 'usd_nis',
   'supervision_cost', 'supervision_fees',
   'cost_unit', 'cost_case', 'cost_1kg', 'price_unit', 'price_case', 'price_1kg',
-  'sap_price_unit', 'sap_price_case', 'sap_price_1kg',
+  'sap_price_unit', 'sap_price_case', 'sap_price_1kg', 'weight_unit',
 ] as const;
 
 const LIST_SELECT = `
