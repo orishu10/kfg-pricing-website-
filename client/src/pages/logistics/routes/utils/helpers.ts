@@ -1,0 +1,77 @@
+import { EMPTY_ROUTE, ROUTE_KEYS, INCOTERMS, type RouteForm } from './consts';
+import type { Route } from '../../../../api';
+
+export const routeToForm = (r: Route): RouteForm => {
+  const out = { ...EMPTY_ROUTE };
+  ROUTE_KEYS.forEach((k) => {
+    const v = (r as unknown as Record<string, unknown>)[k];
+    out[k] = v == null ? '' : String(v);
+  });
+  if (out.validity) out.validity = out.validity.slice(0, 10);
+  return out;
+};
+
+export const deriveRoute = (f: RouteForm): Partial<RouteForm> => {
+  const num = (k: keyof RouteForm) => parseFloat(f[k]) || 0;
+  const usdRate = num('usd_rate');
+  const eurRate = num('eur_rate');
+  const s = (v: number | null) => (v != null ? v.toFixed(4) : '');
+
+  const out: Partial<RouteForm> = {};
+  INCOTERMS.forEach((x) => {
+    const cur = (f[`${x}_currency` as keyof RouteForm] || 'ILS').toUpperCase();
+    const ilsK = `${x}_ils` as keyof RouteForm;
+    const usdK = `${x}_usd` as keyof RouteForm;
+    const eurK = `${x}_eur` as keyof RouteForm;
+
+    let ils: number | null = null;
+    let usd: number | null = null;
+    let eur: number | null = null;
+
+    if (cur === 'USD') {
+      const v = num(usdK);
+      ils = v * usdRate;
+      eur = eurRate > 0 ? (v * usdRate) / eurRate : null;
+    } else if (cur === 'EUR') {
+      const v = num(eurK);
+      ils = v * eurRate;
+      usd = usdRate > 0 ? (v * eurRate) / usdRate : null;
+    } else {
+      const v = num(ilsK);
+      usd = usdRate > 0 ? v / usdRate : null;
+      eur = eurRate > 0 ? v / eurRate : null;
+    }
+
+    if (cur !== 'ILS') out[ilsK] = s(ils);
+    if (cur !== 'USD') out[usdK] = s(usd);
+    if (cur !== 'EUR') out[eurK] = s(eur);
+  });
+  return out;
+};
+
+const toLocalDate = (iso: string): Date | null => {
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+};
+
+export const daysUntil = (validity: string | null): number | null => {
+  if (!validity) return null;
+  const target = toLocalDate(validity);
+  if (!target) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+};
+
+export const EXPIRY_WINDOW = 7;
+export const isUrgent = (days: number) => days <= 1;
+
+export const expiryLabel = (days: number): string =>
+  days <= 0 ? 'expires today' : days === 1 ? 'expires tomorrow' : `expires in ${days} days`;
+
+export const expiringSoon = <T extends { validity: string | null }>(routes: T[]) =>
+  routes
+    .map((r) => ({ route: r, days: daysUntil(r.validity) }))
+    .filter((x): x is { route: T; days: number } => x.days != null && x.days >= 0 && x.days <= EXPIRY_WINDOW)
+    .sort((a, b) => a.days - b.days);

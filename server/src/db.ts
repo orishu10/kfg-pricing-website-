@@ -1,7 +1,9 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+types.setTypeParser(1082, (v) => v);
 
 // Managed Postgres providers (Render, Railway, Heroku, etc.) require TLS.
 // Enable it whenever DB_SSL=true or a single DATABASE_URL is provided.

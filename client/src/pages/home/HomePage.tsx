@@ -37,7 +37,7 @@ export const HomePage = () => {
           onClick={() => navigate("/dbm")}
         />
         <NavCard icon={pricingLogo} label="PRICING" onClick={() => navigate("/pricing")} />
-        <NavCard icon={pmsLogo} label="LOGISTICS" onClick={() => {}} />
+        <NavCard icon={pmsLogo} label="LOGISTICS" onClick={() => navigate("/logistics")} />
         <NavCard
           icon={<AssessmentIcon sx={{ fontSize: 56 }} />}
           label="REPORTS"

@@ -6,11 +6,11 @@ import type { Supplier } from '../../api';
 
 const columns: Column<Supplier>[] = [
   { key: 'id', label: '#', mono: true, align: 'center' },
-  { key: 'name', label: 'Supplier', sortable: true },
-  { key: 'short_name', label: 'Short Name', sortable: true, render: (r) => r.short_name ?? '' },
+  { key: 'name', label: 'Supplier', sortable: true, filterable: false },
+  { key: 'short_name', label: 'Short Name', sortable: true, filterable: false, render: (r) => r.short_name ?? '' },
   { key: 'address', label: 'Address', render: (r) => r.address ?? '' },
   { key: 'city', label: 'City', render: (r) => r.city ?? '' },
-  { key: 'country', label: 'Country', render: (r) => r.country ?? '' },
+  { key: 'country', label: 'Country', filterable: true, render: (r) => r.country ?? '' },
   { key: 'incoterms', label: 'Incoterms', sortable: true, render: (r) => r.incoterms ?? '' },
 ];
 

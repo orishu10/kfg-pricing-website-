@@ -221,6 +221,43 @@ export const updatePricing = async (id: string, data: PricingInput) =>
   (await api.put<Pricing>(`/pricing/${id}`, data)).data;
 export const deletePricing = async (id: string) => api.delete(`/pricing/${id}`);
 
+export interface Route {
+  id: string;
+  reference: string | null;
+  agent: string | null;
+  shipping_line: string | null;
+  origin: string | null;
+  destination: string | null;
+  origin_port: string | null;
+  destination_port: string | null;
+  container_type: string | null;
+  tt: string | null;
+  validity: string | null;
+
+  usd_rate: N;
+  eur_rate: N;
+
+  fob_currency: string | null; fob_ils: N; fob_usd: N; fob_eur: N;
+  cif_currency: string | null; cif_ils: N; cif_usd: N; cif_eur: N;
+  dap_currency: string | null; dap_ils: N; dap_usd: N; dap_eur: N;
+  ddp_currency: string | null; ddp_ils: N; ddp_usd: N; ddp_eur: N;
+
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export type RouteInput = Record<string, string | number | null | undefined>;
+
+export const getRoutes = async () => (await api.get<Route[]>('/routes')).data;
+export const getRoute = async (id: string) => (await api.get<Route>(`/routes/${id}`)).data;
+export const createRoute = async (data: RouteInput) =>
+  (await api.post<Route>('/routes', data)).data;
+export const updateRoute = async (id: string, data: RouteInput) =>
+  (await api.put<Route>(`/routes/${id}`, data)).data;
+export const deleteRoute = async (id: string) => api.delete(`/routes/${id}`);
+
 // Auth
 export const login = async (username: string, password: string) =>
   (await api.post<{ token: string; username: string }>('/auth/login', { username, password })).data;

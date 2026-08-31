@@ -44,6 +44,8 @@ export interface Column<T> {
   label: string;
   align?: "left" | "center" | "right";
   sortable?: boolean;
+  /** Show the per-column filter dropdown. Defaults to `sortable` when unset. */
+  filterable?: boolean;
   mono?: boolean;
   render?: (row: T) => React.ReactNode;
   value?: (row: T) => string | number | null;
@@ -68,6 +70,10 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   exportFileName?: string;
   onImport?: (rows: Record<string, string>[]) => void;
+  /** Hide the per-column filter buttons (sorting is still available). */
+  disableFilters?: boolean;
+  /** Custom content rendered centered in the toolbar (e.g. a week picker). */
+  headerCenter?: React.ReactNode;
 }
 
 const HEADER_BG = "#7c7f83";
@@ -123,6 +129,8 @@ export function DataTable<T>({
   searchPlaceholder = "Search…",
   exportFileName,
   onImport,
+  disableFilters,
+  headerCenter,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     null,
@@ -153,7 +161,8 @@ export function DataTable<T>({
     onAdd ||
     onSearchChange ||
     exportFileName ||
-    onImport
+    onImport ||
+    headerCenter
   );
   const showSearch = onSearchChange !== undefined;
 
@@ -389,6 +398,12 @@ export function DataTable<T>({
             )}
           </Box>
 
+          {headerCenter && (
+            <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+              {headerCenter}
+            </Box>
+          )}
+
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {showSearch && (
               <Box sx={{ width: { xs: 150, sm: 220 } }}>
@@ -559,6 +574,7 @@ export function DataTable<T>({
               )}
               {columns.map((col, idx) => {
                 const active = sort?.key === col.key;
+                const canFilter = (col.filterable ?? col.sortable) && !disableFilters;
                 const showDivider = idx < columns.length - 1 || hasActions;
                 return (
                   <TableCell
@@ -588,7 +604,7 @@ export function DataTable<T>({
                         ) : (
                           <ArrowDropDownIcon sx={{ fontSize: 18 }} />
                         ))}
-                      {col.sortable && (
+                      {canFilter && (
                         <IconButton
                           size="small"
                           aria-label={`Filter ${col.label}`}

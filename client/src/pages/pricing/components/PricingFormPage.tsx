@@ -283,9 +283,6 @@ export const PricingFormPage = () => {
           <Box sx={{ width: 160 }}>
             <Sel label="STATUS" value={form.status} onChange={set('status')} options={PRICING_STATUS} />
           </Box>
-          <Button type="submit" variant="contained" disabled={!canSave} size="large">
-            Save
-          </Button>
         </Box>
       </Box>
 
