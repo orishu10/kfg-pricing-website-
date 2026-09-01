@@ -104,8 +104,7 @@ const start = async () => {
   try {
     await runMigrations();
   } catch (err) {
-    console.error('✗ Migrations failed:', err);
-    process.exit(1);
+    console.error('✗ Migrations failed (starting anyway):', err);
   }
 
   app.listen(PORT, () => {
