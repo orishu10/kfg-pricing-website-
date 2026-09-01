@@ -101,7 +101,6 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const st2 = st1 != null ? st1 + tar : null;
   const imp = st1 != null && st1 > 0 ? incoSum / st1 : null;
   const kfgTot = st1 != null ? kfg + st1 : null;
-  const tarTot = spFcl != null && tar > 0 ? spFcl * tar : null;
   const tot = st2 != null ? st2 + kfg : null;
   const cCase = st2 != null && cifcl > 0 ? st2 / cifcl : null;
   const cUnit = cCase != null && uic > 0 ? cCase / uic : null;
@@ -131,7 +130,7 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     kfg_commission: s(kfgVal),
     import_factor: imp != null ? (imp * 100).toFixed(2) : '',
     kfg_commission_total: s(kfgTot),
-    tariffs_total: s(tarTot),
+    tariffs_total: '',
     total: s(tot),
     cost_case: s(cCase),
     cost_unit: s(cUnit),
