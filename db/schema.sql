@@ -181,6 +181,8 @@ CREATE TABLE IF NOT EXISTS pricing (
     usd_nis              NUMERIC(14, 4),
     supervision_cost     NUMERIC(14, 4),
     supervision_fees     NUMERIC(14, 4),
+    supervision_cost_rate NUMERIC(14, 4),
+    supervision_fees_rate NUMERIC(14, 4),
 
     -- Final cost & price
     cost_unit            NUMERIC(14, 4),

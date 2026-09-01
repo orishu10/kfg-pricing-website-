@@ -196,6 +196,8 @@ export interface Pricing {
   usd_nis: N;
   supervision_cost: N;
   supervision_fees: N;
+  supervision_cost_rate: N;
+  supervision_fees_rate: N;
 
   cost_unit: N; cost_case: N; cost_1kg: N;
   price_unit: N; price_case: N; price_1kg: N;

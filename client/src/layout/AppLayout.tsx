@@ -151,6 +151,7 @@ export const AppLayout = () => {
                   label={m.label}
                   value={m.path}
                   disabled={!m.ready}
+                  onClick={() => navigate(m.path)}
                   sx={{ textTransform: 'none', fontWeight: 600 }}
                 />
               ))}
@@ -319,6 +320,7 @@ export const AppLayout = () => {
                   label={c.label}
                   value={c.path}
                   disabled={!c.ready}
+                  onClick={() => navigate(c.path)}
                   sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.8rem' }}
                 />
               ))}

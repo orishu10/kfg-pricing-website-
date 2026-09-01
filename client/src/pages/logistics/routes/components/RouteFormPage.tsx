@@ -4,13 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import InputAdornment from '@mui/material/InputAdornment';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../../components';
+import { FormField, FormSelect, FormPanel, gridSx } from '../../components/form';
 import {
   EMPTY_ROUTE, CURRENCY_OPTIONS, CONTAINER_OPTIONS, INCOTERMS,
   SHIPPING_LINE_OPTIONS, POL_OPTIONS, POD_OPTIONS, type RouteForm,
@@ -20,89 +17,10 @@ import {
   getRoute, createRoute, updateRoute, type RouteInput,
 } from '../../../../api';
 
-type Opt = string | { label: string; value: string };
-
 const C = {
   log: '#e9e4f2', green: '#e6efe1', pink: '#f6e2e2', blue: '#dcecf4',
   grey: '#e6e6e6', tariff: '#e7dbf1', yellow: '#f6efc0',
 };
-
-const LABEL_SX = { fontSize: '0.66rem', fontWeight: 700, color: '#3a3a3a', mb: 0.25 } as const;
-const INPUT_SX = { bgcolor: '#fff', '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.75 } } as const;
-
-const gridSx = (cols: number, gap = 1.25) => ({
-  display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap,
-});
-
-const FieldLabel = ({ label }: { label?: string }) =>
-  label ? <Typography sx={LABEL_SX}>{label}</Typography> : null;
-
-const Fld = ({ label, value, onChange, readOnly, unit, type }: {
-  label?: string; value: string; onChange?: (v: string) => void; readOnly?: boolean; unit?: string; type?: string;
-}) => (
-  <Box sx={{ minWidth: 0 }}>
-    <FieldLabel label={label} />
-    <TextField
-      value={value}
-      type={type}
-      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-      size="small"
-      fullWidth
-      slotProps={{
-        input: {
-          readOnly,
-          sx: { ...INPUT_SX, bgcolor: readOnly ? 'rgba(0,0,0,0.05)' : '#fff' },
-          endAdornment: unit ? (
-            <InputAdornment position="end" sx={{ '& p': { fontSize: '0.75rem' } }}>{unit}</InputAdornment>
-          ) : undefined,
-        },
-      }}
-    />
-  </Box>
-);
-
-const Sel = ({ label, value, onChange, options }: {
-  label?: string; value: string; onChange: (v: string) => void; options: Opt[];
-}) => (
-  <Box sx={{ minWidth: 0 }}>
-    <FieldLabel label={label} />
-    <Select value={value} onChange={(e) => onChange(e.target.value)} size="small" fullWidth displayEmpty sx={INPUT_SX}>
-      <MenuItem value=""><em>—</em></MenuItem>
-      {options.map((op) =>
-        typeof op === 'string' ? (
-          <MenuItem key={op} value={op}>{op}</MenuItem>
-        ) : (
-          <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>
-        ),
-      )}
-    </Select>
-  </Box>
-);
-
-const Panel = ({ label, color, children }: {
-  label?: string; color?: string; children: React.ReactNode;
-}) => (
-  <Box
-    sx={{
-      position: 'relative', bgcolor: color ?? '#fff', border: '1px solid rgba(0,0,0,0.18)',
-      borderRadius: 1.5, pt: label ? 2.4 : 1.5, px: 1.5, pb: 1.5,
-    }}
-  >
-    {label && (
-      <Box
-        sx={{
-          position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
-          bgcolor: '#efefef', border: '1px solid rgba(0,0,0,0.18)', borderRadius: 5, px: 1.2, py: 0.15,
-        }}
-      >
-        <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: 0.6, color: '#555', whiteSpace: 'nowrap' }}>
-          {label}
-        </Typography>
-      </Box>
-    )}
-    {children}
-  </Box>
-);
 
 const PRICE_COLORS: Record<string, string> = { fob: C.green, cif: C.blue, dap: C.pink, ddp: C.yellow };
 
@@ -173,29 +91,29 @@ export const RouteFormPage = () => {
   const priceBox = (x: (typeof INCOTERMS)[number]) => {
     const cur = form[`${x}_currency` as keyof RouteForm] || 'ILS';
     return (
-      <Panel key={x} label={x.toUpperCase()} color={PRICE_COLORS[x]}>
+      <FormPanel key={x} label={x.toUpperCase()} color={PRICE_COLORS[x]}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Sel
+          <FormSelect
             label="Currency"
             value={form[`${x}_currency` as keyof RouteForm]}
             onChange={set(`${x}_currency` as keyof RouteForm)}
             options={CURRENCY_OPTIONS}
           />
-          <Fld
+          <FormField
             label="ILS"
             value={form[`${x}_ils` as keyof RouteForm]}
             onChange={set(`${x}_ils` as keyof RouteForm)}
             readOnly={cur !== 'ILS'}
             unit="₪"
           />
-          <Fld
+          <FormField
             label="USD"
             value={form[`${x}_usd` as keyof RouteForm]}
             onChange={set(`${x}_usd` as keyof RouteForm)}
             readOnly={cur !== 'USD'}
             unit="$"
           />
-          <Fld
+          <FormField
             label="EUR"
             value={form[`${x}_eur` as keyof RouteForm]}
             onChange={set(`${x}_eur` as keyof RouteForm)}
@@ -203,7 +121,7 @@ export const RouteFormPage = () => {
             unit="€"
           />
         </Box>
-      </Panel>
+      </FormPanel>
     );
   };
 
@@ -223,34 +141,34 @@ export const RouteFormPage = () => {
       <Box sx={{ mb: 2 }}><ErrorAlert message={error} /></Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-        <Panel label="DETAILS">
+        <FormPanel label="DETAILS">
           <Box sx={{ ...gridSx(4), mb: 1.25 }}>
-            <Fld label="Reference / LOG #" value={form.reference} onChange={set('reference')} />
-            <Fld label="Agent" value={form.agent} onChange={set('agent')} />
-            <Sel label="Shipping Line" value={form.shipping_line} onChange={set('shipping_line')} options={SHIPPING_LINE_OPTIONS} />
-            <Sel label="Container Type" value={form.container_type} onChange={set('container_type')} options={CONTAINER_OPTIONS} />
+            <FormField label="Reference / LOG #" value={form.reference} onChange={set('reference')} />
+            <FormField label="Agent" value={form.agent} onChange={set('agent')} />
+            <FormSelect label="Shipping Line" value={form.shipping_line} onChange={set('shipping_line')} options={SHIPPING_LINE_OPTIONS} />
+            <FormSelect label="Container Type" value={form.container_type} onChange={set('container_type')} options={CONTAINER_OPTIONS} />
           </Box>
           <Box sx={gridSx(4)}>
-            <Fld label="Origin" value={form.origin} onChange={set('origin')} />
-            <Sel label="POL" value={form.origin_port} onChange={set('origin_port')} options={POL_OPTIONS} />
-            <Fld label="Destination" value={form.destination} onChange={set('destination')} />
-            <Sel label="POD" value={form.destination_port} onChange={set('destination_port')} options={POD_OPTIONS} />
+            <FormField label="Origin" value={form.origin} onChange={set('origin')} />
+            <FormSelect label="POL" value={form.origin_port} onChange={set('origin_port')} options={POL_OPTIONS} />
+            <FormField label="Destination" value={form.destination} onChange={set('destination')} />
+            <FormSelect label="POD" value={form.destination_port} onChange={set('destination_port')} options={POD_OPTIONS} />
           </Box>
-        </Panel>
+        </FormPanel>
 
         <Box sx={gridSx(2, 1.5)}>
-          <Panel label="SCHEDULE" color={C.log}>
+          <FormPanel label="SCHEDULE" color={C.log}>
             <Box sx={gridSx(2)}>
-              <Fld label="TT" value={form.tt} onChange={set('tt')} />
-              <Fld label="Validity" type="date" value={form.validity} onChange={set('validity')} />
+              <FormField label="TT" value={form.tt} onChange={set('tt')} />
+              <FormField label="Validity" type="date" value={form.validity} onChange={set('validity')} />
             </Box>
-          </Panel>
-          <Panel label="RATES" color={C.log}>
+          </FormPanel>
+          <FormPanel label="RATES" color={C.log}>
             <Box sx={gridSx(2)}>
-              <Fld label="$ Rate" value={form.usd_rate} onChange={set('usd_rate')} unit="₪/$" />
-              <Fld label="€ Rate" value={form.eur_rate} onChange={set('eur_rate')} unit="₪/€" />
+              <FormField label="$ Rate" value={form.usd_rate} onChange={set('usd_rate')} unit="₪/$" />
+              <FormField label="€ Rate" value={form.eur_rate} onChange={set('eur_rate')} unit="₪/€" />
             </Box>
-          </Panel>
+          </FormPanel>
         </Box>
 
         <Box sx={gridSx(4, 1.5)}>

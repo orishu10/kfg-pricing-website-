@@ -75,7 +75,8 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const tarPct = num('us_tariff_pct');
   const kfgPct = num('kfg_commission_pct');
   const ex = num('ex_rate');
-  const sup = num('supervision_cost');
+  const supCostRate = num('supervision_cost_rate');
+  const supFeesRate = num('supervision_fees_rate');
 
   const spCase = unit > 0 && uic > 0 ? unit * uic : null;
   const spFcl = spCase != null && cifcl > 0 ? spCase * cifcl : null;
@@ -84,6 +85,10 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const puUsd = ex > 0 && unit > 0 ? unit / ex : null;
   const pcUsd = ex > 0 && spCase != null ? spCase / ex : null;
   const pfUsd = pcUsd != null && cifcl > 0 ? pcUsd * cifcl : null;
+
+  const supCostVal = cifcl > 0 && supCostRate > 0 ? supCostRate * cifcl : null;
+  const supFeesVal = cifcl > 0 && supFeesRate > 0 ? supFeesRate * cifcl : null;
+  const sup = (supCostVal ?? 0) + (supFeesVal ?? 0);
 
   const incoSum = fob + cif + dap + ddp;
   const st1 = incoSum > 0 || spFcl != null || sup > 0 ? incoSum + (spFcl ?? 0) + sup : null;
@@ -94,7 +99,7 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const kfg = kfgVal ?? 0;
 
   const st2 = st1 != null ? st1 + tar : null;
-  const imp = spFcl != null && spFcl > 0 ? incoSum / spFcl : null;
+  const imp = st1 != null && st1 > 0 ? incoSum / st1 : null;
   const kfgTot = st1 != null ? kfg + st1 : null;
   const tarTot = spFcl != null && tar > 0 ? spFcl * tar : null;
   const tot = st2 != null ? st2 + kfg : null;
@@ -120,9 +125,11 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     price_fcl_usd: s(pfUsd),
     sub_total_1: s(st1),
     sub_total_2: s(st2),
+    supervision_cost: s(supCostVal),
+    supervision_fees: s(supFeesVal),
     us_tariff: s(tarVal),
     kfg_commission: s(kfgVal),
-    import_factor: s(imp),
+    import_factor: imp != null ? (imp * 100).toFixed(2) : '',
     kfg_commission_total: s(kfgTot),
     tariffs_total: s(tarTot),
     total: s(tot),

@@ -9,17 +9,18 @@ import { fmtDate } from '../../pricing/utils/helpers';
 import type { WeeklyShipment } from '../../../api';
 
 const buildColumns = (onToggleBooked: (s: WeeklyShipment) => void): Column<WeeklyShipment>[] => [
-  { key: 'id', label: 'LOG #', mono: true, align: 'center' },
-  { key: 'con', label: 'CON', render: (r) => r.con ?? '' },
+  { key: 'id', label: 'LOG #', mono: true, align: 'center', width: 58 },
+  { key: 'con', label: 'CON', width: 92, render: (r) => r.con ?? '' },
   { key: 'customer', label: 'Customer', sortable: true, render: (r) => r.customer ?? '' },
-  { key: 'supplier', label: 'Supplier', sortable: true, render: (r) => r.supplier ?? '' },
+  { key: 'supplier', label: 'Supplier', sortable: true, width: 100, render: (r) => r.supplier ?? '' },
   { key: 'description', label: 'Description', render: (r) => r.description ?? '' },
-  { key: 'pup', label: 'PUP', render: (r) => r.pup ?? '' },
-  { key: 'pol', label: 'POL', render: (r) => r.pol ?? '' },
-  { key: 'pod', label: 'POD', render: (r) => r.pod ?? '' },
+  { key: 'pup', label: 'PUP', width: 68, render: (r) => r.pup ?? '' },
+  { key: 'pol', label: 'POL', width: 68, render: (r) => r.pol ?? '' },
+  { key: 'pod', label: 'POD', width: 84, render: (r) => r.pod ?? '' },
   {
     key: 'vessel',
     label: 'Schedule',
+    width: 118,
     render: (r) => (
       <Box>
         <Typography sx={{ fontSize: '0.85rem' }}>{r.vessel ?? ''}</Typography>
@@ -29,12 +30,13 @@ const buildColumns = (onToggleBooked: (s: WeeklyShipment) => void): Column<Weekl
       </Box>
     ),
   },
-  { key: 'etd', label: 'ETD', sortable: true, value: (r) => r.etd, render: (r) => fmtDate(r.etd) },
-  { key: 'eta', label: 'ETA', sortable: true, value: (r) => r.eta, render: (r) => fmtDate(r.eta) },
+  { key: 'etd', label: 'ETD', sortable: true, width: 82, value: (r) => r.etd, render: (r) => fmtDate(r.etd) },
+  { key: 'eta', label: 'ETA', sortable: true, width: 82, value: (r) => r.eta, render: (r) => fmtDate(r.eta) },
   {
     key: 'booked',
     label: 'Booking',
     align: 'center',
+    width: 76,
     render: (r) => (
       <Checkbox
         size="small"

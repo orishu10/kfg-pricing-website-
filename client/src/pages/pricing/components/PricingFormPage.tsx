@@ -345,18 +345,23 @@ export const PricingFormPage = () => {
           </Panel>
         </Box>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'end' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Panel label="SUPPLIER" color={C.green}>
-              <Box sx={gridSx(5)}>
-                <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit="₪" />
-                <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
-                <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit="₪" />
-                <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
-                <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
-              </Box>
-            </Panel>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'stretch' }}>
+          <Panel label="SUPPLIER" color={C.green} fill>
+            <Box sx={gridSx(5)}>
+              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit="₪" />
+              <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
+              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit="₪" />
+              <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
+              <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
+            </Box>
+          </Panel>
+          <Panel color={C.green} fill>
+            <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={set('incoterms_supplier')} options={INCOTERMS_OPTIONS} />
+          </Panel>
+        </Box>
 
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'stretch' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 2.5 }}>
             <Box sx={gridSx(3, 1.5)}>
               <Panel label="SUBTOTAL 1" color={C.pink}>
                 <Caption>LOG + Supplier + Supervision</Caption>
@@ -388,71 +393,74 @@ export const PricingFormPage = () => {
             </Box>
 
             <Panel label="SUPERVISION">
-              <Box sx={gridSx(2)}>
-                <Fld label="Cost" value={form.supervision_cost} onChange={set('supervision_cost')} unit="₪" />
-                <Fld label="Fees" value={form.supervision_fees} onChange={set('supervision_fees')} unit="₪" />
+              <Box sx={gridSx(4)}>
+                <Fld label="Cost / Case" value={form.supervision_cost_rate} onChange={set('supervision_cost_rate')} unit="₪" />
+                <Fld label="Cost Total" value={form.supervision_cost} readOnly unit="₪" />
+                <Fld label="Fees / Case" value={form.supervision_fees_rate} onChange={set('supervision_fees_rate')} unit="₪" />
+                <Fld label="Fees Total" value={form.supervision_fees} readOnly unit="₪" />
               </Box>
             </Panel>
-
-            <Box sx={gridSx(3, 1.5)}>
-              <Panel color={C.pink}>
-                <Fld label="Cost - Unit" value={form.cost_unit} readOnly unit="₪" />
-                <Box sx={{ mt: 1 }}><Fld label="Cost - Case" value={form.cost_case} readOnly unit="₪" /></Box>
-              </Panel>
-              <Panel color={C.blue}>
-                <Fld label="Price - Unit" value={form.price_unit} readOnly unit="₪" />
-                <Box sx={{ mt: 1 }}><Fld label="Price - Case" value={form.price_case} readOnly unit="₪" /></Box>
-              </Panel>
-              <Panel color={C.yellow}>
-                <Fld label="SAP Price - Unit" value={form.sap_price_unit} readOnly unit="₪" />
-                <Box sx={{ mt: 1 }}><Fld label="SAP Price - Case" value={form.sap_price_case} onChange={set('sap_price_case')} unit="₪" /></Box>
-              </Panel>
-            </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Panel color={C.green}>
-              <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={set('incoterms_supplier')} options={INCOTERMS_OPTIONS} />
-            </Panel>
-
-            <Panel>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700 }}>{`1${weightUnit} INDICATOR`}</Typography>
-                <Box sx={{ width: 90 }}>
-                  <Sel value={weightUnit} onChange={set('weight_unit')} options={WEIGHT_UNIT_OPTIONS} hideEmpty />
-                </Box>
+          <Panel fill>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 700 }}>{`1${weightUnit} INDICATOR`}</Typography>
+              <Box sx={{ width: 90 }}>
+                <Sel value={weightUnit} onChange={set('weight_unit')} options={WEIGHT_UNIT_OPTIONS} hideEmpty />
               </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ bgcolor: C.pink, borderRadius: 1, p: 1 }}>
-                  <Fld label={`Cost - 1${weightUnit}`} value={form.cost_1kg} readOnly unit="₪" />
-                </Box>
-                <Box sx={{ bgcolor: C.blue, borderRadius: 1, p: 1 }}>
-                  <Fld label={`Price - 1${weightUnit}`} value={form.price_1kg} readOnly unit="₪" />
-                </Box>
-                <Box sx={{ bgcolor: C.yellow, borderRadius: 1, p: 1 }}>
-                  <Fld label={`SAP Price - 1${weightUnit}`} value={form.sap_price_1kg} readOnly unit="₪" />
-                </Box>
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ bgcolor: C.pink, borderRadius: 1, p: 1 }}>
+                <Fld label={`Cost - 1${weightUnit}`} value={form.cost_1kg} readOnly unit="₪" />
+              </Box>
+              <Box sx={{ bgcolor: C.blue, borderRadius: 1, p: 1 }}>
+                <Fld label={`Price - 1${weightUnit}`} value={form.price_1kg} readOnly unit="₪" />
+              </Box>
+              <Box sx={{ bgcolor: C.yellow, borderRadius: 1, p: 1 }}>
+                <Fld label={`SAP Price - 1${weightUnit}`} value={form.sap_price_1kg} readOnly unit="₪" />
+              </Box>
+            </Box>
+          </Panel>
+        </Box>
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'stretch' }}>
+          <Box sx={{ ...gridSx(3, 1.5), gridTemplateRows: '1fr' }}>
+            <Panel color={C.pink} fill>
+              <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: 1 }}>
+                <Fld label="Cost - Unit" value={form.cost_unit} readOnly unit="₪" />
+                <Fld label="Cost - Case" value={form.cost_case} readOnly unit="₪" />
               </Box>
             </Panel>
+            <Panel color={C.blue} fill>
+              <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: 1 }}>
+                <Fld label="Price - Unit" value={form.price_unit} readOnly unit="₪" />
+                <Fld label="Price - Case" value={form.price_case} readOnly unit="₪" />
+              </Box>
+            </Panel>
+            <Panel color={C.yellow} fill>
+              <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: 1 }}>
+                <Fld label="SAP Price - Unit" value={form.sap_price_unit} readOnly unit="₪" />
+                <Fld label="SAP Price - Case" value={form.sap_price_case} onChange={set('sap_price_case')} unit="₪" />
+              </Box>
+            </Panel>
+          </Box>
 
+          <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 2 }}>
             <Panel>
               <Fld label="Import Factor" value={form.import_factor} readOnly unit="%" />
             </Panel>
-
-            {isEdit && (
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
-                  <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Created by</Typography>
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{p?.created_by || '—'}</Typography>
-                  <Typography sx={{ fontSize: '0.66rem', color: '#999' }}>{fmtDateTime(p?.created_at ?? null) || '—'}</Typography>
-                </Box>
-                <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
-                  <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Last Updated by</Typography>
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{p?.updated_by || '—'}</Typography>
-                  <Typography sx={{ fontSize: '0.66rem', color: '#999' }}>{fmtDateTime(p?.updated_at ?? null) || '—'}</Typography>
-                </Box>
+            <Box sx={{ display: 'flex', gap: 1, visibility: isEdit ? 'visible' : 'hidden' }}>
+              <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
+                <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Created by</Typography>
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{p?.created_by || '—'}</Typography>
+                <Typography sx={{ fontSize: '0.66rem', color: '#999' }}>{fmtDateTime(p?.created_at ?? null) || '—'}</Typography>
               </Box>
-            )}
+              <Box sx={{ flex: 1, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 1, p: 1 }}>
+                <Typography sx={{ fontSize: '0.6rem', color: '#888' }}>Last Updated by</Typography>
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{p?.updated_by || '—'}</Typography>
+                <Typography sx={{ fontSize: '0.66rem', color: '#999' }}>{fmtDateTime(p?.updated_at ?? null) || '—'}</Typography>
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Box>

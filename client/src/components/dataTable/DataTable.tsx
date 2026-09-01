@@ -44,9 +44,9 @@ export interface Column<T> {
   label: string;
   align?: "left" | "center" | "right";
   sortable?: boolean;
-  /** Show the per-column filter dropdown. Defaults to `sortable` when unset. */
   filterable?: boolean;
   mono?: boolean;
+  width?: number | string;
   render?: (row: T) => React.ReactNode;
   value?: (row: T) => string | number | null;
 }
@@ -70,9 +70,7 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   exportFileName?: string;
   onImport?: (rows: Record<string, string>[]) => void;
-  /** Hide the per-column filter buttons (sorting is still available). */
   disableFilters?: boolean;
-  /** Custom content rendered centered in the toolbar (e.g. a week picker). */
   headerCenter?: React.ReactNode;
   fitWidth?: boolean;
 }
@@ -557,6 +555,15 @@ export function DataTable<T>({
 
       <TableContainer sx={fitWidth ? { overflowX: "hidden" } : undefined}>
         <Table size="small" sx={fitWidth ? { width: "100%", tableLayout: "fixed" } : undefined}>
+          {fitWidth && (
+            <colgroup>
+              {selectable && <col style={{ width: 44 }} />}
+              {columns.map((col) => (
+                <col key={col.key} style={col.width != null ? { width: col.width } : undefined} />
+              ))}
+              {hasActions && <col style={{ width: 48 }} />}
+            </colgroup>
+          )}
           <TableHead>
             <TableRow>
               {selectable && (
@@ -588,6 +595,8 @@ export function DataTable<T>({
                     sx={{
                       ...headCellSx,
                       whiteSpace: fitWidth ? "normal" : headCellSx.whiteSpace,
+                      overflowWrap: fitWidth ? "break-word" : undefined,
+                      px: fitWidth ? 1 : undefined,
                       borderRight: showDivider ? HEAD_DIVIDER : "none",
                       cursor: col.sortable ? "pointer" : "default",
                     }}
@@ -665,6 +674,9 @@ export function DataTable<T>({
                         borderBottom: "1px solid #ececec",
                         borderRight: showDivider ? COL_DIVIDER : "none",
                         fontFamily: col.mono ? "monospace" : undefined,
+                        whiteSpace: fitWidth ? "normal" : undefined,
+                        overflowWrap: fitWidth ? "break-word" : undefined,
+                        px: fitWidth ? 1 : undefined,
                         py: 1.15,
                       }}
                     >
@@ -682,6 +694,7 @@ export function DataTable<T>({
                     sx={{
                       borderBottom: "1px solid #ececec",
                       py: 0.5,
+                      px: fitWidth ? 0 : undefined,
                       width: 48,
                     }}
                   >

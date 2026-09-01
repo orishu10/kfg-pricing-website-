@@ -46,14 +46,7 @@ export const useWeeklyShipmentsPage = () => {
 
   const toggleBooked = (s: WeeklyShipment) => {
     setError('');
-    bookedMutation.mutate({
-      id: s.id,
-      data: {
-        con: s.con, customer: s.customer, supplier: s.supplier, description: s.description,
-        pup: s.pup, pol: s.pol, pod: s.pod, vessel: s.vessel, voyage: s.voyage,
-        etd: s.etd, eta: s.eta, booked: !s.booked, updated_by: username ?? '',
-      },
-    });
+    bookedMutation.mutate({ id: s.id, data: { ...s, booked: !s.booked, updated_by: username ?? '' } });
   };
 
   const rows = useMemo(() => {
