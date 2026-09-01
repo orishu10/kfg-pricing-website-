@@ -79,3 +79,14 @@ Calculations (e.g. `supplier_price_case = supplier_price_unit × units_in_case`)
 - Client: `tsconfig.app.json` — ES2023, `react-jsx`, strict, `noUnusedLocals`, `erasableSyntaxOnly`.
 - Server: `tsconfig.json` — ES2020, `commonjs`, strict, `erasableSyntaxOnly`.
 - ESLint uses flat config (`eslint.config.js`) with TypeScript + React Hooks + React Refresh plugins.
+
+## Code conventions
+Apply these to every change; match the surrounding code when in doubt.
+- **No comments.** Code should read on its own. Delete stale/explanatory comments rather than adding them.
+- **Clear, full names.** No cryptic abbreviations for variables, functions, or components (`FormField`, not `Fld`). Names state intent.
+- **Consts in `consts.ts`, helpers in `helpers.ts`.** Field-key lists, option arrays, empty-form objects, and static config live in a feature's `utils/consts.ts`; pure transform/derive/format functions live in `utils/helpers.ts`. Don't inline them in components.
+- **Small, modular components.** Extract shared UI primitives instead of duplicating them (see `pages/logistics/components/form/`). Keep page components focused on layout + wiring.
+- **Feature folder shape** (mirror `pages/logistics/routes`, `weeklyShipments`, `schedules`): `FeaturePage.tsx` (list/table), `hooks/useFeaturePage.tsx` (React Query + state), `components/FeatureFormPage.tsx` (full-page create/edit form), `utils/consts.ts`, `utils/helpers.ts`.
+- **Data layer.** All server calls go through named functions in `client/src/api/index.ts`; components never call axios directly. Server routes stay parameterized `pool.query` (no ORM) and mirror the existing CRUD shape (`COLUMNS` list, `n()` empty→null helper).
+- **DB changes** are additive migrations (`db/migration_NNN_*.sql`, defensive DDL) + the matching column in `schema.sql`; never edit an applied migration.
+- **Before finishing**, keep it green: `cd client && npx tsc -b && npm run lint`, and `cd server && npx tsc --noEmit`.
