@@ -83,7 +83,6 @@ export interface Item {
   kfg_commission: N;
   total: N;
   kfg_commission_total: N;
-  tariffs_total: N;
   usd_nis: N;
 
   // Final cost & price
@@ -191,7 +190,6 @@ export interface Pricing {
   kfg_commission: N;
   kfg_commission_pct: N;
   kfg_commission_total: N;
-  tariffs_total: N;
   total: N;
   usd_nis: N;
   supervision_cost: N;

@@ -92,7 +92,6 @@ CREATE TABLE IF NOT EXISTS items (
     kfg_commission       NUMERIC(14, 4),
     total                NUMERIC(14, 4),
     kfg_commission_total NUMERIC(14, 4),
-    tariffs_total        NUMERIC(14, 4),
     usd_nis              NUMERIC(14, 4),
 
     -- Final cost & price
@@ -176,7 +175,6 @@ CREATE TABLE IF NOT EXISTS pricing (
     kfg_commission       NUMERIC(14, 4),
     kfg_commission_pct   NUMERIC(14, 4),
     kfg_commission_total NUMERIC(14, 4),
-    tariffs_total        NUMERIC(14, 4),
     total                NUMERIC(14, 4),
     usd_nis              NUMERIC(14, 4),
     supervision_cost     NUMERIC(14, 4),

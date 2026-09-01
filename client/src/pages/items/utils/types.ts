@@ -25,7 +25,6 @@ export interface FormState {
   kfg_commission: string;
   total: string;
   kfg_commission_total: string;
-  tariffs_total: string;
   usd_nis: string;
   cost_unit: string;
   cost_case: string;

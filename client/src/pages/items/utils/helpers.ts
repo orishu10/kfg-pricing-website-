@@ -32,7 +32,6 @@ export const itemToForm = (item: Item): FormState => ({
   kfg_commission: fmt(item.kfg_commission),
   total: fmt(item.total),
   kfg_commission_total: fmt(item.kfg_commission_total),
-  tariffs_total: fmt(item.tariffs_total),
   usd_nis: fmt(item.usd_nis),
   cost_unit: fmt(item.cost_unit),
   cost_case: fmt(item.cost_case),
@@ -65,7 +64,6 @@ export const calcDerived = (f: FormState): Partial<FormState> => {
   const st2     = st1 != null ? st1 + tar : null;
   const imp_f   = sp_fcl != null && sp_fcl > 0 ? incoSum / sp_fcl : null;
   const kfg_tot = st1 != null ? kfg + st1 : null;
-  const tar_tot = sp_fcl != null && tar > 0 ? sp_fcl * tar : null;
   const tot     = st2 != null ? st2 + kfg : null;
   const c_case  = st2 != null && cifcl != null && cifcl > 0 ? st2 / cifcl : null;
   const c_unit  = c_case != null && uic > 0 ? c_case / uic : null;
@@ -82,7 +80,6 @@ export const calcDerived = (f: FormState): Partial<FormState> => {
     sub_total_2:          st2     != null ? st2.toFixed(4)        : '',
     import_factor:        imp_f   != null ? imp_f.toFixed(4)      : '',
     kfg_commission_total: kfg_tot != null ? kfg_tot.toFixed(4)   : '',
-    tariffs_total:        tar_tot != null ? tar_tot.toFixed(4)    : '',
     total:                tot     != null ? tot.toFixed(4)        : '',
     cost_case:            c_case  != null ? c_case.toFixed(4)     : '',
     cost_unit:            c_unit  != null ? c_unit.toFixed(4)     : '',

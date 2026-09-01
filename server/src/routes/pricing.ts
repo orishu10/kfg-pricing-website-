@@ -16,7 +16,7 @@ const COLUMNS = [
   'supplier_price_unit', 'supplier_price_case', 'supplier_price_fcl', 'supplier_price_1kg',
   'price_unit_ils', 'price_unit_usd', 'price_case_ils', 'price_case_usd', 'price_fcl_usd',
   'sub_total_1', 'sub_total_2', 'us_tariff', 'us_tariff_pct', 'import_factor',
-  'kfg_commission', 'kfg_commission_pct', 'kfg_commission_total', 'tariffs_total', 'total', 'usd_nis',
+  'kfg_commission', 'kfg_commission_pct', 'kfg_commission_total', 'total', 'usd_nis',
   'supervision_cost', 'supervision_fees', 'supervision_cost_rate', 'supervision_fees_rate',
   'cost_unit', 'cost_case', 'cost_1kg', 'price_unit', 'price_case', 'price_1kg',
   'sap_price_unit', 'sap_price_case', 'sap_price_1kg', 'weight_unit',

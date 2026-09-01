@@ -130,7 +130,6 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     kfg_commission: s(kfgVal),
     import_factor: imp != null ? (imp * 100).toFixed(2) : '',
     kfg_commission_total: s(kfgTot),
-    tariffs_total: '',
     total: s(tot),
     cost_case: s(cCase),
     cost_unit: s(cUnit),

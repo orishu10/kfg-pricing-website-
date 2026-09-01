@@ -31,7 +31,6 @@ const blankForm = (): FormState => ({
   kfg_commission: '',
   total: '',
   kfg_commission_total: '',
-  tariffs_total: '',
   usd_nis: '',
   cost_unit: '',
   cost_case: '',
@@ -65,7 +64,6 @@ describe('calcDerived', () => {
       sub_total_2: '2150.1000', // sub_total_1 + us_tariff
       import_factor: '0.0750', // incoSum / supplier_fcl
       kfg_commission_total: '2175.0000', // kfg + sub_total_1
-      tariffs_total: '200.0000', // supplier_fcl * us_tariff
       total: '2175.1000', // sub_total_2 + kfg
       cost_case: '21.5010', // sub_total_2 / cases_in_fcl
       cost_unit: '2.1501', // cost_case / units_in_case
@@ -107,18 +105,6 @@ describe('calcDerived', () => {
       units_in_case: '10',
     };
     expect(calcDerived(form).import_factor).toBe('');
-  });
-
-  it('only computes tariffs_total when a tariff is present', () => {
-    const base: FormState = {
-      ...blankForm(),
-      supplier_price_unit: '2',
-      units_in_case: '10',
-      pallets_per_fcl: '20',
-      cases_per_pallet: '5',
-    };
-    expect(calcDerived(base).tariffs_total).toBe(''); // no us_tariff
-    expect(calcDerived({ ...base, us_tariff: '0.1' }).tariffs_total).toBe('200.0000');
   });
 
   it('ignores non-numeric input rather than producing NaN', () => {

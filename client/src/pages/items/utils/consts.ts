@@ -9,7 +9,7 @@ export const EMPTY_FORM: FormState = {
   supplier_price_unit: '', supplier_price_case: '', supplier_price_fcl: '', supplier_price_1kg: '',
   sub_total_1: '', us_tariff: '', sub_total_2: '',
   import_factor: '', kfg_commission: '', total: '',
-  kfg_commission_total: '', tariffs_total: '', usd_nis: '',
+  kfg_commission_total: '', usd_nis: '',
   cost_unit: '', cost_case: '', price_unit: '', price_case: '',
   sap_price_unit: '', sap_price_case: '',
 };
