@@ -9,7 +9,7 @@ import { useAuth } from '../../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../../components';
 import { FormField, FormSelect, FormPanel, gridSx } from '../../components/form';
 import { useLookups } from '../../../../hooks/useLookups';
-import { EMPTY_ROUTE, CURRENCY_OPTIONS, INCOTERMS, type RouteForm } from '../utils/consts';
+import { EMPTY_ROUTE, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, INCOTERMS, type RouteForm } from '../utils/consts';
 import { deriveRoute, routeToForm } from '../utils/helpers';
 import {
   getRoute, createRoute, updateRoute, type RouteInput,
@@ -87,6 +87,8 @@ export const RouteFormPage = () => {
 
   if (sourceId && sourceQuery.isLoading) return <LoadingPage />;
 
+  const totalSymbol = CURRENCY_SYMBOLS[form.total_currency] || '';
+
   const priceBox = (x: (typeof INCOTERMS)[number]) => {
     const cur = form[`${x}_currency` as keyof RouteForm] || 'ILS';
     return (
@@ -135,37 +137,47 @@ export const RouteFormPage = () => {
             {isEdit ? `Route ${routeId}` : 'New Route'}
           </Typography>
         </Box>
+        <Box sx={{ width: 180 }}>
+          <FormField label="VALIDITY" type="date" value={form.validity} onChange={set('validity')} />
+        </Box>
       </Box>
 
       <Box sx={{ mb: 2 }}><ErrorAlert message={error} /></Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-        <FormPanel label="DETAILS">
-          <Box sx={{ ...gridSx(4), mb: 1.25 }}>
+        <FormPanel label="ROUTE">
+          <Box sx={{ ...gridSx(3), mb: 1.25 }}>
             <FormField label="Reference / LOG #" value={form.reference} onChange={set('reference')} />
-            <FormField label="Agent" value={form.agent} onChange={set('agent')} />
-            <FormSelect label="Shipping Line" value={form.shipping_line} onChange={set('shipping_line')} options={options('shipping_line', form.shipping_line)} />
-            <FormSelect label="Container Type" value={form.container_type} onChange={set('container_type')} options={options('container', form.container_type)} />
-          </Box>
-          <Box sx={gridSx(4)}>
             <FormField label="Origin" value={form.origin} onChange={set('origin')} />
-            <FormSelect label="POL" value={form.origin_port} onChange={set('origin_port')} options={options('sea_port', form.origin_port)} />
             <FormField label="Destination" value={form.destination} onChange={set('destination')} />
+          </Box>
+          <Box sx={gridSx(3)}>
+            <Box />
+            <FormSelect label="POL" value={form.origin_port} onChange={set('origin_port')} options={options('sea_port', form.origin_port)} />
             <FormSelect label="POD" value={form.destination_port} onChange={set('destination_port')} options={options('sea_port', form.destination_port)} />
           </Box>
         </FormPanel>
 
+        <FormPanel label="DETAILS">
+          <Box sx={gridSx(4)}>
+            <FormField label="Agent" value={form.agent} onChange={set('agent')} />
+            <FormSelect label="Shipping Line" value={form.shipping_line} onChange={set('shipping_line')} options={options('shipping_line', form.shipping_line)} />
+            <FormSelect label="Container Type" value={form.container_type} onChange={set('container_type')} options={options('container', form.container_type)} />
+            <FormField label="TT" value={form.tt} onChange={set('tt')} />
+          </Box>
+        </FormPanel>
+
         <Box sx={gridSx(2, 1.5)}>
-          <FormPanel label="SCHEDULE" color={C.log}>
-            <Box sx={gridSx(2)}>
-              <FormField label="TT" value={form.tt} onChange={set('tt')} />
-              <FormField label="Validity" type="date" value={form.validity} onChange={set('validity')} />
-            </Box>
-          </FormPanel>
           <FormPanel label="RATES" color={C.log}>
             <Box sx={gridSx(2)}>
               <FormField label="$ Rate" value={form.usd_rate} onChange={set('usd_rate')} unit="₪/$" />
               <FormField label="€ Rate" value={form.eur_rate} onChange={set('eur_rate')} unit="₪/€" />
+            </Box>
+          </FormPanel>
+          <FormPanel label="TOTAL COST" color={C.log}>
+            <Box sx={gridSx(2)}>
+              <FormSelect label="Currency" value={form.total_currency} onChange={set('total_currency')} options={CURRENCY_OPTIONS} />
+              <FormField label="Total" value={form.total_cost} readOnly unit={totalSymbol} />
             </Box>
           </FormPanel>
         </Box>

@@ -1,4 +1,5 @@
 export const CURRENCY_OPTIONS = ['ILS', 'USD', 'EUR'];
+export const CURRENCY_SYMBOLS: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
 export const INCOTERMS = ['fob', 'cif', 'dap', 'ddp'] as const;
 
 export const ROUTE_KEYS = [
@@ -9,6 +10,7 @@ export const ROUTE_KEYS = [
   'cif_currency', 'cif_ils', 'cif_usd', 'cif_eur',
   'dap_currency', 'dap_ils', 'dap_usd', 'dap_eur',
   'ddp_currency', 'ddp_ils', 'ddp_usd', 'ddp_eur',
+  'total_currency', 'total_cost',
 ] as const;
 
 export type RouteForm = Record<(typeof ROUTE_KEYS)[number], string>;
@@ -19,4 +21,5 @@ export const EMPTY_ROUTE: RouteForm = {
   cif_currency: 'ILS',
   dap_currency: 'ILS',
   ddp_currency: 'ILS',
+  total_currency: 'ILS',
 };

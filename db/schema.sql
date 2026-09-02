@@ -235,6 +235,8 @@ CREATE TABLE IF NOT EXISTS routes (
     dap_currency VARCHAR(10), dap_ils NUMERIC(14, 4), dap_usd NUMERIC(14, 4), dap_eur NUMERIC(14, 4),
     ddp_currency VARCHAR(10), ddp_ils NUMERIC(14, 4), ddp_usd NUMERIC(14, 4), ddp_eur NUMERIC(14, 4),
 
+    total_currency VARCHAR(10), total_cost NUMERIC(14, 4),
+
     created_by         VARCHAR(100),
     updated_by         VARCHAR(100),
     created_at         TIMESTAMP    DEFAULT NOW(),

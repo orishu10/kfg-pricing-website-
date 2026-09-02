@@ -8,7 +8,7 @@ export const routeToForm = (r: Route): RouteForm => {
     out[k] = v == null ? '' : String(v);
   });
   if (out.validity) out.validity = out.validity.slice(0, 10);
-  return out;
+  return { ...out, ...deriveRoute(out) };
 };
 
 export const deriveRoute = (f: RouteForm): Partial<RouteForm> => {
@@ -18,6 +18,8 @@ export const deriveRoute = (f: RouteForm): Partial<RouteForm> => {
   const s = (v: number | null) => (v != null ? v.toFixed(4) : '');
 
   const out: Partial<RouteForm> = {};
+  const totals = { ILS: 0, USD: 0, EUR: 0 };
+
   INCOTERMS.forEach((x) => {
     const cur = (f[`${x}_currency` as keyof RouteForm] || 'ILS').toUpperCase();
     const ilsK = `${x}_ils` as keyof RouteForm;
@@ -29,23 +31,30 @@ export const deriveRoute = (f: RouteForm): Partial<RouteForm> => {
     let eur: number | null = null;
 
     if (cur === 'USD') {
-      const v = num(usdK);
-      ils = v * usdRate;
-      eur = eurRate > 0 ? (v * usdRate) / eurRate : null;
+      usd = num(usdK);
+      ils = usd * usdRate;
+      eur = eurRate > 0 ? (usd * usdRate) / eurRate : null;
     } else if (cur === 'EUR') {
-      const v = num(eurK);
-      ils = v * eurRate;
-      usd = usdRate > 0 ? (v * eurRate) / usdRate : null;
+      eur = num(eurK);
+      ils = eur * eurRate;
+      usd = usdRate > 0 ? (eur * eurRate) / usdRate : null;
     } else {
-      const v = num(ilsK);
-      usd = usdRate > 0 ? v / usdRate : null;
-      eur = eurRate > 0 ? v / eurRate : null;
+      ils = num(ilsK);
+      usd = usdRate > 0 ? ils / usdRate : null;
+      eur = eurRate > 0 ? ils / eurRate : null;
     }
 
     if (cur !== 'ILS') out[ilsK] = s(ils);
     if (cur !== 'USD') out[usdK] = s(usd);
     if (cur !== 'EUR') out[eurK] = s(eur);
+
+    totals.ILS += ils ?? 0;
+    totals.USD += usd ?? 0;
+    totals.EUR += eur ?? 0;
   });
+
+  const totalCurrency = (f.total_currency || 'ILS').toUpperCase() as keyof typeof totals;
+  out.total_cost = s(totals[totalCurrency]);
   return out;
 };
 

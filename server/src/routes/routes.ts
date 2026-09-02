@@ -13,6 +13,7 @@ const COLUMNS = [
   'cif_currency', 'cif_ils', 'cif_usd', 'cif_eur',
   'dap_currency', 'dap_ils', 'dap_usd', 'dap_eur',
   'ddp_currency', 'ddp_ils', 'ddp_usd', 'ddp_eur',
+  'total_currency', 'total_cost',
 ] as const;
 
 router.get('/', async (_req: Request, res: Response) => {

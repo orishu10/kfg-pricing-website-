@@ -243,6 +243,8 @@ export interface Route {
   dap_currency: string | null; dap_ils: N; dap_usd: N; dap_eur: N;
   ddp_currency: string | null; ddp_ils: N; ddp_usd: N; ddp_eur: N;
 
+  total_currency: string | null; total_cost: N;
+
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
