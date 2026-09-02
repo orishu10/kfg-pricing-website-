@@ -13,10 +13,13 @@ import { useAuth } from '../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../components';
 import { useLookups } from '../../../hooks/useLookups';
 import {
-  EMPTY_PRICING, NUMERIC_KEYS, type PricingForm,
+  EMPTY_PRICING, ILS_SYMBOL, NUMERIC_KEYS, type PricingForm,
   PRICING_STATUS, WEIGHT_UNIT_OPTIONS,
 } from '../utils/consts';
-import { derivePricing, pricingToForm, fetchFxRate, symbol, fmtDateTime, to2, to4 } from '../utils/helpers';
+import {
+  derivePricing, pricingToForm, fetchFxRate, routeIncotermPrices,
+  symbol, fmtDateTime, to2, to4,
+} from '../utils/helpers';
 import {
   getPricing, getItems, getCustomers, getRoutes, createPricing, updatePricing,
   type PricingInput, type Route,
@@ -180,29 +183,28 @@ export const PricingFormPage = () => {
 
   const onCustomer = (id: string) =>
     setForm((prev) => {
-      const c = customers.find((x) => x.id === id);
-      const cur = c?.currency ?? '';
+      const customer = customers.find((option) => option.id === id);
+      const currency = customer?.currency ?? '';
+      const selectedRoute = routes.find((option) => option.id === prev.route);
       const next: PricingForm = {
         ...prev,
         customer_id: id,
-        currency: cur,
+        currency,
         currency_pair:
-          cur === 'EUR' ? 'ILS > EUR' : cur === 'USD' ? 'ILS > USD' : prev.currency_pair,
+          currency === 'EUR' ? 'ILS > EUR' : currency === 'USD' ? 'ILS > USD' : prev.currency_pair,
+        ...(selectedRoute ? routeIncotermPrices(selectedRoute, currency) : {}),
       };
       return { ...next, ...derivePricing(next) };
     });
 
   const onRoute = (id: string) =>
     setForm((prev) => {
-      const r = routes.find((x) => x.id === id);
+      const route = routes.find((option) => option.id === id);
       const next: PricingForm = {
         ...prev,
         route: id,
-        container_type: r?.container_type ?? '',
-        fob: r ? to2(r.fob_usd) : '',
-        cif: r ? to2(r.cif_usd) : '',
-        dap: r ? to2(r.dap_usd) : '',
-        ddp: r ? to2(r.ddp_usd) : '',
+        container_type: route?.container_type ?? '',
+        ...routeIncotermPrices(route, prev.currency),
       };
       return { ...next, ...derivePricing(next) };
     });
@@ -258,7 +260,7 @@ export const PricingFormPage = () => {
 
   if (sourceId && sourceQuery.isLoading) return <LoadingPage />;
 
-  const itemOptions = items.map((i) => ({ label: i.size ? `${i.name} — ${i.size}` : i.name, value: i.id }));
+  const itemOptions = items.map((i) => ({ label: i.size ? `${i.name}  ${i.size}` : i.name, value: i.id }));
   const customerOptions = customers.map((c) => ({ label: c.name, value: c.id }));
 
   const routeLabel = (r: Route) => {
@@ -330,10 +332,10 @@ export const PricingFormPage = () => {
               <Fld label="Cases / FCL" value={form.cases_in_fcl} readOnly />
             </Box>
             <Box sx={gridSx(4)}>
-              <Fld label="FOB" value={form.fob} readOnly unit="$" />
-              <Fld label="CIF" value={form.cif} readOnly unit="$" />
-              <Fld label="DAP" value={form.dap} readOnly unit="$" />
-              <Fld label="DDP" value={form.ddp} readOnly unit="$" />
+              <Fld label="FOB" value={form.fob} readOnly unit={sym} />
+              <Fld label="CIF" value={form.cif} readOnly unit={sym} />
+              <Fld label="DAP" value={form.dap} readOnly unit={sym} />
+              <Fld label="DDP" value={form.ddp} readOnly unit={sym} />
             </Box>
           </Panel>
           <Panel color={C.log} fill>
@@ -350,9 +352,9 @@ export const PricingFormPage = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'stretch' }}>
           <Panel label="SUPPLIER" color={C.green} fill>
             <Box sx={gridSx(5)}>
-              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit="₪" />
+              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit={ILS_SYMBOL} />
               <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
-              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit="₪" />
+              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit={ILS_SYMBOL} />
               <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
               <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
             </Box>
@@ -367,15 +369,15 @@ export const PricingFormPage = () => {
             <Box sx={gridSx(3, 1.5)}>
               <Panel label="SUBTOTAL 1" color={C.pink}>
                 <Caption>LOG + Supplier + Supervision</Caption>
-                <Fld value={form.sub_total_1} readOnly unit="₪" />
+                <Fld value={form.sub_total_1} readOnly unit={sym} />
               </Panel>
               <Panel label="SUBTOTAL 2" color={C.pink}>
                 <Caption>LOG + Supplier + US Tariff</Caption>
-                <Fld value={form.sub_total_2} readOnly unit="₪" />
+                <Fld value={form.sub_total_2} readOnly unit={sym} />
               </Panel>
               <Panel label="TOTAL" color={C.blue}>
                 <Caption>Subtotal 2 + KFG</Caption>
-                <Fld value={form.total} readOnly unit="₪" />
+                <Fld value={form.total} readOnly unit={sym} />
               </Panel>
             </Box>
 
@@ -383,23 +385,23 @@ export const PricingFormPage = () => {
               <Panel label="KFG COMMISSION" color={C.grey}>
                 <Box sx={gridSx(2)}>
                   <Fld value={form.kfg_commission_pct} onChange={set('kfg_commission_pct')} unit="%" />
-                  <Fld value={form.kfg_commission} readOnly unit="₪" />
+                  <Fld value={form.kfg_commission} readOnly unit={sym} />
                 </Box>
               </Panel>
               <Panel label="US TARIFF" color={C.tariff}>
                 <Box sx={gridSx(2)}>
                   <Fld value={form.us_tariff_pct} onChange={set('us_tariff_pct')} unit="%" />
-                  <Fld value={form.us_tariff} readOnly unit="$" />
+                  <Fld value={form.us_tariff} readOnly unit={sym} />
                 </Box>
               </Panel>
             </Box>
 
             <Panel label="SUPERVISION">
               <Box sx={gridSx(4)}>
-                <Fld label="Cost / Case" value={form.supervision_cost_rate} onChange={set('supervision_cost_rate')} unit="₪" />
-                <Fld label="Cost Total" value={form.supervision_cost} readOnly unit="₪" />
-                <Fld label="Fees / Case" value={form.supervision_fees_rate} onChange={set('supervision_fees_rate')} unit="₪" />
-                <Fld label="Fees Total" value={form.supervision_fees} readOnly unit="₪" />
+                <Fld label="Cost / Case" value={form.supervision_cost_rate} onChange={set('supervision_cost_rate')} unit={sym} />
+                <Fld label="Cost Total" value={form.supervision_cost} readOnly unit={sym} />
+                <Fld label="Fees / Case" value={form.supervision_fees_rate} onChange={set('supervision_fees_rate')} unit={sym} />
+                <Fld label="Fees Total" value={form.supervision_fees} readOnly unit={sym} />
               </Box>
             </Panel>
           </Box>
@@ -413,13 +415,13 @@ export const PricingFormPage = () => {
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Box sx={{ bgcolor: C.pink, borderRadius: 1, p: 1 }}>
-                <Fld label={`Cost - 1${weightUnit}`} value={form.cost_1kg} readOnly unit="₪" />
+                <Fld label={`Cost - 1${weightUnit}`} value={form.cost_1kg} readOnly unit={sym} />
               </Box>
               <Box sx={{ bgcolor: C.blue, borderRadius: 1, p: 1 }}>
-                <Fld label={`Price - 1${weightUnit}`} value={form.price_1kg} readOnly unit="₪" />
+                <Fld label={`Price - 1${weightUnit}`} value={form.price_1kg} readOnly unit={sym} />
               </Box>
               <Box sx={{ bgcolor: C.yellow, borderRadius: 1, p: 1 }}>
-                <Fld label={`SAP Price - 1${weightUnit}`} value={form.sap_price_1kg} readOnly unit="₪" />
+                <Fld label={`SAP Price - 1${weightUnit}`} value={form.sap_price_1kg} readOnly unit={sym} />
               </Box>
             </Box>
           </Panel>
@@ -429,20 +431,20 @@ export const PricingFormPage = () => {
           <Box sx={{ ...gridSx(3, 1.5), gridTemplateRows: '1fr' }}>
             <Panel color={C.pink} fill>
               <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: 1 }}>
-                <Fld label="Cost - Unit" value={form.cost_unit} readOnly unit="₪" />
-                <Fld label="Cost - Case" value={form.cost_case} readOnly unit="₪" />
+                <Fld label="Cost - Unit" value={form.cost_unit} readOnly unit={sym} />
+                <Fld label="Cost - Case" value={form.cost_case} readOnly unit={sym} />
               </Box>
             </Panel>
             <Panel color={C.blue} fill>
               <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: 1 }}>
-                <Fld label="Price - Unit" value={form.price_unit} readOnly unit="₪" />
-                <Fld label="Price - Case" value={form.price_case} readOnly unit="₪" />
+                <Fld label="Price - Unit" value={form.price_unit} readOnly unit={sym} />
+                <Fld label="Price - Case" value={form.price_case} readOnly unit={sym} />
               </Box>
             </Panel>
             <Panel color={C.yellow} fill>
               <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: 1 }}>
-                <Fld label="SAP Price - Unit" value={form.sap_price_unit} readOnly unit="₪" />
-                <Fld label="SAP Price - Case" value={form.sap_price_case} onChange={set('sap_price_case')} unit="₪" />
+                <Fld label="SAP Price - Unit" value={form.sap_price_unit} onChange={set('sap_price_unit')} unit={sym} />
+                <Fld label="SAP Price - Case" value={form.sap_price_case} readOnly unit={sym} />
               </Box>
             </Panel>
           </Box>

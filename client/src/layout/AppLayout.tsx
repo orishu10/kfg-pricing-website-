@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -9,7 +8,6 @@ import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import ListItemText from '@mui/material/ListItemText';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Toolbar from '@mui/material/Toolbar';
@@ -21,8 +19,9 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import { useAuth } from '../context/auth';
-import { getRoutes } from '../api';
-import { expiringSoon, isUrgent, expiryLabel } from '../pages/logistics/routes/utils/helpers';
+import { MODULES } from './consts';
+import { ExpiryNotificationsMenu } from './components/ExpiryNotificationsMenu';
+import { useExpiryNotifications } from './hooks/useExpiryNotifications';
 import kfgBackground from '../../public/background-logo.webp';
 import kfgLogo from '../../public/KFG-Logo.svg';
 
@@ -34,64 +33,17 @@ const bgStyle = {
   backgroundPosition: 'center',
 } as const;
 
-interface NavItem {
-  label: string;
-  path: string;
-  /** false ⇒ page not built yet: shown disabled ("coming soon") */
-  ready?: boolean;
-}
-
-interface NavModule extends NavItem {
-  children: NavItem[];
-}
-
-// Two-level navigation mirroring the KFG design: top-level modules, each with
-// its own set of sub-sections. `ready: false` entries render disabled until
-// their page exists — flip the flag (and add the route) as pages get built.
-const MODULES: NavModule[] = [
-  {
-    label: 'DBM',
-    path: '/dbm',
-    ready: true,
-    children: [
-      { label: 'Customers', path: '/customers', ready: true },
-      { label: 'Suppliers', path: '/suppliers', ready: true },
-      { label: 'Items', path: '/items', ready: true },
-      { label: 'Incoterms', path: '/incoterms', ready: true },
-      { label: 'Currencies', path: '/currencies', ready: true },
-      { label: 'Countries', path: '/countries', ready: true },
-      { label: 'Containers', path: '/containers', ready: true },
-      { label: 'Shipping Lines', path: '/shipping-lines', ready: true },
-      { label: 'Sea Ports', path: '/sea-ports', ready: true },
-    ],
-  },
-  { label: 'Pricing', path: '/pricing', ready: true, children: [] },
-  {
-    label: 'Logistics',
-    path: '/logistics',
-    ready: true,
-    children: [
-      { label: 'Weekly Shipments', path: '/logistics/weekly-shipments', ready: true },
-      { label: 'Schedules', path: '/logistics/schedules', ready: true },
-      { label: 'Routes', path: '/logistics/routes', ready: true },
-      { label: 'Shipment History', path: '/logistics/shipment-history' },
-      { label: 'Weekly Expenses', path: '/logistics/weekly-expenses' },
-      { label: 'Insurance', path: '/logistics/insurance' },
-    ],
-  },
-  { label: 'Reports', path: '/reports', children: [] },
-];
-
 export const AppLayout = () => {
-  const { logout, username } = useAuth();
+  const { logout, username, role, canAccess } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [navAnchorEl, setNavAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
 
-  const { data: routes = [] } = useQuery({ queryKey: ['routes'], queryFn: getRoutes });
-  const expiring = expiringSoon(routes);
+  const modules = MODULES.filter((m) => canAccess(m.requires));
+
+  const { alerts, dismissAlert, dismissAllAlerts } = useExpiryNotifications(canAccess('logistics'));
 
   const openNotif = (path: string) => {
     setNotifAnchorEl(null);
@@ -102,7 +54,7 @@ export const AppLayout = () => {
 
   // The module we're currently inside (matched by the module hub path or any of
   // its children). Undefined on hub pages like "/" so nothing is highlighted.
-  const activeModule = MODULES.find(
+  const activeModule = modules.find(
     (m) => isActive(m.path) || m.children.some((c) => isActive(c.path)),
   );
   const activeModulePath = activeModule?.path ?? false;
@@ -145,7 +97,7 @@ export const AppLayout = () => {
                 '& .MuiTabs-indicator': { backgroundColor: 'primary.main' },
               }}
             >
-              {MODULES.map((m) => (
+              {modules.map((m) => (
                 <Tab
                   key={m.path}
                   label={m.label}
@@ -176,7 +128,7 @@ export const AppLayout = () => {
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
               slotProps={{ paper: { sx: { minWidth: 220, mt: 1 } } }}
             >
-              {MODULES.flatMap((m) => [
+              {modules.flatMap((m) => [
                 <MenuItem
                   key={m.path}
                   disabled={!m.ready}
@@ -205,41 +157,23 @@ export const AppLayout = () => {
                 <HomeIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Expiring routes">
-              <IconButton onClick={(e) => setNotifAnchorEl(e.currentTarget)} sx={{ color: '#494445' }}>
-                <Badge badgeContent={expiring.length} color="error">
-                  <NotificationsNoneIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-            <Menu
+            {canAccess('logistics') && (
+              <Tooltip title="Expiring routes">
+                <IconButton onClick={(e) => setNotifAnchorEl(e.currentTarget)} sx={{ color: '#494445' }}>
+                  <Badge badgeContent={alerts.length} color="error">
+                    <NotificationsNoneIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+            )}
+            <ExpiryNotificationsMenu
               anchorEl={notifAnchorEl}
-              open={Boolean(notifAnchorEl)}
+              alerts={alerts}
               onClose={() => setNotifAnchorEl(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              slotProps={{ paper: { sx: { minWidth: 280, maxWidth: 360, mt: 1 } } }}
-            >
-              <Box sx={{ px: 2, py: 1 }}>
-                <Typography variant="subtitle2" fontWeight={700}>Route validity</Typography>
-              </Box>
-              <Divider />
-              {expiring.length === 0 ? (
-                <Box sx={{ px: 2, py: 1.5 }}>
-                  <Typography variant="body2" color="text.secondary">No routes expiring soon.</Typography>
-                </Box>
-              ) : (
-                expiring.map(({ route, days }) => (
-                  <MenuItem key={route.id} onClick={() => openNotif(`/logistics/routes/${route.id}`)}>
-                    <ListItemText
-                      primary={route.reference || route.shipping_line || `Route ${route.id}`}
-                      secondary={expiryLabel(days)}
-                      secondaryTypographyProps={{ color: isUrgent(days) ? 'error.main' : 'warning.main', fontWeight: 600 }}
-                    />
-                  </MenuItem>
-                ))
-              )}
-            </Menu>
+              onOpenRoute={(routeId) => openNotif(`/logistics/routes/${routeId}`)}
+              onDismiss={dismissAlert}
+              onDismissAll={dismissAllAlerts}
+            />
             <Tooltip title="Account">
               <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ color: '#494445' }}>
                 <AccountCircleIcon />
@@ -259,6 +193,9 @@ export const AppLayout = () => {
                 </Typography>
                 <Typography variant="subtitle2" fontWeight={600} noWrap>
                   {username}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                  {role}
                 </Typography>
               </Box>
               <Divider />

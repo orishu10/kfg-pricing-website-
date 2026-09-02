@@ -1,3 +1,5 @@
+import type { Route } from '../../../../api';
+
 export const CURRENCY_OPTIONS = ['ILS', 'USD', 'EUR'];
 export const CURRENCY_SYMBOLS: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
 export const INCOTERMS = ['fob', 'cif', 'dap', 'ddp'] as const;
@@ -22,4 +24,25 @@ export const EMPTY_ROUTE: RouteForm = {
   dap_currency: 'ILS',
   ddp_currency: 'ILS',
   total_currency: 'ILS',
+};
+
+export const EXPIRY_WINDOW = 7;
+
+export type ExpirySeverity = 'expired' | 'urgent' | 'soon';
+
+export interface RouteExpiryAlert {
+  route: Route;
+  days: number;
+}
+
+export const EXPIRY_CHIP_STYLES: Record<ExpirySeverity, { bgcolor: string; color: string }> = {
+  expired: { bgcolor: '#d32f2f', color: '#ffffff' },
+  urgent: { bgcolor: '#ed6c02', color: '#ffffff' },
+  soon: { bgcolor: '#ffe680', color: '#5a4700' },
+};
+
+export const EXPIRY_TEXT_COLORS: Record<ExpirySeverity, string> = {
+  expired: '#d32f2f',
+  urgent: '#ed6c02',
+  soon: '#8a6d00',
 };

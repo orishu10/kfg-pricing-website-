@@ -5,10 +5,26 @@ const router = Router();
 
 const n = (v: unknown) => (v === '' || v === undefined ? null : v);
 
+const JSON_COLUMNS = ['suppliers', 'purchase_orders', 'invoices', 'packing_lists'] as const;
+
 const COLUMNS = [
   'con', 'customer', 'supplier', 'description', 'pup', 'pol', 'pod',
   'vessel', 'voyage', 'etd', 'eta', 'booked',
+  'route', 'status', 'format_id',
+  'customer_incoterms', 'supplier_incoterms', 'suppliers',
+  'loading_place', 'loading_date', 'trucking_company',
+  'container_number', 'shipping_line', 'seal_number', 'mbl_number',
+  'temp_logger', 'booking', 'temperature', 'tfc_reference', 'export_release', 'schedule_id',
+  'purchase_orders', 'invoices', 'packing_lists',
+  'isf', 'bl', 'export_entry', 'trucking_invoice', 'sea_freight_invoice',
+  'fob_charge', 'cif_charge', 'bl_manifest', 'bl_credit', 'additional_ees',
+  'reserve', 'drop_container', 'warehouse_208', 'trucking_charge', 'extras',
 ] as const;
+
+const isJsonColumn = (column: string) => JSON_COLUMNS.includes(column as (typeof JSON_COLUMNS)[number]);
+
+const columnValue = (body: Record<string, unknown>, column: string) =>
+  isJsonColumn(column) ? JSON.stringify(Array.isArray(body[column]) ? body[column] : []) : n(body[column]);
 
 router.get('/', async (_req: Request, res: Response) => {
   try {
@@ -32,7 +48,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   const cols = [...COLUMNS, 'created_by', 'updated_by'];
   const values = [
-    ...COLUMNS.map((c) => n(req.body[c])),
+    ...COLUMNS.map((c) => columnValue(req.body, c)),
     n(req.body.created_by),
     n(req.body.updated_by),
   ];
@@ -52,7 +68,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   const cols = [...COLUMNS, 'updated_by'];
   const set = cols.map((c, i) => `${c} = $${i + 1}`).join(', ');
   const values = [
-    ...COLUMNS.map((c) => n(req.body[c])),
+    ...COLUMNS.map((c) => columnValue(req.body, c)),
     n(req.body.updated_by),
     req.params.id,
   ];

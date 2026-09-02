@@ -4,21 +4,26 @@ import Chip from '@mui/material/Chip';
 import { useRoutesPage } from './hooks/useRoutesPage';
 import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../../components';
 import { fmtDate } from '../../pricing/utils/helpers';
-import { daysUntil, isUrgent, EXPIRY_WINDOW } from './utils/helpers';
+import { daysUntil, expiryChipLabel, expirySeverity, isWithinExpiryWindow } from './utils/helpers';
+import { EXPIRY_CHIP_STYLES } from './utils/consts';
 import type { Route } from '../../../api';
 
 const validityCell = (r: Route) => {
   const days = daysUntil(r.validity);
-  const showChip = days != null && days >= 0 && days <= EXPIRY_WINDOW;
+  const showChip = days != null && isWithinExpiryWindow(days);
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       {fmtDate(r.validity)}
       {showChip && (
         <Chip
           size="small"
-          label={days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`}
-          color={isUrgent(days) ? 'error' : 'warning'}
-          sx={{ height: 20, fontSize: '0.68rem' }}
+          label={expiryChipLabel(days)}
+          sx={{
+            height: 20,
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            ...EXPIRY_CHIP_STYLES[expirySeverity(days)],
+          }}
         />
       )}
     </Box>

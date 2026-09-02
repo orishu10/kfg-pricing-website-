@@ -14,9 +14,12 @@ import pricingRouter from './routes/pricing';
 import routesRouter from './routes/routes';
 import lookupsRouter from './routes/lookups';
 import weeklyShipmentsRouter from './routes/weeklyShipments';
+import shipmentFormatsRouter from './routes/shipmentFormats';
 import schedulesRouter from './routes/schedules';
 import fxRouter from './routes/fx';
 import authRouter from './routes/auth';
+import usersRouter from './routes/users';
+import { requireAuth, requireAdmin, requireInternalUser, requireModuleForWrites } from './middleware/auth';
 
 dotenv.config();
 
@@ -56,16 +59,23 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+const internalAccess = [requireAuth, requireInternalUser];
+const dbmAccess = [...internalAccess, requireModuleForWrites('dbm')];
+const pricingAccess = [...internalAccess, requireModuleForWrites('pricing')];
+const logisticsAccess = [...internalAccess, requireModuleForWrites('logistics')];
+
 app.use('/api/auth', authRouter);
-app.use('/api/customers', customersRouter);
-app.use('/api/suppliers', suppliersRouter);
-app.use('/api/items', itemsRouter);
-app.use('/api/pricing', pricingRouter);
-app.use('/api/routes', routesRouter);
-app.use('/api/lookups', lookupsRouter);
-app.use('/api/weekly-shipments', weeklyShipmentsRouter);
-app.use('/api/schedules', schedulesRouter);
-app.use('/api/fx', fxRouter);
+app.use('/api/users', requireAuth, requireAdmin, usersRouter);
+app.use('/api/customers', dbmAccess, customersRouter);
+app.use('/api/suppliers', dbmAccess, suppliersRouter);
+app.use('/api/items', dbmAccess, itemsRouter);
+app.use('/api/lookups', dbmAccess, lookupsRouter);
+app.use('/api/pricing', pricingAccess, pricingRouter);
+app.use('/api/routes', logisticsAccess, routesRouter);
+app.use('/api/weekly-shipments', logisticsAccess, weeklyShipmentsRouter);
+app.use('/api/shipment-formats', internalAccess, shipmentFormatsRouter);
+app.use('/api/schedules', logisticsAccess, schedulesRouter);
+app.use('/api/fx', internalAccess, fxRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

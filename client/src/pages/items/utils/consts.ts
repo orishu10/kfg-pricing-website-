@@ -13,7 +13,3 @@ export const EMPTY_FORM: FormState = {
   cost_unit: '', cost_case: '', price_unit: '', price_case: '',
   sap_price_unit: '', sap_price_case: '',
 };
-
-export const CONTAINER_OPTIONS = ['REF40HC', 'REF20HC', 'DRY40HC', 'DRY20HC'];
-
-export const INCOTERMS_OPTIONS = ['FCA', 'FOB', 'CIF', 'DAP', 'DDP'];

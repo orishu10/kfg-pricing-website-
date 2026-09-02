@@ -261,6 +261,13 @@ export const updateRoute = async (id: string, data: RouteInput) =>
   (await api.put<Route>(`/routes/${id}`, data)).data;
 export const deleteRoute = async (id: string) => api.delete(`/routes/${id}`);
 
+export interface ShipmentDocumentRow {
+  number: string;
+  date: string;
+  amount: string;
+  file: string;
+}
+
 export interface WeeklyShipment {
   id: string;
   con: string | null;
@@ -276,13 +283,59 @@ export interface WeeklyShipment {
   eta: string | null;
   booked: boolean;
 
+  route: string | null;
+  status: string | null;
+  format_id: number | null;
+
+  customer_incoterms: string | null;
+  supplier_incoterms: string | null;
+  suppliers: string[];
+
+  loading_place: string | null;
+  loading_date: string | null;
+  trucking_company: string | null;
+
+  container_number: string | null;
+  shipping_line: string | null;
+  seal_number: string | null;
+  mbl_number: string | null;
+  temp_logger: string | null;
+  booking: string | null;
+  temperature: string | null;
+  tfc_reference: string | null;
+  export_release: string | null;
+  schedule_id: string | null;
+
+  purchase_orders: ShipmentDocumentRow[];
+  invoices: ShipmentDocumentRow[];
+  packing_lists: ShipmentDocumentRow[];
+  isf: string | null;
+  bl: string | null;
+  export_entry: string | null;
+  trucking_invoice: string | null;
+  sea_freight_invoice: string | null;
+
+  fob_charge: string | null;
+  cif_charge: string | null;
+  bl_manifest: boolean;
+  bl_credit: N;
+  additional_ees: N;
+  reserve: string | null;
+  drop_container: N;
+  warehouse_208: N;
+  trucking_charge: N;
+  extras: string | null;
+
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
   updated_at: string | null;
 }
 
-export type WeeklyShipmentInput = Record<string, string | number | boolean | null | undefined>;
+export type WeeklyShipmentInput = Record<
+  string,
+  string | number | boolean | ShipmentDocumentRow[] | string[] | null | undefined
+>;
 
 export const getWeeklyShipments = async () =>
   (await api.get<WeeklyShipment[]>('/weekly-shipments')).data;
@@ -293,6 +346,30 @@ export const createWeeklyShipment = async (data: WeeklyShipmentInput) =>
 export const updateWeeklyShipment = async (id: string, data: WeeklyShipmentInput) =>
   (await api.put<WeeklyShipment>(`/weekly-shipments/${id}`, data)).data;
 export const deleteWeeklyShipment = async (id: string) => api.delete(`/weekly-shipments/${id}`);
+
+export interface ShipmentFormat {
+  id: number;
+  name: string;
+  fields: string[];
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface ShipmentFormatPayload {
+  name: string;
+  fields: string[];
+  updated_by?: string;
+}
+
+export const getShipmentFormats = async () =>
+  (await api.get<ShipmentFormat[]>('/shipment-formats')).data;
+export const createShipmentFormat = async (data: ShipmentFormatPayload) =>
+  (await api.post<ShipmentFormat>('/shipment-formats', data)).data;
+export const updateShipmentFormat = async (id: number, data: ShipmentFormatPayload) =>
+  (await api.put<ShipmentFormat>(`/shipment-formats/${id}`, data)).data;
+export const deleteShipmentFormat = async (id: number) => api.delete(`/shipment-formats/${id}`);
 
 export interface Schedule {
   id: string;
@@ -361,6 +438,41 @@ export const reorderLookups = async (category: LookupCategory, ids: number[]) =>
   api.put('/lookups/reorder', { category, ids });
 export const deleteLookup = async (id: number) => api.delete(`/lookups/${id}`);
 
+// Users and access control
+export type AppModule = 'dbm' | 'pricing' | 'logistics' | 'reports';
+export type UserRole = 'admin' | 'manager' | 'user' | 'customer';
+
+export interface AppUser {
+  id: number;
+  username: string;
+  email: string | null;
+  role: UserRole;
+  permissions: AppModule[];
+  created_at: string;
+}
+
+export interface UserPayload {
+  username: string;
+  email: string | null;
+  password?: string;
+  role: UserRole;
+  permissions: AppModule[];
+}
+
+export const getUsers = async () => (await api.get<AppUser[]>('/users')).data;
+export const createUser = async (data: UserPayload) =>
+  (await api.post<AppUser>('/users', data)).data;
+export const updateUser = async (id: number, data: UserPayload) =>
+  (await api.put<AppUser>(`/users/${id}`, data)).data;
+export const deleteUser = async (id: number) => api.delete(`/users/${id}`);
+
 // Auth
+export interface AuthSession {
+  token: string;
+  username: string;
+  role: UserRole;
+  permissions: AppModule[];
+}
+
 export const login = async (username: string, password: string) =>
-  (await api.post<{ token: string; username: string }>('/auth/login', { username, password })).data;
+  (await api.post<AuthSession>('/auth/login', { username, password })).data;

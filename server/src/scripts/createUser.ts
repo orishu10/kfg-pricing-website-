@@ -1,12 +1,13 @@
 /**
- * One-off user creator / password resetter.
+ * One-off administrator creator / password resetter.
  *
- * The app is login-only (no signup route), so the first user must be seeded
- * manually. Idempotent: re-running with an existing username updates the
- * password hash.
+ * The app has no signup route, so the first administrator must be seeded
+ * manually; everyone else is created from the in-app Users page. Idempotent:
+ * re-running with an existing username updates the password and restores the
+ * admin role.
  *
  * Usage (from server/, after `npm run build`):
- *   node dist/scripts/createUser.js <username> <password>
+ *   node dist/scripts/createUser.js <username> <password> [email]
  * or via environment variables:
  *   ADMIN_USERNAME=alice ADMIN_PASSWORD=secret node dist/scripts/createUser.js
  *
@@ -18,6 +19,7 @@ import { pool } from '../db';
 
 const username = process.argv[2] || process.env.ADMIN_USERNAME;
 const password = process.argv[3] || process.env.ADMIN_PASSWORD;
+const email = process.argv[4] || process.env.ADMIN_EMAIL || null;
 
 const run = async () => {
   if (!username || !password) {
@@ -30,12 +32,15 @@ const run = async () => {
 
   const hash = await bcrypt.hash(password, 12);
   await pool.query(
-    `INSERT INTO users (username, password_hash)
-     VALUES ($1, $2)
-     ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
-    [username, hash]
+    `INSERT INTO users (username, email, password_hash, role, permissions)
+     VALUES ($1, $2, $3, 'admin', '[]'::jsonb)
+     ON CONFLICT (username) DO UPDATE
+        SET password_hash = EXCLUDED.password_hash,
+            email         = COALESCE(EXCLUDED.email, users.email),
+            role          = 'admin'`,
+    [username, email, hash]
   );
-  console.log(`✓ User "${username}" created/updated`);
+  console.log(`✓ Administrator "${username}" created/updated`);
   await pool.end();
 };
 

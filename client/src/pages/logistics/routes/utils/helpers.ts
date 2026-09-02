@@ -1,4 +1,12 @@
-import { EMPTY_ROUTE, ROUTE_KEYS, INCOTERMS, type RouteForm } from './consts';
+import {
+  EMPTY_ROUTE,
+  ROUTE_KEYS,
+  INCOTERMS,
+  EXPIRY_WINDOW,
+  type RouteForm,
+  type ExpirySeverity,
+  type RouteExpiryAlert,
+} from './consts';
 import type { Route } from '../../../../api';
 
 export const routeToForm = (r: Route): RouteForm => {
@@ -73,14 +81,28 @@ export const daysUntil = (validity: string | null): number | null => {
   return Math.round((target.getTime() - today.getTime()) / 86_400_000);
 };
 
-export const EXPIRY_WINDOW = 7;
-export const isUrgent = (days: number) => days <= 1;
+export const isWithinExpiryWindow = (days: number) => days <= EXPIRY_WINDOW;
 
-export const expiryLabel = (days: number): string =>
-  days <= 0 ? 'expires today' : days === 1 ? 'expires tomorrow' : `expires in ${days} days`;
+export const expirySeverity = (days: number): ExpirySeverity =>
+  days < 0 ? 'expired' : days <= 1 ? 'urgent' : 'soon';
 
-export const expiringSoon = <T extends { validity: string | null }>(routes: T[]) =>
+export const expiryChipLabel = (days: number): string => {
+  if (days < 0) return 'Expired';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  return `${days}d`;
+};
+
+export const expiryMessage = (days: number): string => {
+  if (days < -1) return `Expired ${Math.abs(days)} days ago`;
+  if (days === -1) return 'Expired yesterday';
+  if (days === 0) return 'Expires today';
+  if (days === 1) return 'Expires tomorrow';
+  return `Expires in ${days} days`;
+};
+
+export const expiryAlerts = (routes: Route[]): RouteExpiryAlert[] =>
   routes
-    .map((r) => ({ route: r, days: daysUntil(r.validity) }))
-    .filter((x): x is { route: T; days: number } => x.days != null && x.days >= 0 && x.days <= EXPIRY_WINDOW)
+    .map((route) => ({ route, days: daysUntil(route.validity) }))
+    .filter((alert): alert is RouteExpiryAlert => alert.days != null && isWithinExpiryWindow(alert.days))
     .sort((a, b) => a.days - b.days);

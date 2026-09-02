@@ -1,14 +1,21 @@
 import { createContext, useContext } from 'react';
+import type { AppModule, AuthSession, UserRole } from '../api';
+
+export type AccessRequirement = AppModule | 'admin';
 
 export interface AuthState {
   token: string | null;
   username: string | null;
+  role: UserRole | null;
+  permissions: AppModule[];
 }
 
 export interface AuthContextValue extends AuthState {
-  login: (token: string, username: string) => void;
+  login: (session: AuthSession) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  canAccess: (requirement: AccessRequirement) => boolean;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

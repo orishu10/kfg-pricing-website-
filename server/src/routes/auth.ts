@@ -3,17 +3,9 @@ import rateLimit from 'express-rate-limit';
 import { pool } from '../db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { jwtSecret, loadAuthUser, isUserRole, toModuleList } from '../middleware/auth';
 
 const router = Router();
-
-const jwtSecret = (): string => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    // Fail loudly rather than silently signing tokens with a public default.
-    throw new Error('JWT_SECRET is not set');
-  }
-  return secret;
-};
 
 // Throttle credential-guessing: max 10 login attempts per IP per 15 minutes.
 const loginLimiter = rateLimit({
@@ -49,23 +41,35 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
-    res.json({ token, username: user.username });
+    res.json({
+      token,
+      username: user.username,
+      role: isUserRole(user.role) ? user.role : 'customer',
+      permissions: toModuleList(user.permissions),
+    });
   } catch (err) {
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-// POST /api/auth/verify  — lightweight token check
-router.post('/verify', (req: Request, res: Response) => {
+// POST /api/auth/verify  — token check that returns the live role and permissions
+router.post('/verify', async (req: Request, res: Response) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token' });
   }
+  let id: number;
   try {
-    const payload = jwt.verify(auth.slice(7), jwtSecret()) as { username: string };
-    res.json({ username: payload.username });
+    ({ id } = jwt.verify(auth.slice(7), jwtSecret()) as { id: number });
   } catch {
-    res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  try {
+    const user = await loadAuthUser(id);
+    if (!user) return res.status(401).json({ error: 'Account no longer exists' });
+    res.json({ username: user.username, role: user.role, permissions: user.permissions });
+  } catch {
+    res.status(500).json({ error: 'Verification failed' });
   }
 });
 

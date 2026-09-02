@@ -16,8 +16,7 @@ export const useSignInPage = () => {
     setError('');
     setLoading(true);
     try {
-      const data = await login(username.trim(), password);
-      setAuth(data.token, data.username);
+      setAuth(await login(username.trim(), password));
       navigate('/');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;

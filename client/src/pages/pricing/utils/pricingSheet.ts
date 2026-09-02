@@ -1,5 +1,6 @@
 import type { Pricing } from '../../../api';
-import { fmtDate } from './helpers';
+import { ILS_SYMBOL } from './consts';
+import { fmtDate, symbol } from './helpers';
 
 const esc = (v: unknown): string =>
   String(v ?? '')
@@ -56,6 +57,7 @@ const STYLE = `
 
 export const buildPricingSheetHtml = (p: Pricing): string => {
   const g = (k: keyof Pricing) => (p[k] == null ? '' : String(p[k]));
+  const sym = symbol(p.currency);
 
   const fld = (label: string, value: string, unit = '') => `
     <div class="fld">
@@ -98,10 +100,10 @@ export const buildPricingSheetHtml = (p: Pricing): string => {
       ${fld('Cases / FCL', g('cases_in_fcl'))}
     </div>
     <div class="grid g4">
-      ${fld('FOB', g('fob'), '$')}
-      ${fld('CIF', g('cif'), '$')}
-      ${fld('DAP', g('dap'), '$')}
-      ${fld('DDP', g('ddp'), '$')}
+      ${fld('FOB', g('fob'), sym)}
+      ${fld('CIF', g('cif'), sym)}
+      ${fld('DAP', g('dap'), sym)}
+      ${fld('DDP', g('ddp'), sym)}
     </div>`);
 
   const routePanel = panel('', C.log, `
@@ -110,11 +112,11 @@ export const buildPricingSheetHtml = (p: Pricing): string => {
 
   const supplierPanel = panel('SUPPLIER', C.green, `
     <div class="grid g5">
-      ${fld('Price - Unit', g('supplier_price_unit'), '₪')}
-      ${fld('Price - Unit', g('price_unit_usd'), '$')}
-      ${fld('Price - Case', g('supplier_price_case'), '₪')}
-      ${fld('Price - Case', g('price_case_usd'), '$')}
-      ${fld('Price - FCL', g('price_fcl_usd'), '$')}
+      ${fld('Price - Unit', g('supplier_price_unit'), ILS_SYMBOL)}
+      ${fld('Price - Unit', g('price_unit_usd'), sym)}
+      ${fld('Price - Case', g('supplier_price_case'), ILS_SYMBOL)}
+      ${fld('Price - Case', g('price_case_usd'), sym)}
+      ${fld('Price - FCL', g('price_fcl_usd'), sym)}
     </div>`);
 
   const incotermsPanel = panel('', C.green, fld('Incoterms - Supplier', g('incoterms_supplier')));
@@ -122,35 +124,35 @@ export const buildPricingSheetHtml = (p: Pricing): string => {
   const costBuildUp = `
     <div class="stack">
       <div class="grid g3">
-        ${panel('SUBTOTAL 1', C.pink, `<div class="cap">LOG + Supplier + Supervision</div>${fld('', g('sub_total_1'), '₪')}`)}
-        ${panel('SUBTOTAL 2', C.pink, `<div class="cap">LOG + Supplier + US Tariff</div>${fld('', g('sub_total_2'), '₪')}`)}
-        ${panel('TOTAL', C.blue, `<div class="cap">Subtotal 2 + KFG</div>${fld('', g('total'), '₪')}`)}
+        ${panel('SUBTOTAL 1', C.pink, `<div class="cap">LOG + Supplier + Supervision</div>${fld('', g('sub_total_1'), sym)}`)}
+        ${panel('SUBTOTAL 2', C.pink, `<div class="cap">LOG + Supplier + US Tariff</div>${fld('', g('sub_total_2'), sym)}`)}
+        ${panel('TOTAL', C.blue, `<div class="cap">Subtotal 2 + KFG</div>${fld('', g('total'), sym)}`)}
       </div>
       <div class="grid g2 grow">
-        ${panel('KFG COMMISSION', C.grey, `<div class="grid g2">${fld('', g('kfg_commission_pct'), '%')}${fld('', g('kfg_commission'), '₪')}</div>`, 'vcenter')}
-        ${panel('US TARIFF', C.tariff, `<div class="grid g2">${fld('', g('us_tariff_pct'), '%')}${fld('', g('us_tariff'), '$')}</div>`, 'vcenter')}
+        ${panel('KFG COMMISSION', C.grey, `<div class="grid g2">${fld('', g('kfg_commission_pct'), '%')}${fld('', g('kfg_commission'), sym)}</div>`, 'vcenter')}
+        ${panel('US TARIFF', C.tariff, `<div class="grid g2">${fld('', g('us_tariff_pct'), '%')}${fld('', g('us_tariff'), sym)}</div>`, 'vcenter')}
       </div>
       ${panel('SUPERVISION', '#fff', `<div class="grid g4">
-        ${fld('Cost / Case', g('supervision_cost_rate'), '₪')}
-        ${fld('Cost Total', g('supervision_cost'), '₪')}
-        ${fld('Fees / Case', g('supervision_fees_rate'), '₪')}
-        ${fld('Fees Total', g('supervision_fees'), '₪')}
+        ${fld('Cost / Case', g('supervision_cost_rate'), sym)}
+        ${fld('Cost Total', g('supervision_cost'), sym)}
+        ${fld('Fees / Case', g('supervision_fees_rate'), sym)}
+        ${fld('Fees Total', g('supervision_fees'), sym)}
       </div>`, 'grow vcenter')}
     </div>`;
 
   const indicatorPanel = panel('', '#fff', `
     <div class="lbl" style="font-size:9px;margin-bottom:5px">1KG Indicator</div>
     <div style="display:flex;flex-direction:column;gap:5px">
-      ${box(C.pink, fld('Cost - 1KG', g('cost_1kg'), '₪'))}
-      ${box(C.blue, fld('Price - 1KG', g('price_1kg'), '₪'))}
-      ${box(C.yellow, fld('SAP Price - 1KG', g('sap_price_1kg'), '₪'))}
+      ${box(C.pink, fld('Cost - 1KG', g('cost_1kg'), sym))}
+      ${box(C.blue, fld('Price - 1KG', g('price_1kg'), sym))}
+      ${box(C.yellow, fld('SAP Price - 1KG', g('sap_price_1kg'), sym))}
     </div>`);
 
   const costPriceSap = `
     <div class="grid g3" style="height:100%">
-      ${box(C.pink, `<div class="fillcol">${fld('Cost - Unit', g('cost_unit'), '₪')}${fld('Cost - Case', g('cost_case'), '₪')}</div>`)}
-      ${box(C.blue, `<div class="fillcol">${fld('Price - Unit', g('price_unit'), '₪')}${fld('Price - Case', g('price_case'), '₪')}</div>`)}
-      ${box(C.yellow, `<div class="fillcol">${fld('SAP Price - Unit', g('sap_price_unit'), '₪')}${fld('SAP Price - Case', g('sap_price_case'), '₪')}</div>`)}
+      ${box(C.pink, `<div class="fillcol">${fld('Cost - Unit', g('cost_unit'), sym)}${fld('Cost - Case', g('cost_case'), sym)}</div>`)}
+      ${box(C.blue, `<div class="fillcol">${fld('Price - Unit', g('price_unit'), sym)}${fld('Price - Case', g('price_case'), sym)}</div>`)}
+      ${box(C.yellow, `<div class="fillcol">${fld('SAP Price - Unit', g('sap_price_unit'), sym)}${fld('SAP Price - Case', g('sap_price_case'), sym)}</div>`)}
     </div>`;
 
   const importAndAttribution = `

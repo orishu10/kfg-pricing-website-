@@ -1,13 +1,12 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import api from '../api';
 import { AuthContext, type AuthState } from './auth';
+import { readStoredSession, storeSession, clearStoredSession, accessIsAllowed } from './helpers';
+import type { AccessRequirement } from './auth';
+import type { AuthSession } from '../api';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [auth, setAuth] = useState<AuthState>(() => {
-    const token = localStorage.getItem('kfg_token');
-    const username = localStorage.getItem('kfg_username');
-    return { token, username };
-  });
+  const [auth, setAuth] = useState<AuthState>(readStoredSession);
 
   useEffect(() => {
     if (auth.token) {
@@ -17,22 +16,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [auth.token]);
 
-  const login = (token: string, username: string) => {
-    localStorage.setItem('kfg_token', token);
-    localStorage.setItem('kfg_username', username);
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setAuth({ token, username });
+  const login = (session: AuthSession) => {
+    storeSession(session);
+    api.defaults.headers.common['Authorization'] = `Bearer ${session.token}`;
+    setAuth({
+      token: session.token,
+      username: session.username,
+      role: session.role,
+      permissions: session.permissions,
+    });
   };
 
-  const logout = () => {
-    localStorage.removeItem('kfg_token');
-    localStorage.removeItem('kfg_username');
+  const logout = useCallback(() => {
+    clearStoredSession();
     delete api.defaults.headers.common['Authorization'];
-    setAuth({ token: null, username: null });
-  };
+    setAuth({ token: null, username: null, role: null, permissions: [] });
+  }, []);
+
+  useEffect(() => {
+    const interceptor = api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const status = error?.response?.status;
+        const url: string = error?.config?.url ?? '';
+        if (status === 401 && !url.includes('/auth/login')) logout();
+        return Promise.reject(error);
+      },
+    );
+    return () => api.interceptors.response.eject(interceptor);
+  }, [logout]);
+
+  const canAccess = (requirement: AccessRequirement) => accessIsAllowed(auth, requirement);
 
   return (
-    <AuthContext.Provider value={{ ...auth, login, logout, isAuthenticated: !!auth.token }}>
+    <AuthContext.Provider
+      value={{
+        ...auth,
+        login,
+        logout,
+        isAuthenticated: !!auth.token,
+        isAdmin: auth.role === 'admin',
+        canAccess,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

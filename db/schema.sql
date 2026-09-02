@@ -31,12 +31,21 @@ CREATE TABLE IF NOT EXISTS suppliers (
 );
 
 -- Application login accounts (bcrypt password hashes).
+-- role drives access: admin (full + user management), manager (full, no user
+-- management), user (only the modules listed in permissions), customer
+-- (no internal module access).
 CREATE TABLE IF NOT EXISTS users (
     id            SERIAL       PRIMARY KEY,
     username      VARCHAR(100) UNIQUE NOT NULL,
+    email         VARCHAR(255),
     password_hash VARCHAR(255) NOT NULL,
+    role          VARCHAR(20)  NOT NULL DEFAULT 'user'
+                      CHECK (role IN ('admin', 'manager', 'user', 'customer')),
+    permissions   JSONB        NOT NULL DEFAULT '[]'::jsonb,
     created_at    TIMESTAMP    NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (lower(email)) WHERE email IS NOT NULL;
 
 -- Auto-update timestamp helper (used by the items and pricing triggers).
 CREATE OR REPLACE FUNCTION update_updated_at_column()

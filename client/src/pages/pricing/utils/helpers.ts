@@ -1,5 +1,8 @@
-import { EMPTY_PRICING, PRICING_KEYS, TEXT_KEYS, type PricingForm } from './consts';
-import { getFxRates, type Pricing } from '../../../api';
+import {
+  CURRENCY_SYMBOLS, EMPTY_PRICING, ILS_SYMBOL, PRICING_KEYS,
+  ROUTE_CURRENCY_SUFFIX, TEXT_KEYS, type PricingForm,
+} from './consts';
+import { getFxRates, type Pricing, type Route } from '../../../api';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const LB_PER_KG = 2.20462;
@@ -31,7 +34,21 @@ export const pricingToForm = (p: Pricing): PricingForm => {
 };
 
 export const symbol = (currency: string | null | undefined): string =>
-  currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '₪';
+  CURRENCY_SYMBOLS[currency ?? ''] ?? ILS_SYMBOL;
+
+export const routeIncotermPrices = (
+  route: Route | undefined,
+  currency: string | null | undefined,
+): Pick<PricingForm, 'fob' | 'cif' | 'dap' | 'ddp'> => {
+  const suffix = ROUTE_CURRENCY_SUFFIX[currency ?? ''] ?? ROUTE_CURRENCY_SUFFIX.USD;
+  const values = (route ?? {}) as unknown as Record<string, string | null | undefined>;
+  return {
+    fob: to2(values[`fob_${suffix}`]),
+    cif: to2(values[`cif_${suffix}`]),
+    dap: to2(values[`dap_${suffix}`]),
+    ddp: to2(values[`ddp_${suffix}`]),
+  };
+};
 
 export const fetchFxRate = async (pair: string): Promise<number | null> => {
   const target = pair.includes('EUR') ? 'EUR' : 'USD';
@@ -91,7 +108,7 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const sup = (supCostVal ?? 0) + (supFeesVal ?? 0);
 
   const incoSum = fob + cif + dap + ddp;
-  const st1 = incoSum > 0 || spFcl != null || sup > 0 ? incoSum + (spFcl ?? 0) + sup : null;
+  const st1 = incoSum > 0 || pfUsd != null || sup > 0 ? incoSum + (pfUsd ?? 0) + sup : null;
 
   const tarVal = pfUsd != null ? (tarPct / 100) * pfUsd : null;
   const kfgVal = st1 != null ? (kfgPct / 100) * st1 : null;
@@ -106,12 +123,13 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const cUnit = cCase != null && uic > 0 ? cCase / uic : null;
   const pCase = tot != null && cifcl > 0 ? tot / cifcl : null;
   const pUnit = pCase != null && uic > 0 ? pCase / uic : null;
-  const sapU = spCase != null && uic > 0 ? spCase / uic : null;
+  const sapUnit = num('sap_price_unit');
+  const sapCase = sapUnit > 0 && uic > 0 ? sapUnit * uic : null;
 
   const wtEff = f.weight_unit === 'LB' ? wt * LB_PER_KG : wt;
   const c1kg = cUnit != null && wtEff > 0 ? cUnit / wtEff : null;
   const p1kg = pUnit != null && wtEff > 0 ? pUnit / wtEff : null;
-  const sap1kg = sapU != null && wtEff > 0 ? sapU / wtEff : null;
+  const sap1kg = sapUnit > 0 && wtEff > 0 ? sapUnit / wtEff : null;
 
   const s = (v: number | null) => (v != null ? v.toFixed(2) : '');
 
@@ -135,7 +153,7 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     cost_unit: s(cUnit),
     price_case: s(pCase),
     price_unit: s(pUnit),
-    sap_price_unit: s(sapU),
+    sap_price_case: s(sapCase),
     cost_1kg: s(c1kg),
     price_1kg: s(p1kg),
     sap_price_1kg: s(sap1kg),

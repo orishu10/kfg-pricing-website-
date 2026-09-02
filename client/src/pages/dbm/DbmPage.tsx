@@ -30,12 +30,12 @@ export const DbmPage = () => {
       <NavCard icon={<PeopleAltIcon sx={iconSx} />} label="Customers" onClick={() => navigate('/customers')} />
       <NavCard icon={<LocalShippingIcon sx={iconSx} />} label="Suppliers" onClick={() => navigate('/suppliers')} />
       <NavCard icon={<Inventory2Icon sx={iconSx} />} label="Items" onClick={() => navigate('/items')} />
-      <NavCard icon={<SwapHorizIcon sx={iconSx} />} label="Incoterms" onClick={() => {}} />
-      <NavCard icon={<CurrencyExchangeIcon sx={iconSx} />} label="Currencies" onClick={() => {}} />
-      <NavCard icon={<PublicIcon sx={iconSx} />} label="Countries" onClick={() => {}} />
-      <NavCard icon={<ViewInArIcon sx={iconSx} />} label="Containers" onClick={() => {}} />
-      <NavCard icon={<DirectionsBoatIcon sx={iconSx} />} label="Shipping Lines" onClick={() => {}} />
-      <NavCard icon={<AnchorIcon sx={iconSx} />} label="Sea Ports" onClick={() => {}} />
+      <NavCard icon={<SwapHorizIcon sx={iconSx} />} label="Incoterms" onClick={() => navigate('/incoterms')} />
+      <NavCard icon={<CurrencyExchangeIcon sx={iconSx} />} label="Currencies" onClick={() => navigate('/currencies')} />
+      <NavCard icon={<PublicIcon sx={iconSx} />} label="Countries" onClick={() => navigate('/countries')} />
+      <NavCard icon={<ViewInArIcon sx={iconSx} />} label="Containers" onClick={() => navigate('/containers')} />
+      <NavCard icon={<DirectionsBoatIcon sx={iconSx} />} label="Shipping Lines" onClick={() => navigate('/shipping-lines')} />
+      <NavCard icon={<AnchorIcon sx={iconSx} />} label="Sea Ports" onClick={() => navigate('/sea-ports')} />
     </Box>
   );
 };

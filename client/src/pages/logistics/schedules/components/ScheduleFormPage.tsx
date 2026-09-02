@@ -7,7 +7,8 @@ import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../../components';
-import { FormField, FormPanel, gridSx } from '../../components/form';
+import { useLookups } from '../../../../hooks/useLookups';
+import { FormField, FormSelect, FormPanel, gridSx } from '../../components/form';
 import { EMPTY_SCHEDULE, type ScheduleForm } from '../utils/consts';
 import { scheduleToForm } from '../utils/helpers';
 import {
@@ -23,6 +24,7 @@ export const ScheduleFormPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { username } = useAuth();
+  const { options } = useLookups();
   const [error, setError] = useState('');
   const [form, setForm] = useState<ScheduleForm>(EMPTY_SCHEDULE);
 
@@ -90,8 +92,8 @@ export const ScheduleFormPage = () => {
           <Box sx={gridSx(4)}>
             <FormField label="Vessel" value={form.vessel} onChange={set('vessel')} />
             <FormField label="Voyage" value={form.voyage} onChange={set('voyage')} />
-            <FormField label="POL" value={form.pol} onChange={set('pol')} />
-            <FormField label="POD" value={form.pod} onChange={set('pod')} />
+            <FormSelect label="POL" value={form.pol} onChange={set('pol')} options={options('sea_port', form.pol)} />
+            <FormSelect label="POD" value={form.pod} onChange={set('pod')} options={options('sea_port', form.pod)} />
           </Box>
           <Box sx={gridSx(3)}>
             <FormField label="ETD" type="date" value={form.etd} onChange={set('etd')} />

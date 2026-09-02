@@ -7,12 +7,16 @@ import CircularProgress from '@mui/material/CircularProgress';
 import theme from './theme';
 import { AuthProvider } from './context/AuthContext';
 import { AuthGuard } from './layout/AuthGuard';
+import { AdminGuard } from './layout/AdminGuard';
+import { ModuleGuard } from './layout/ModuleGuard';
 import { AppLayout } from './layout/AppLayout';
 
 // Each page loads as its own chunk only when first visited
 const SignInPage = lazy(() => import('./pages/auth/SignInPage'));
 const HomePage = lazy(() => import('./pages/home/HomePage'));
 const DbmPage = lazy(() => import('./pages/dbm/DbmPage'));
+const UsersPage = lazy(() => import('./pages/users/UsersPage'));
+const FormatsPage = lazy(() => import('./pages/formats/FormatsPage'));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
 const SuppliersPage = lazy(() => import('./pages/suppliers/SuppliersPage'));
 const ItemsPage = lazy(() => import('./pages/items/ItemsPage'));
@@ -21,7 +25,6 @@ const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
 const PricingFormPage = lazy(() => import('./pages/pricing/components/PricingFormPage'));
 const LogisticsPage = lazy(() => import('./pages/logistics/LogisticsPage'));
 const WeeklyShipmentsPage = lazy(() => import('./pages/logistics/weeklyShipments/WeeklyShipmentsPage'));
-const WeeklyShipmentFormPage = lazy(() => import('./pages/logistics/weeklyShipments/components/WeeklyShipmentFormPage'));
 const SchedulesPage = lazy(() => import('./pages/logistics/schedules/SchedulesPage'));
 const ScheduleFormPage = lazy(() => import('./pages/logistics/schedules/components/ScheduleFormPage'));
 const RoutesPage = lazy(() => import('./pages/logistics/routes/RoutesPage'));
@@ -44,29 +47,41 @@ export const App = () => (
             <Route element={<AuthGuard />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/dbm" element={<DbmPage />} />
-                <Route path="/customers" element={<CustomersPage />} />
-                <Route path="/suppliers" element={<SuppliersPage />} />
-                <Route path="/items" element={<ItemsPage />} />
-                <Route path="/incoterms" element={<ListsPage category="incoterms" />} />
-                <Route path="/currencies" element={<ListsPage category="currency_pair" />} />
-                <Route path="/countries" element={<ListsPage category="country" />} />
-                <Route path="/containers" element={<ListsPage category="container" />} />
-                <Route path="/shipping-lines" element={<ListsPage category="shipping_line" />} />
-                <Route path="/sea-ports" element={<ListsPage category="sea_port" />} />
-                <Route path="/pricing" element={<PricingPage />} />
-                <Route path="/pricing/new" element={<PricingFormPage />} />
-                <Route path="/pricing/:pricingId" element={<PricingFormPage />} />
-                <Route path="/logistics" element={<LogisticsPage />} />
-                <Route path="/logistics/weekly-shipments" element={<WeeklyShipmentsPage />} />
-                <Route path="/logistics/weekly-shipments/new" element={<WeeklyShipmentFormPage />} />
-                <Route path="/logistics/weekly-shipments/:shipmentId" element={<WeeklyShipmentFormPage />} />
-                <Route path="/logistics/schedules" element={<SchedulesPage />} />
-                <Route path="/logistics/schedules/new" element={<ScheduleFormPage />} />
-                <Route path="/logistics/schedules/:scheduleId" element={<ScheduleFormPage />} />
-                <Route path="/logistics/routes" element={<RoutesPage />} />
-                <Route path="/logistics/routes/new" element={<RouteFormPage />} />
-                <Route path="/logistics/routes/:routeId" element={<RouteFormPage />} />
+
+                <Route element={<AdminGuard />}>
+                  <Route path="/users" element={<UsersPage />} />
+                  <Route path="/formats" element={<FormatsPage />} />
+                </Route>
+
+                <Route element={<ModuleGuard module="dbm" />}>
+                  <Route path="/dbm" element={<DbmPage />} />
+                  <Route path="/customers" element={<CustomersPage />} />
+                  <Route path="/suppliers" element={<SuppliersPage />} />
+                  <Route path="/items" element={<ItemsPage />} />
+                  <Route path="/incoterms" element={<ListsPage category="incoterms" />} />
+                  <Route path="/currencies" element={<ListsPage category="currency_pair" />} />
+                  <Route path="/countries" element={<ListsPage category="country" />} />
+                  <Route path="/containers" element={<ListsPage category="container" />} />
+                  <Route path="/shipping-lines" element={<ListsPage category="shipping_line" />} />
+                  <Route path="/sea-ports" element={<ListsPage category="sea_port" />} />
+                </Route>
+
+                <Route element={<ModuleGuard module="pricing" />}>
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/pricing/new" element={<PricingFormPage />} />
+                  <Route path="/pricing/:pricingId" element={<PricingFormPage />} />
+                </Route>
+
+                <Route element={<ModuleGuard module="logistics" />}>
+                  <Route path="/logistics" element={<LogisticsPage />} />
+                  <Route path="/logistics/weekly-shipments" element={<WeeklyShipmentsPage />} />
+                  <Route path="/logistics/schedules" element={<SchedulesPage />} />
+                  <Route path="/logistics/schedules/new" element={<ScheduleFormPage />} />
+                  <Route path="/logistics/schedules/:scheduleId" element={<ScheduleFormPage />} />
+                  <Route path="/logistics/routes" element={<RoutesPage />} />
+                  <Route path="/logistics/routes/new" element={<RouteFormPage />} />
+                  <Route path="/logistics/routes/:routeId" element={<RouteFormPage />} />
+                </Route>
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" />} />

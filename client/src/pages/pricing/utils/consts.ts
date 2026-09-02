@@ -1,6 +1,20 @@
 export const PRICING_STATUS = ['Active', 'Inactive'];
 export const WEIGHT_UNIT_OPTIONS = ['KG', 'LB'];
 
+export const ILS_SYMBOL = '₪';
+
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  ILS: ILS_SYMBOL,
+};
+
+export const ROUTE_CURRENCY_SUFFIX: Record<string, string> = {
+  USD: 'usd',
+  EUR: 'eur',
+  ILS: 'ils',
+};
+
 export const PRICING_KEYS = [
   'customer_id', 'item_id', 'kfg_sku', 'status',
   'currency', 'pack_size', 'currency_pair', 'ex_rate', 'ex_current',

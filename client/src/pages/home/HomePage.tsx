@@ -1,14 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import StorageIcon from "@mui/icons-material/Storage";
-import AssessmentIcon from "@mui/icons-material/Assessment";
+import Typography from "@mui/material/Typography";
 import kfgLogo from "../../../public/KFG-Logo.svg";
-import pmsLogo from "../../../public/Icon PMS.svg";
-import pricingLogo from "../../../public/Icon PRICING.svg";
 import { NavCard } from "./components/NavCard";
+import { HOME_MODULE_CARDS } from "./utils/consts";
+import { useAuth } from "../../context/auth";
 
 export const HomePage = () => {
   const navigate = useNavigate();
+  const { canAccess } = useAuth();
+
+  const cards = HOME_MODULE_CARDS.filter((card) => canAccess(card.requires));
 
   return (
     <Box
@@ -31,19 +33,26 @@ export const HomePage = () => {
           pb: 2,
         }}
       >
-        <NavCard
-          icon={<StorageIcon sx={{ fontSize: 56 }} />}
-          label="DBM"
-          onClick={() => navigate("/dbm")}
-        />
-        <NavCard icon={pricingLogo} label="PRICING" onClick={() => navigate("/pricing")} />
-        <NavCard icon={pmsLogo} label="LOGISTICS" onClick={() => navigate("/logistics")} />
-        <NavCard
-          icon={<AssessmentIcon sx={{ fontSize: 56 }} />}
-          label="REPORTS"
-          onClick={() => {}}
-        />
+        {cards.map((card) => (
+          <NavCard
+            key={card.path}
+            icon={card.icon}
+            label={card.label}
+            onClick={() => card.ready && navigate(card.path)}
+          />
+        ))}
       </Box>
+
+      {cards.length === 0 && (
+        <Box sx={{ flexShrink: 0, textAlign: "center", pt: 6, pb: 2 }}>
+          <Typography variant="h6" fontWeight={700} color="text.primary">
+            No modules assigned
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Ask an administrator to grant you access.
+          </Typography>
+        </Box>
+      )}
 
       {/* KFG logo */}
       <Box

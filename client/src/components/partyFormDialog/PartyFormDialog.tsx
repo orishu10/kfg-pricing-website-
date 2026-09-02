@@ -5,10 +5,10 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
 import { CommonInput } from '../commonInput/CommonInput';
+import { CommonSelect } from '../commonSelect/CommonSelect';
 import { ErrorAlert } from '../errorAlert/ErrorAlert';
+import { useLookups } from '../../hooks/useLookups';
 import type { Customer, PartyPayload, Supplier } from '../../api';
 
 const CURRENCY_OPTIONS = ['USD', 'EUR', 'ILS'];
@@ -45,6 +45,7 @@ const toForm = (initial: Customer | Supplier | null) =>
     : EMPTY;
 
 export const PartyFormDialog = ({ open, entity, initial, error, onClose, onSubmit, onDelete }: PartyFormDialogProps) => {
+  const { options } = useLookups();
   const [form, setForm] = useState(EMPTY);
   const isEdit = initial !== null;
 
@@ -99,26 +100,32 @@ export const PartyFormDialog = ({ open, entity, initial, error, onClose, onSubmi
             <CommonInput label="Full Name" size="small" required value={form.name} onChange={set('name')} />
             <CommonInput label="Short Name" size="small" value={form.short_name} onChange={set('short_name')} />
             <CommonInput label="Phone" size="small" value={form.phone} onChange={set('phone')} />
-            <CommonInput label="Incoterms" size="small" value={form.incoterms} onChange={set('incoterms')} />
+            <CommonSelect
+              label="Incoterms"
+              size="small"
+              value={form.incoterms}
+              onChange={set('incoterms')}
+              options={options('incoterms', form.incoterms)}
+            />
             {isCustomer && (
-              <TextField
-                select
+              <CommonSelect
                 label="Currency"
                 size="small"
-                fullWidth
                 value={form.currency}
-                onChange={(e) => set('currency')(e.target.value)}
-              >
-                <MenuItem value=""><em>—</em></MenuItem>
-                {CURRENCY_OPTIONS.map((c) => (
-                  <MenuItem key={c} value={c}>{c}</MenuItem>
-                ))}
-              </TextField>
+                onChange={set('currency')}
+                options={CURRENCY_OPTIONS}
+              />
             )}
             <CommonInput label="Address" size="small" value={form.address} onChange={set('address')} />
             <CommonInput label="City" size="small" value={form.city} onChange={set('city')} />
             <CommonInput label="ZIP Code" size="small" value={form.zip_code} onChange={set('zip_code')} />
-            <CommonInput label="Country" size="small" value={form.country} onChange={set('country')} />
+            <CommonSelect
+              label="Country"
+              size="small"
+              value={form.country}
+              onChange={set('country')}
+              options={options('country', form.country)}
+            />
           </Box>
           <Box sx={{ mt: 2 }}>
             <ErrorAlert message={error} />

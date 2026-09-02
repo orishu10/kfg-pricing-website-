@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
@@ -6,13 +5,25 @@ import { useWeeklyShipmentsPage } from './hooks/useWeeklyShipmentsPage';
 import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../../components';
 import { WeekSelector } from '../components/WeekSelector';
 import { fmtDate } from '../../pricing/utils/helpers';
+import { ShipmentFormDialog } from './components/ShipmentFormDialog';
+import { FormatPickerDialog } from './components/FormatPickerDialog';
 import type { WeeklyShipment } from '../../../api';
 
-const buildColumns = (onToggleBooked: (s: WeeklyShipment) => void): Column<WeeklyShipment>[] => [
+const supplierLabel = (shipment: WeeklyShipment) =>
+  shipment.suppliers?.length ? shipment.suppliers.join(', ') : shipment.supplier ?? '';
+
+const buildColumns = (onToggleBooked: (shipment: WeeklyShipment) => void): Column<WeeklyShipment>[] => [
   { key: 'id', label: 'LOG #', mono: true, align: 'center', width: 58 },
   { key: 'con', label: 'CON', width: 92, render: (r) => r.con ?? '' },
   { key: 'customer', label: 'Customer', sortable: true, render: (r) => r.customer ?? '' },
-  { key: 'supplier', label: 'Supplier', sortable: true, width: 100, render: (r) => r.supplier ?? '' },
+  {
+    key: 'supplier',
+    label: 'Supplier',
+    sortable: true,
+    width: 100,
+    value: supplierLabel,
+    render: supplierLabel,
+  },
   { key: 'description', label: 'Description', render: (r) => r.description ?? '' },
   { key: 'pup', label: 'PUP', width: 68, render: (r) => r.pup ?? '' },
   { key: 'pol', label: 'POL', width: 68, render: (r) => r.pol ?? '' },
@@ -50,9 +61,11 @@ const buildColumns = (onToggleBooked: (s: WeeklyShipment) => void): Column<Weekl
 ];
 
 export const WeeklyShipmentsPage = () => {
-  const navigate = useNavigate();
   const {
     rows, monday, setMonday, search, setSearch, error,
+    formats, formError, formatPickerOpen, setFormatPickerOpen, dialogOpen,
+    selectedFormat, sourceShipment, isEdit,
+    openFormatPicker, pickFormat, openEdit, openDuplicate, closeDialog, submitShipment,
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete, toggleBooked,
   } = useWeeklyShipmentsPage();
 
@@ -68,18 +81,35 @@ export const WeeklyShipmentsPage = () => {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by customer, supplier, vessel or port…"
-        onAdd={() => navigate('/logistics/weekly-shipments/new')}
+        onAdd={openFormatPicker}
         headerCenter={<WeekSelector monday={monday} onChange={setMonday} />}
         disableFilters
         fitWidth
         columns={columns}
         rows={rows}
         getRowId={(r) => r.id}
-        onRowClick={(r) => navigate(`/logistics/weekly-shipments/${r.id}`)}
-        onEdit={(r) => navigate(`/logistics/weekly-shipments/${r.id}`)}
-        onDuplicate={(r) => navigate(`/logistics/weekly-shipments/new?from=${r.id}`)}
+        onRowClick={openEdit}
+        onEdit={openEdit}
+        onDuplicate={openDuplicate}
         onDelete={handleDelete}
         emptyMessage="No shipments this week."
+      />
+
+      <FormatPickerDialog
+        open={formatPickerOpen}
+        formats={formats}
+        onPick={pickFormat}
+        onClose={() => setFormatPickerOpen(false)}
+      />
+
+      <ShipmentFormDialog
+        open={dialogOpen}
+        source={sourceShipment}
+        isEdit={isEdit}
+        format={selectedFormat}
+        error={formError}
+        onClose={closeDialog}
+        onSubmit={submitShipment}
       />
 
       <ConfirmDialog
