@@ -8,10 +8,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../../components';
 import { FormField, FormSelect, FormPanel, gridSx } from '../../components/form';
-import {
-  EMPTY_ROUTE, CURRENCY_OPTIONS, CONTAINER_OPTIONS, INCOTERMS,
-  SHIPPING_LINE_OPTIONS, POL_OPTIONS, POD_OPTIONS, type RouteForm,
-} from '../utils/consts';
+import { useLookups } from '../../../../hooks/useLookups';
+import { EMPTY_ROUTE, CURRENCY_OPTIONS, INCOTERMS, type RouteForm } from '../utils/consts';
 import { deriveRoute, routeToForm } from '../utils/helpers';
 import {
   getRoute, createRoute, updateRoute, type RouteInput,
@@ -33,6 +31,7 @@ export const RouteFormPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { username } = useAuth();
+  const { options } = useLookups();
   const [error, setError] = useState('');
   const [form, setForm] = useState<RouteForm>(EMPTY_ROUTE);
 
@@ -145,14 +144,14 @@ export const RouteFormPage = () => {
           <Box sx={{ ...gridSx(4), mb: 1.25 }}>
             <FormField label="Reference / LOG #" value={form.reference} onChange={set('reference')} />
             <FormField label="Agent" value={form.agent} onChange={set('agent')} />
-            <FormSelect label="Shipping Line" value={form.shipping_line} onChange={set('shipping_line')} options={SHIPPING_LINE_OPTIONS} />
-            <FormSelect label="Container Type" value={form.container_type} onChange={set('container_type')} options={CONTAINER_OPTIONS} />
+            <FormSelect label="Shipping Line" value={form.shipping_line} onChange={set('shipping_line')} options={options('shipping_line', form.shipping_line)} />
+            <FormSelect label="Container Type" value={form.container_type} onChange={set('container_type')} options={options('container', form.container_type)} />
           </Box>
           <Box sx={gridSx(4)}>
             <FormField label="Origin" value={form.origin} onChange={set('origin')} />
-            <FormSelect label="POL" value={form.origin_port} onChange={set('origin_port')} options={POL_OPTIONS} />
+            <FormSelect label="POL" value={form.origin_port} onChange={set('origin_port')} options={options('sea_port', form.origin_port)} />
             <FormField label="Destination" value={form.destination} onChange={set('destination')} />
-            <FormSelect label="POD" value={form.destination_port} onChange={set('destination_port')} options={POD_OPTIONS} />
+            <FormSelect label="POD" value={form.destination_port} onChange={set('destination_port')} options={options('sea_port', form.destination_port)} />
           </Box>
         </FormPanel>
 

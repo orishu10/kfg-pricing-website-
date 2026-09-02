@@ -16,6 +16,7 @@ const DbmPage = lazy(() => import('./pages/dbm/DbmPage'));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
 const SuppliersPage = lazy(() => import('./pages/suppliers/SuppliersPage'));
 const ItemsPage = lazy(() => import('./pages/items/ItemsPage'));
+const ListsPage = lazy(() => import('./pages/lists/ListsPage'));
 const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
 const PricingFormPage = lazy(() => import('./pages/pricing/components/PricingFormPage'));
 const LogisticsPage = lazy(() => import('./pages/logistics/LogisticsPage'));
@@ -47,6 +48,12 @@ export const App = () => (
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/suppliers" element={<SuppliersPage />} />
                 <Route path="/items" element={<ItemsPage />} />
+                <Route path="/incoterms" element={<ListsPage category="incoterms" />} />
+                <Route path="/currencies" element={<ListsPage category="currency_pair" />} />
+                <Route path="/countries" element={<ListsPage category="country" />} />
+                <Route path="/containers" element={<ListsPage category="container" />} />
+                <Route path="/shipping-lines" element={<ListsPage category="shipping_line" />} />
+                <Route path="/sea-ports" element={<ListsPage category="sea_port" />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/pricing/new" element={<PricingFormPage />} />
                 <Route path="/pricing/:pricingId" element={<PricingFormPage />} />

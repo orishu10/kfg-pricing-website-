@@ -1,10 +1,5 @@
 export const CURRENCY_OPTIONS = ['ILS', 'USD', 'EUR'];
-export const CONTAINER_OPTIONS = ['REF40HC', 'REF20HC', 'DRY40HC', 'DRY20HC'];
 export const INCOTERMS = ['fob', 'cif', 'dap', 'ddp'] as const;
-
-export const SHIPPING_LINE_OPTIONS: string[] = [];
-export const POL_OPTIONS: string[] = [];
-export const POD_OPTIONS: string[] = [];
 
 export const ROUTE_KEYS = [
   'reference', 'agent', 'shipping_line', 'origin', 'destination',

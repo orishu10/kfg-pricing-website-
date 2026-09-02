@@ -328,6 +328,37 @@ export interface FxRates {
 
 export const getFxRates = async () => (await api.get<FxRates>('/fx')).data;
 
+// Lookup options — editable dropdown lists managed from the DBM > Lists pages.
+export type LookupCategory =
+  | 'incoterms'
+  | 'currency_pair'
+  | 'country'
+  | 'container'
+  | 'shipping_line'
+  | 'sea_port';
+
+export interface LookupOption {
+  id: number;
+  category: LookupCategory;
+  value: string;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
+}
+
+export type LookupGroups = Record<LookupCategory, LookupOption[]>;
+
+export const getLookups = async () => (await api.get<LookupGroups>('/lookups')).data;
+export const getLookupsByCategory = async (category: LookupCategory) =>
+  (await api.get<LookupOption[]>('/lookups', { params: { category } })).data;
+export const createLookup = async (category: LookupCategory, value: string) =>
+  (await api.post<LookupOption>('/lookups', { category, value })).data;
+export const updateLookup = async (id: number, data: { value?: string; active?: boolean }) =>
+  (await api.patch<LookupOption>(`/lookups/${id}`, data)).data;
+export const reorderLookups = async (category: LookupCategory, ids: number[]) =>
+  api.put('/lookups/reorder', { category, ids });
+export const deleteLookup = async (id: number) => api.delete(`/lookups/${id}`);
+
 // Auth
 export const login = async (username: string, password: string) =>
   (await api.post<{ token: string; username: string }>('/auth/login', { username, password })).data;

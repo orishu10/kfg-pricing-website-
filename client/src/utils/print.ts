@@ -1,6 +1,5 @@
-// Prints each HTML document as its own job so the user gets a separate PDF per
-// document; window.print() blocks until dismissed, sequencing the dialogs.
 export const printDocuments = (docs: string[]): void => {
+  const originalTitle = document.title;
   for (const html of docs) {
     const iframe = document.createElement('iframe');
     Object.assign(iframe.style, {
@@ -20,8 +19,10 @@ export const printDocuments = (docs: string[]): void => {
     doc.close();
 
     void doc.body.offsetHeight;
+    if (doc.title) document.title = doc.title;
     win.focus();
     win.print();
+    document.title = originalTitle;
     iframe.remove();
   }
 };

@@ -245,3 +245,19 @@ DROP TRIGGER IF EXISTS update_routes_updated_at ON routes;
 CREATE TRIGGER update_routes_updated_at
     BEFORE UPDATE ON routes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Editable option lists that feed form dropdowns, keyed by `category`
+-- (incoterms, currency_pair, country, container, shipping_line, sea_port).
+-- Managed from the DBM > Lists pages; deletes are soft (active=false). Seed
+-- values are loaded by db/migration_016_lookup_options.sql.
+CREATE TABLE IF NOT EXISTS lookup_options (
+    id         SERIAL       PRIMARY KEY,
+    category   VARCHAR(50)  NOT NULL,
+    value      VARCHAR(255) NOT NULL,
+    sort_order INTEGER      NOT NULL DEFAULT 0,
+    active     BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP    DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lookup_category_value ON lookup_options(category, value);
+CREATE INDEX IF NOT EXISTS idx_lookup_category ON lookup_options(category);

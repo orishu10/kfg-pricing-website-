@@ -1,9 +1,5 @@
 export const PRICING_STATUS = ['Active', 'Inactive'];
-export const CONTAINER_OPTIONS = ['REF40HC', 'REF20HC', 'DRY40HC', 'DRY20HC'];
-export const INCOTERMS_OPTIONS = ['FCA', 'FOB', 'CIF', 'DAP', 'DDP'];
 export const WEIGHT_UNIT_OPTIONS = ['KG', 'LB'];
-export const CURRENCY_OPTIONS = ['USD', 'ILS', 'EUR', 'GBP'];
-export const CURRENCY_PAIR_OPTIONS = ['ILS > USD', 'ILS > EUR'];
 
 export const PRICING_KEYS = [
   'customer_id', 'item_id', 'kfg_sku', 'status',

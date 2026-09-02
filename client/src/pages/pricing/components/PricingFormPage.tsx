@@ -11,9 +11,10 @@ import InputAdornment from '@mui/material/InputAdornment';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../components';
+import { useLookups } from '../../../hooks/useLookups';
 import {
   EMPTY_PRICING, NUMERIC_KEYS, type PricingForm,
-  PRICING_STATUS, INCOTERMS_OPTIONS, CURRENCY_PAIR_OPTIONS, WEIGHT_UNIT_OPTIONS,
+  PRICING_STATUS, WEIGHT_UNIT_OPTIONS,
 } from '../utils/consts';
 import { derivePricing, pricingToForm, fetchFxRate, symbol, fmtDateTime, to2, to4 } from '../utils/helpers';
 import {
@@ -132,6 +133,7 @@ export const PricingFormPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { username } = useAuth();
+  const { options } = useLookups();
   const [error, setError] = useState('');
   const [form, setForm] = useState<PricingForm>(EMPTY_PRICING);
 
@@ -312,7 +314,7 @@ export const PricingFormPage = () => {
           <Panel fill>
             <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, mb: 1 }}>Currency Exchange</Typography>
             <Box sx={{ mb: 1.25 }}>
-              <Sel value={form.currency_pair} onChange={set('currency_pair')} options={CURRENCY_PAIR_OPTIONS} />
+              <Sel value={form.currency_pair} onChange={set('currency_pair')} options={options('currency_pair', form.currency_pair)} />
             </Box>
             <Box sx={gridSx(2)}>
               <Fld label="Ex Rate" required value={form.ex_rate} onChange={set('ex_rate')} />
@@ -356,7 +358,7 @@ export const PricingFormPage = () => {
             </Box>
           </Panel>
           <Panel color={C.green} fill>
-            <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={set('incoterms_supplier')} options={INCOTERMS_OPTIONS} />
+            <Sel label="Incoterms - Supplier" value={form.incoterms_supplier} onChange={set('incoterms_supplier')} options={options('incoterms', form.incoterms_supplier)} />
           </Panel>
         </Box>
 
