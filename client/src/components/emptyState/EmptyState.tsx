@@ -4,7 +4,6 @@ import type { SvgIconComponent } from '@mui/icons-material';
 
 interface EmptyStateProps {
   message: string;
-  /** Optional MUI SvgIcon component to display above the message */
   Icon?: SvgIconComponent;
   action?: React.ReactNode;
 }

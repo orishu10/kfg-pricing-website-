@@ -4,7 +4,6 @@ import Typography from '@mui/material/Typography';
 
 interface LoadingPageProps {
   message?: string;
-  /** 'page' fills the viewport; 'section' fills its container */
   variant?: 'page' | 'section';
 }
 

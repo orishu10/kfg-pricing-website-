@@ -11,7 +11,6 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** Use 'error' for destructive actions (red confirm button) */
   severity?: 'error' | 'warning' | 'info';
   onConfirm: () => void;
   onCancel: () => void;

@@ -61,6 +61,7 @@ React 19 + Vite (port 5173) → Express + PostgreSQL (port 3001). Vite proxies `
 - **Server state**: TanStack React Query (`queryClient.ts`): `staleTime: 30s`, `gcTime: 5min`, `retry: 1`, `refetchOnWindowFocus: false`. Cache is manually invalidated after mutations.
 - **Pages** (lazy-loaded): `SignInPage`, `HomePage`, `CustomersPage`, `SuppliersPage` (`/customers/:customerId/suppliers`), `ItemsPage`, `ItemDetailPage` (`/items/:itemId`).
 - **Styling**: MUI v6 with custom theme (`theme.ts`): primary `#c41230`, background `#c8c8c8`, no button text-transform.
+- **Shared inputs** (`components/`): `CommonInput` renders a show/hide eye toggle for `type="password"` and delegates `type="date"` to `DateInput`. `DateInput` is a custom calendar popover over plain `YYYY-MM-DD` strings — use it for every date field instead of a native `type="date"` input.
 
 ### Server (`server/src/`)
 - `index.ts`: Express app, CORS, `compression`, mounts routes under `/api`.

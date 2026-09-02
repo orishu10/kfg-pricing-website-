@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
+import { DateInput } from '../dateInput/DateInput';
+import { PasswordVisibilityToggle } from '../passwordVisibilityToggle/PasswordVisibilityToggle';
 
 interface CommonInputProps {
   label: string;
@@ -10,7 +13,6 @@ interface CommonInputProps {
   placeholder?: string;
   autoFocus?: boolean;
   autoComplete?: string;
-  /** Appends a $ end-adornment when value is non-empty */
   currency?: boolean;
   disabled?: boolean;
   size?: 'small' | 'medium';
@@ -34,25 +36,52 @@ export const CommonInput = ({
   fullWidth = true,
   error,
   helperText,
-}: CommonInputProps) => (
-  <TextField
-    label={label}
-    type={type}
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    required={required}
-    placeholder={placeholder}
-    autoFocus={autoFocus}
-    autoComplete={autoComplete}
-    disabled={disabled}
-    size={size}
-    fullWidth={fullWidth}
-    error={error}
-    helperText={helperText}
-    slotProps={
-      currency && value
-        ? { input: { endAdornment: <InputAdornment position="end">$</InputAdornment> } }
-        : undefined
-    }
-  />
-);
+}: CommonInputProps) => {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = type === 'password';
+
+  if (type === 'date') {
+    return (
+      <DateInput
+        label={label}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        size={size}
+        fullWidth={fullWidth}
+        error={error}
+        helperText={helperText}
+      />
+    );
+  }
+
+  const endAdornment = isPassword ? (
+    <PasswordVisibilityToggle
+      visible={passwordVisible}
+      onToggle={() => setPasswordVisible((previous) => !previous)}
+    />
+  ) : currency && value ? (
+    <InputAdornment position="end">$</InputAdornment>
+  ) : undefined;
+
+  return (
+    <TextField
+      label={label}
+      type={isPassword && passwordVisible ? 'text' : type}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      required={required}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+      autoComplete={autoComplete}
+      disabled={disabled}
+      size={size}
+      fullWidth={fullWidth}
+      error={error}
+      helperText={helperText}
+      slotProps={endAdornment ? { input: { endAdornment } } : undefined}
+    />
+  );
+};

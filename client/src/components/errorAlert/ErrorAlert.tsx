@@ -3,7 +3,6 @@ import Collapse from '@mui/material/Collapse';
 
 interface ErrorAlertProps {
   message: string;
-  /** When true, the alert slides in/out with a Collapse animation */
   animate?: boolean;
 }
 
