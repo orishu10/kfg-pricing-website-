@@ -1,7 +1,4 @@
--- Editable option lists that feed form dropdowns (incoterms, currencies,
--- countries, containers, shipping lines, sea ports). One generic table keyed by
--- `category`, managed from the DBM > Lists pages. Deletes are soft (active=false)
--- so records already referencing a value stay readable.
+
 CREATE TABLE IF NOT EXISTS lookup_options (
     id         SERIAL       PRIMARY KEY,
     category   VARCHAR(50)  NOT NULL,
