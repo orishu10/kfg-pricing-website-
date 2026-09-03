@@ -71,19 +71,34 @@ const routeTitle = (route: ExpiringRoute): string =>
 
 const routeCarrier = (route: ExpiringRoute): string => joinParts([route.agent, route.shipping_line], ' · ');
 
+const appBaseUrl = (): string => process.env.APP_URL?.trim().replace(/\/+$/, '') ?? '';
+
 const routesUrl = (): string => {
-  const base = process.env.APP_URL?.trim().replace(/\/+$/, '');
+  const base = appBaseUrl();
   return base ? `${base}/logistics/routes` : '';
+};
+
+const routeUrl = (id: string): string => {
+  const base = appBaseUrl();
+  return base ? `${base}/logistics/routes/${encodeURIComponent(id)}` : '';
 };
 
 const cell = (content: string, extra = ''): string =>
   `<td style="padding:10px 12px;border-bottom:1px solid #e0e0e0;font-size:13px;color:#222;${extra}">${content}</td>`;
 
+const routeTitleHtml = (route: ExpiringRoute): string => {
+  const title = escapeHtml(routeTitle(route));
+  const url = routeUrl(route.id);
+  return url
+    ? `<a href="${escapeHtml(url)}" style="color:#c41230;font-weight:bold;text-decoration:underline;">${title}</a>`
+    : `<strong>${title}</strong>`;
+};
+
 const rowHtml = (route: ExpiringRoute): string => {
   const lane = routeLane(route);
   const carrier = routeCarrier(route);
   return `<tr>${cell(
-    `<strong>${escapeHtml(routeTitle(route))}</strong>${carrier ? `<div style="color:#666;font-size:12px;margin-top:2px;">${escapeHtml(carrier)}</div>` : ''}`,
+    `${routeTitleHtml(route)}${carrier ? `<div style="color:#666;font-size:12px;margin-top:2px;">${escapeHtml(carrier)}</div>` : ''}`,
   )}${cell(lane ? escapeHtml(lane) : '—')}${cell(escapeHtml(route.validity), 'white-space:nowrap;')}${cell(
     escapeHtml(expiryMessage(route.days_left)),
     'white-space:nowrap;',
@@ -115,7 +130,16 @@ export const stageEmailHtml = (stage: ExpiryStage, routes: ExpiringRoute[]): str
 export const stageEmailText = (stage: ExpiryStage, routes: ExpiringRoute[]): string => {
   const link = routesUrl();
   const lines = routes.map((route) =>
-    joinParts([routeTitle(route), routeLane(route) || null, `validity ${route.validity}`, expiryMessage(route.days_left)], ' | '),
+    joinParts(
+      [
+        routeTitle(route),
+        routeLane(route) || null,
+        `validity ${route.validity}`,
+        expiryMessage(route.days_left),
+        routeUrl(route.id) || null,
+      ],
+      ' | ',
+    ),
   );
   return [STAGE_PRESENTATION[stage].heading, '', ...lines, ...(link ? ['', link] : [])].join('\n');
 };

@@ -14,17 +14,6 @@ interface PendingRoute extends ExpiringRoute {
   sent_stages: ExpiryStage[];
 }
 
-export interface StageResult {
-  stage: ExpiryStage;
-  routes: number;
-  sent: boolean;
-}
-
-export interface NotifierRun {
-  recipients: number;
-  stages: StageResult[];
-}
-
 const TICK_MS = 15 * 60 * 1000;
 
 const DEFAULT_ALERT_HOUR = 8;
@@ -86,7 +75,7 @@ const recordSent = async (stage: ExpiryStage, routes: ExpiringRoute[]): Promise<
   );
 };
 
-export const collectDueRoutes = async (): Promise<Map<ExpiryStage, ExpiringRoute[]>> => {
+const collectDueRoutes = async (): Promise<Map<ExpiryStage, ExpiringRoute[]>> => {
   const pending = await loadPendingRoutes();
   const dueByStage = new Map<ExpiryStage, ExpiringRoute[]>();
 
@@ -99,17 +88,17 @@ export const collectDueRoutes = async (): Promise<Map<ExpiryStage, ExpiringRoute
   return dueByStage;
 };
 
-export const runRouteExpiryNotifications = async (): Promise<NotifierRun> => {
+const runRouteExpiryNotifications = async (): Promise<void> => {
   const dueByStage = await collectDueRoutes();
-  if (dueByStage.size === 0) return { recipients: 0, stages: [] };
+  if (dueByStage.size === 0) return;
 
   const recipients = await loadRecipients();
   if (recipients.length === 0) {
     console.warn('⚠ No administrator has an email address — route validity alerts have nowhere to go');
-    return { recipients: 0, stages: [] };
+    return;
   }
 
-  const stages: StageResult[] = [];
+  let delivered = 0;
 
   for (const stage of EXPIRY_STAGES) {
     const routes = dueByStage.get(stage);
@@ -120,16 +109,14 @@ export const runRouteExpiryNotifications = async (): Promise<NotifierRun> => {
       html: stageEmailHtml(stage, routes),
       text: stageEmailText(stage, routes),
     });
-    if (sent) await recordSent(stage, routes);
-    stages.push({ stage, routes: routes.length, sent });
+    if (!sent) continue;
+    await recordSent(stage, routes);
+    delivered += 1;
   }
 
-  const delivered = stages.filter((result) => result.sent).length;
   if (delivered > 0) {
     console.log(`✓ Route validity alerts sent (${delivered} email(s), ${recipients.length} recipient(s))`);
   }
-
-  return { recipients: recipients.length, stages };
 };
 
 export const startRouteExpiryNotifier = (): void => {

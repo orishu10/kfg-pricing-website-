@@ -83,8 +83,7 @@ scheduler ticks every 15 minutes and only works from `ROUTE_ALERT_HOUR`
 (default 8) onward in `ROUTE_ALERT_TIMEZONE` (default `Asia/Jerusalem`) — the
 timezone is explicit because Render runs the process in UTC. `route_expiry_notifications`
 keys sent emails on `(route_id, stage, validity)`: each stage sends once, and
-moving a route's validity forward re-arms all three. Admins can force a run with
-`POST /api/routes/expiry-alerts/run` to verify SMTP settings.
+moving a route's validity forward re-arms all three.
 
 ### Database schema (`db/schema.sql`)
 Five tables: `users`, `customers`, `suppliers`, `customer_suppliers` (junction), `items`. Items holds ~25 NUMERIC(14,4) pricing columns spanning incoterm prices (`fob`, `cif`, `dap`, `ddp`), supplier pricing, cost build-up (`sub_total_1`, `us_tariff`, `sub_total_2`, `import_factor`, `kfg_commission`, `total`), and final cost/price/SAP fields. An `updated_at` trigger fires on item update.
