@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db';
+import { requireAdmin } from '../middleware/auth';
+import { runRouteExpiryNotifications } from '../services/routeExpiryNotifier';
 
 const router = Router();
 
@@ -22,6 +24,14 @@ router.get('/', async (_req: Request, res: Response) => {
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch routes' });
+  }
+});
+
+router.post('/expiry-alerts/run', requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    res.json(await runRouteExpiryNotifications());
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send route validity alerts' });
   }
 });
 

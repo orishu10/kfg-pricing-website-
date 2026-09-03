@@ -38,7 +38,8 @@ export const MODULES: NavModule[] = [
     requires: 'logistics',
     ready: true,
     children: [
-      { label: 'Weekly Shipments', path: '/logistics/weekly-shipments', ready: true },
+      { label: 'Weekly Shipments IL', path: '/logistics/weekly-shipments-il', ready: true },
+      { label: 'Weekly Shipments INT', path: '/logistics/weekly-shipments-int' },
       { label: 'Schedules', path: '/logistics/schedules', ready: true },
       { label: 'Routes', path: '/logistics/routes', ready: true },
       { label: 'Shipment History', path: '/logistics/shipment-history' },

@@ -46,6 +46,8 @@ PORT=3001
 DB_HOST=localhost  DB_PORT=5432  DB_NAME=kfg_project
 DB_USER=postgres   DB_PASSWORD=...  JWT_SECRET=...
 # Production extras: DATABASE_URL (managed Postgres), CLIENT_ORIGIN (CORS), DB_SSL
+# Route validity alert emails: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER,
+# SMTP_PASSWORD, MAIL_FROM, ROUTE_ALERT_RECIPIENTS, ROUTE_ALERT_HOUR, APP_URL
 ```
 `JWT_SECRET` is required — the server refuses to start without it.
 
@@ -70,6 +72,19 @@ React 19 + Vite (port 5173) → Express + PostgreSQL (port 3001). Vite proxies `
 - Routes use parameterized `pool.query` calls only — no ORM. The `items.ts` route uses a local `n()` helper to safely convert empty strings to `null` for `NUMERIC` fields.
 - Suppliers route wraps create + link in a DB transaction for atomicity.
 - Auth: `POST /api/auth/login` → bcrypt verify → JWT (7-day expiry). `POST /api/auth/verify` validates existing tokens.
+
+### Route validity alerts
+`services/routeExpiryNotifier.ts` emails every admin user (plus
+`ROUTE_ALERT_RECIPIENTS`) when a route reaches each of three stages — a week
+out, a day out, and expired — one email per stage listing the routes in it.
+`services/mailer.ts` wraps a nodemailer SMTP transport and no-ops when
+`SMTP_HOST`/`MAIL_FROM` are unset, which also disables the scheduler. The
+scheduler ticks every 15 minutes and only works from `ROUTE_ALERT_HOUR`
+(default 8) onward in `ROUTE_ALERT_TIMEZONE` (default `Asia/Jerusalem`) — the
+timezone is explicit because Render runs the process in UTC. `route_expiry_notifications`
+keys sent emails on `(route_id, stage, validity)`: each stage sends once, and
+moving a route's validity forward re-arms all three. Admins can force a run with
+`POST /api/routes/expiry-alerts/run` to verify SMTP settings.
 
 ### Database schema (`db/schema.sql`)
 Five tables: `users`, `customers`, `suppliers`, `customer_suppliers` (junction), `items`. Items holds ~25 NUMERIC(14,4) pricing columns spanning incoterm prices (`fob`, `cif`, `dap`, `ddp`), supplier pricing, cost build-up (`sub_total_1`, `us_tariff`, `sub_total_2`, `import_factor`, `kfg_commission`, `total`), and final cost/price/SAP fields. An `updated_at` trigger fires on item update.

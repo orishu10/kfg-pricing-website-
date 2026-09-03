@@ -22,6 +22,7 @@ const ListsPage = lazy(() => import('./pages/lists/ListsPage'));
 const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
 const PricingFormPage = lazy(() => import('./pages/pricing/components/PricingFormPage'));
 const WeeklyShipmentsPage = lazy(() => import('./pages/logistics/weeklyShipments/WeeklyShipmentsPage'));
+const WeeklyShipmentsIntPage = lazy(() => import('./pages/logistics/weeklyShipmentsInt/WeeklyShipmentsIntPage'));
 const SchedulesPage = lazy(() => import('./pages/logistics/schedules/SchedulesPage'));
 const ScheduleFormPage = lazy(() => import('./pages/logistics/schedules/components/ScheduleFormPage'));
 const RoutesPage = lazy(() => import('./pages/logistics/routes/RoutesPage'));
@@ -70,8 +71,10 @@ export const App = () => (
                 </Route>
 
                 <Route element={<ModuleGuard module="logistics" />}>
-                  <Route path="/logistics" element={<Navigate to="/logistics/weekly-shipments" replace />} />
-                  <Route path="/logistics/weekly-shipments" element={<WeeklyShipmentsPage />} />
+                  <Route path="/logistics" element={<Navigate to="/logistics/weekly-shipments-il" replace />} />
+                  <Route path="/logistics/weekly-shipments" element={<Navigate to="/logistics/weekly-shipments-il" replace />} />
+                  <Route path="/logistics/weekly-shipments-il" element={<WeeklyShipmentsPage />} />
+                  <Route path="/logistics/weekly-shipments-int" element={<WeeklyShipmentsIntPage />} />
                   <Route path="/logistics/schedules" element={<SchedulesPage />} />
                   <Route path="/logistics/schedules/new" element={<ScheduleFormPage />} />
                   <Route path="/logistics/schedules/:scheduleId" element={<ScheduleFormPage />} />

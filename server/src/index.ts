@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import { pool } from './db';
 import { runMigrations } from './migrate';
+import { startRouteExpiryNotifier } from './services/routeExpiryNotifier';
 import customersRouter from './routes/customers';
 import suppliersRouter from './routes/suppliers';
 import itemsRouter from './routes/items';
@@ -125,6 +126,8 @@ const start = async () => {
   } catch (err) {
     console.error('✗ Migrations failed (starting anyway):', err);
   }
+
+  startRouteExpiryNotifier();
 
   app.listen(PORT, () => {
     console.log(`✓ Server running on http://localhost:${PORT}`);
