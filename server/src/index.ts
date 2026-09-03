@@ -81,9 +81,16 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+const hashedAssetCache = {
+  maxAge: '1y',
+  immutable: true,
+  fallthrough: false,
+};
+
 const serveClientBuild = () => {
   const clientDist = path.resolve(__dirname, '../../client/dist');
   if (!fs.existsSync(clientDist)) return;
+  app.use('/assets', express.static(path.join(clientDist, 'assets'), hashedAssetCache));
   app.use(express.static(clientDist));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();

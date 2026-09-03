@@ -13,11 +13,11 @@ npm run preview   # Preview production build
 npm test          # Vitest (single run); npm run test:watch for watch mode
 ```
 
-Tests use Vitest and live next to the code as `*.test.ts`. The pricing
-calculations in `pages/items/utils/helpers.ts` (`calcDerived`) are covered by
-`helpers.test.ts` — keep these green when touching pricing logic. Run both
-client and server concurrently during development — the Vite dev server proxies
-`/api` to `localhost:3001`.
+Tests use Vitest and live next to the code as `*.test.ts` (currently
+`utils/xlsx.test.ts`). The pricing calculations in
+`pages/pricing/utils/helpers.ts` (`derivePricing`) are the highest-value thing
+to cover when touching pricing logic. Run both client and server concurrently
+during development — the Vite dev server proxies `/api` to `localhost:3001`.
 
 ### Server (run from `server/`)
 ```
@@ -59,7 +59,8 @@ React 19 + Vite (port 5173) → Express + PostgreSQL (port 3001). Vite proxies `
 - **Auth**: `AuthContext` stores JWT + username in `localStorage` (`kfg_token`, `kfg_username`) and sets the Axios default `Authorization` header on load. `AuthGuard` redirects unauthenticated users to `/login`.
 - **API layer**: Single Axios instance in `api/index.ts` with `baseURL: /api`. All server calls go through named functions here. Token is injected by `AuthContext`, not per-call.
 - **Server state**: TanStack React Query (`queryClient.ts`): `staleTime: 30s`, `gcTime: 5min`, `retry: 1`, `refetchOnWindowFocus: false`. Cache is manually invalidated after mutations.
-- **Pages** (lazy-loaded): `SignInPage`, `HomePage`, `CustomersPage`, `SuppliersPage` (`/customers/:customerId/suppliers`), `ItemsPage`, `ItemDetailPage` (`/items/:itemId`).
+- **Pages** (lazy-loaded): `SignInPage`, `HomePage`, `UsersPage`, `FormatsPage`, `CustomersPage`, `SuppliersPage`, `ItemsPage`, `ListsPage` (one per lookup category), `PricingPage` + `PricingFormPage`, and the logistics set — `WeeklyShipmentsPage`, `SchedulesPage`, `RoutesPage` and their form pages.
+- **Module landing**: `/dbm` and `/logistics` have no hub page — they redirect (`Navigate replace`) to their first section, `/customers` and `/logistics/weekly-shipments`. The module tab stays highlighted because `AppLayout` matches a module by its children too.
 - **Styling**: MUI v6 with custom theme (`theme.ts`): primary `#c41230`, background `#c8c8c8`, no button text-transform.
 - **Shared inputs** (`components/`): `CommonInput` renders a show/hide eye toggle for `type="password"` and delegates `type="date"` to `DateInput`. `DateInput` is a custom calendar popover over plain `YYYY-MM-DD` strings — use it for every date field instead of a native `type="date"` input.
 
@@ -74,7 +75,7 @@ React 19 + Vite (port 5173) → Express + PostgreSQL (port 3001). Vite proxies `
 Five tables: `users`, `customers`, `suppliers`, `customer_suppliers` (junction), `items`. Items holds ~25 NUMERIC(14,4) pricing columns spanning incoterm prices (`fob`, `cif`, `dap`, `ddp`), supplier pricing, cost build-up (`sub_total_1`, `us_tariff`, `sub_total_2`, `import_factor`, `kfg_commission`, `total`), and final cost/price/SAP fields. An `updated_at` trigger fires on item update.
 
 ### Pricing logic
-Calculations (e.g. `supplier_price_case = supplier_price_unit × units_in_case`) are computed **on the client** inside `ItemDetailPage` before sending to the server. The server stores values as-is, enabling manual overrides. `pg` returns numeric DB columns as strings — the `Item` interface reflects this; `ItemPayload` uses `number | null` for what gets sent.
+Calculations (e.g. `supplier_price_case = supplier_price_unit × units_in_case`) are computed **on the client** by `derivePricing` in `pages/pricing/utils/helpers.ts`, called from `PricingFormPage` before sending to the server. The server stores values as-is, enabling manual overrides. `pg` returns numeric DB columns as strings — the `Item` interface reflects this; `ItemPayload` uses `number | null` for what gets sent.
 
 ## TypeScript notes
 - Client: `tsconfig.app.json` — ES2023, `react-jsx`, strict, `noUnusedLocals`, `erasableSyntaxOnly`.

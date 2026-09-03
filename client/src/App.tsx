@@ -11,10 +11,8 @@ import { AdminGuard } from './layout/AdminGuard';
 import { ModuleGuard } from './layout/ModuleGuard';
 import { AppLayout } from './layout/AppLayout';
 
-// Each page loads as its own chunk only when first visited
 const SignInPage = lazy(() => import('./pages/auth/SignInPage'));
 const HomePage = lazy(() => import('./pages/home/HomePage'));
-const DbmPage = lazy(() => import('./pages/dbm/DbmPage'));
 const UsersPage = lazy(() => import('./pages/users/UsersPage'));
 const FormatsPage = lazy(() => import('./pages/formats/FormatsPage'));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
@@ -23,7 +21,6 @@ const ItemsPage = lazy(() => import('./pages/items/ItemsPage'));
 const ListsPage = lazy(() => import('./pages/lists/ListsPage'));
 const PricingPage = lazy(() => import('./pages/pricing/PricingPage'));
 const PricingFormPage = lazy(() => import('./pages/pricing/components/PricingFormPage'));
-const LogisticsPage = lazy(() => import('./pages/logistics/LogisticsPage'));
 const WeeklyShipmentsPage = lazy(() => import('./pages/logistics/weeklyShipments/WeeklyShipmentsPage'));
 const SchedulesPage = lazy(() => import('./pages/logistics/schedules/SchedulesPage'));
 const ScheduleFormPage = lazy(() => import('./pages/logistics/schedules/components/ScheduleFormPage'));
@@ -54,7 +51,7 @@ export const App = () => (
                 </Route>
 
                 <Route element={<ModuleGuard module="dbm" />}>
-                  <Route path="/dbm" element={<DbmPage />} />
+                  <Route path="/dbm" element={<Navigate to="/customers" replace />} />
                   <Route path="/customers" element={<CustomersPage />} />
                   <Route path="/suppliers" element={<SuppliersPage />} />
                   <Route path="/items" element={<ItemsPage />} />
@@ -73,7 +70,7 @@ export const App = () => (
                 </Route>
 
                 <Route element={<ModuleGuard module="logistics" />}>
-                  <Route path="/logistics" element={<LogisticsPage />} />
+                  <Route path="/logistics" element={<Navigate to="/logistics/weekly-shipments" replace />} />
                   <Route path="/logistics/weekly-shipments" element={<WeeklyShipmentsPage />} />
                   <Route path="/logistics/schedules" element={<SchedulesPage />} />
                   <Route path="/logistics/schedules/new" element={<ScheduleFormPage />} />

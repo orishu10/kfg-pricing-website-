@@ -14,6 +14,16 @@ export interface HomeModuleCard {
   ready: boolean;
 }
 
+export const HOME_CARDS_GRID_SX = {
+  flexShrink: 0,
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, max-content)', md: 'repeat(3, max-content)' },
+  justifyContent: 'center',
+  gap: { xs: 3, md: 5 },
+  pt: 6,
+  pb: 2,
+} as const;
+
 export const HOME_MODULE_CARDS: HomeModuleCard[] = [
   { requires: 'dbm', label: 'DBM', path: '/dbm', icon: <StorageIcon sx={{ fontSize: 56 }} />, ready: true },
   { requires: 'pricing', label: 'Pricing', path: '/pricing', icon: pricingLogo, ready: true },
