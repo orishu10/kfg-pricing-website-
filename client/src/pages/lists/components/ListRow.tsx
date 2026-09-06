@@ -21,13 +21,24 @@ interface ListRowProps {
   isLast: boolean;
   onRename: (value: string) => void;
   onDelete: () => void;
+  hasPallets?: boolean;
+  onPalletsChange?: (pallets: number | null) => void;
 }
 
 export const ListRow = ({
-  option, provided, snapshot, listDragging, isLast, onRename, onDelete,
+  option, provided, snapshot, listDragging, isLast, onRename, onDelete, hasPallets, onPalletsChange,
 }: ListRowProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(option.value);
+  const [palletsDraft, setPalletsDraft] = useState(option.pallets != null ? String(option.pallets) : '');
+
+  const savePallets = () => {
+    const trimmed = palletsDraft.trim();
+    const parsed = trimmed === '' ? null : Number(trimmed);
+    const next = parsed != null && Number.isNaN(parsed) ? null : parsed;
+    setPalletsDraft(next != null ? String(next) : '');
+    if (next !== option.pallets) onPalletsChange?.(next);
+  };
   const isDragging = snapshot?.isDragging ?? false;
   const dimmed = !!listDragging && !isDragging;
 
@@ -101,6 +112,21 @@ export const ListRow = ({
         />
       ) : (
         <Typography sx={{ flex: 1, fontSize: '0.9rem' }}>{option.value}</Typography>
+      )}
+
+      {!editing && hasPallets && (
+        <TextField
+          value={palletsDraft}
+          onChange={(e) => setPalletsDraft(e.target.value)}
+          onBlur={savePallets}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+          placeholder="Pallets"
+          type="number"
+          size="small"
+          sx={{ width: 96, ...LIST_INPUT_SX }}
+        />
       )}
 
       {editing ? (

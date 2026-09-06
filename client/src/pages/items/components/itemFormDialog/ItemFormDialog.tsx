@@ -19,7 +19,7 @@ interface ItemFormDialogProps {
 }
 
 const EMPTY = {
-  supplier_id: '', name: '', size: '', unit_weight: '', units_in_case: '', cases_in_fcl: '',
+  supplier_id: '', name: '', size: '', unit_weight: '', units_in_case: '', cases_per_pallet: '', cases_in_fcl: '',
 };
 
 const num = (v: string) => (v.trim() === '' ? null : Number(v));
@@ -30,9 +30,10 @@ const FIELD_LABELS: Record<keyof typeof EMPTY, string> = {
   size: 'Size',
   unit_weight: 'Unit Weight',
   units_in_case: 'Units / Case',
+  cases_per_pallet: 'Cases / Pallet',
   cases_in_fcl: 'Cases / FCL',
 };
-const NUMERIC_FIELDS: (keyof typeof EMPTY)[] = ['unit_weight', 'units_in_case', 'cases_in_fcl'];
+const NUMERIC_FIELDS: (keyof typeof EMPTY)[] = ['unit_weight', 'units_in_case', 'cases_per_pallet', 'cases_in_fcl'];
 
 const validate = (form: typeof EMPTY): Partial<Record<keyof typeof EMPTY, string>> => {
   const errors: Partial<Record<keyof typeof EMPTY, string>> = {};
@@ -55,6 +56,7 @@ const toForm = (it: Item | null) =>
         size: it.size ?? '',
         unit_weight: it.unit_weight ?? '',
         units_in_case: it.units_in_case != null ? String(it.units_in_case) : '',
+        cases_per_pallet: it.cases_per_pallet != null ? String(it.cases_per_pallet) : '',
         cases_in_fcl: it.cases_in_fcl != null ? String(it.cases_in_fcl) : '',
       }
     : EMPTY;
@@ -89,6 +91,7 @@ export const ItemFormDialog = ({ open, initial, isEdit, suppliers, error, onClos
       size: form.size.trim() || null,
       unit_weight: num(form.unit_weight),
       units_in_case: num(form.units_in_case),
+      cases_per_pallet: num(form.cases_per_pallet),
       cases_in_fcl: num(form.cases_in_fcl),
     });
   };
@@ -115,6 +118,7 @@ export const ItemFormDialog = ({ open, initial, isEdit, suppliers, error, onClos
             <CommonInput label="Size" size="small" required value={form.size} onChange={set('size')} placeholder="e.g. 12/800gr" error={!!errFor('size')} helperText={errFor('size')} />
             <CommonInput label="Unit Weight" size="small" required type="number" value={form.unit_weight} onChange={set('unit_weight')} error={!!errFor('unit_weight')} helperText={errFor('unit_weight')} />
             <CommonInput label="Units / Case" size="small" required type="number" value={form.units_in_case} onChange={set('units_in_case')} error={!!errFor('units_in_case')} helperText={errFor('units_in_case')} />
+            <CommonInput label="Cases / Pallet" size="small" required type="number" value={form.cases_per_pallet} onChange={set('cases_per_pallet')} error={!!errFor('cases_per_pallet')} helperText={errFor('cases_per_pallet')} />
             <CommonInput label="Cases / FCL" size="small" required type="number" value={form.cases_in_fcl} onChange={set('cases_in_fcl')} error={!!errFor('cases_in_fcl')} helperText={errFor('cases_in_fcl')} />
           </Box>
           <Box sx={{ mt: 2 }}>

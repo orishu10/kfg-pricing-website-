@@ -265,6 +265,7 @@ CREATE TABLE IF NOT EXISTS lookup_options (
     id         SERIAL       PRIMARY KEY,
     category   VARCHAR(50)  NOT NULL,
     value      VARCHAR(255) NOT NULL,
+    pallets    INTEGER,                 -- container capacity, used by the Pricing form
     sort_order INTEGER      NOT NULL DEFAULT 0,
     active     BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP    DEFAULT NOW()

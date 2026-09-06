@@ -1,6 +1,7 @@
 import { ItemFormDialog } from './components/itemFormDialog/ItemFormDialog';
 import { useItemsPage } from './hooks/useItemsPage';
 import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../components';
+import { formatNumber } from '../../utils/format';
 import type { Item } from '../../api';
 
 const columns: Column<Item>[] = [
@@ -8,9 +9,10 @@ const columns: Column<Item>[] = [
   { key: 'supplier_name', label: 'Supplier', sortable: true, render: (r) => r.supplier_name ?? r.supplier_id },
   { key: 'name', label: 'Description', sortable: true },
   { key: 'size', label: 'Size', render: (r) => r.size ?? '' },
-  { key: 'unit_weight', label: 'Unit Weight', align: 'right', render: (r) => r.unit_weight ?? '' },
-  { key: 'units_in_case', label: 'Units / Case', align: 'right', render: (r) => r.units_in_case ?? '' },
-  { key: 'cases_in_fcl', label: 'Cases / FCL', align: 'right', render: (r) => r.cases_in_fcl ?? '' },
+  { key: 'unit_weight', label: 'Unit Weight', align: 'right', render: (r) => formatNumber(r.unit_weight) },
+  { key: 'units_in_case', label: 'Units / Case', align: 'right', render: (r) => formatNumber(r.units_in_case) },
+  { key: 'cases_per_pallet', label: 'Cases / Pallet', align: 'right', render: (r) => formatNumber(r.cases_per_pallet) },
+  { key: 'cases_in_fcl', label: 'Cases / FCL', align: 'right', render: (r) => formatNumber(r.cases_in_fcl) },
 ];
 
 export const ItemsPage = () => {

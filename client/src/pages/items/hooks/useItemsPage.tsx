@@ -79,6 +79,7 @@ export const useItemsPage = () => {
           size: r.size || null,
           unit_weight: num(r.unit_weight),
           units_in_case: num(r.units_in_case),
+          cases_per_pallet: num(r.cases_per_pallet),
           cases_in_fcl: num(r.cases_in_fcl),
         });
         ok++;

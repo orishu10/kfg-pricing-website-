@@ -12,8 +12,9 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../components';
 import { useLookups } from '../../../hooks/useLookups';
+import { formatNumber } from '../../../utils/format';
 import {
-  EMPTY_PRICING, ILS_SYMBOL, NUMERIC_KEYS, type PricingForm,
+  EMPTY_PRICING, NUMERIC_KEYS, type PricingForm,
   PRICING_STATUS, WEIGHT_UNIT_OPTIONS,
 } from '../utils/consts';
 import {
@@ -53,7 +54,7 @@ const Fld = ({ label, value, onChange, readOnly, unit, required }: {
   <Box sx={{ minWidth: 0 }}>
     <FieldLabel label={label} required={required} />
     <TextField
-      value={value}
+      value={readOnly ? formatNumber(value) : value}
       onChange={onChange ? (e) => onChange(e.target.value) : undefined}
       size="small"
       fullWidth
@@ -136,7 +137,7 @@ export const PricingFormPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { username } = useAuth();
-  const { options } = useLookups();
+  const { options, groups } = useLookups();
   const [error, setError] = useState('');
   const [form, setForm] = useState<PricingForm>(EMPTY_PRICING);
 
@@ -173,6 +174,7 @@ export const PricingFormPage = () => {
         item_id: id,
         unit_weight: it ? to2(it.unit_weight) : '',
         units_in_case: it && it.units_in_case != null ? String(it.units_in_case) : '',
+        cases_per_pallet: it && it.cases_per_pallet != null ? String(it.cases_per_pallet) : '',
         cases_in_fcl: it && it.cases_in_fcl != null ? String(it.cases_in_fcl) : '',
         pack_size: it?.size ?? '',
         supplier_name: it?.supplier_name ?? '',
@@ -200,10 +202,12 @@ export const PricingFormPage = () => {
   const onRoute = (id: string) =>
     setForm((prev) => {
       const route = routes.find((option) => option.id === id);
+      const container = groups.container.find((c) => c.value === route?.container_type);
       const next: PricingForm = {
         ...prev,
         route: id,
         container_type: route?.container_type ?? '',
+        pallets: container?.pallets != null ? String(container.pallets) : '',
         ...routeIncotermPrices(route, prev.currency),
       };
       return { ...next, ...derivePricing(next) };
@@ -328,7 +332,7 @@ export const PricingFormPage = () => {
             <Box sx={{ ...gridSx(4), mb: 1.25 }}>
               <Fld label="Unit Weight" value={form.unit_weight} readOnly />
               <Fld label="Units / Case" value={form.units_in_case} readOnly />
-              <Fld label="Cases / Pallet" value={form.cases_per_pallet} onChange={set('cases_per_pallet')} />
+              <Fld label="Cases / Pallet" value={form.cases_per_pallet} readOnly />
               <Fld label="Cases / FCL" value={form.cases_in_fcl} readOnly />
             </Box>
             <Box sx={gridSx(4)}>
@@ -344,7 +348,7 @@ export const PricingFormPage = () => {
             </Box>
             <Box sx={gridSx(2)}>
               <Fld label="Container Type" value={form.container_type} readOnly />
-              <Fld label="Pallets" value={form.pallets} onChange={set('pallets')} />
+              <Fld label="Pallets" value={form.pallets} readOnly />
             </Box>
           </Panel>
         </Box>
@@ -352,9 +356,9 @@ export const PricingFormPage = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'stretch' }}>
           <Panel label="SUPPLIER" color={C.green} fill>
             <Box sx={gridSx(5)}>
-              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit={ILS_SYMBOL} />
+              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit={sym} />
               <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
-              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit={ILS_SYMBOL} />
+              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit={sym} />
               <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
               <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
             </Box>

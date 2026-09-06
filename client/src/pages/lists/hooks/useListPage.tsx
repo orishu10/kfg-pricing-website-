@@ -26,7 +26,8 @@ export const useListPage = (category: LookupCategory) => {
   };
 
   const createMutation = useMutation({
-    mutationFn: (value: string) => createLookup(category, value),
+    mutationFn: ({ value, pallets }: { value: string; pallets?: number | null }) =>
+      createLookup(category, value, pallets),
     onSuccess: () => { setError(''); invalidate(); },
     onError: onError('Failed to add option'),
   });
@@ -35,6 +36,12 @@ export const useListPage = (category: LookupCategory) => {
     mutationFn: ({ id, value }: { id: number; value: string }) => updateLookup(id, { value }),
     onSuccess: () => { setError(''); invalidate(); },
     onError: onError('Failed to rename option'),
+  });
+
+  const palletsMutation = useMutation({
+    mutationFn: ({ id, pallets }: { id: number; pallets: number | null }) => updateLookup(id, { pallets }),
+    onSuccess: () => { setError(''); invalidate(); },
+    onError: onError('Failed to update pallets'),
   });
 
   const deleteMutation = useMutation({
@@ -49,13 +56,15 @@ export const useListPage = (category: LookupCategory) => {
     onSettled: invalidate,
   });
 
-  const add = (value: string) => {
+  const add = (value: string, pallets?: number | null) => {
     const trimmed = value.trim();
     if (!trimmed) return;
-    createMutation.mutate(trimmed);
+    createMutation.mutate({ value: trimmed, pallets });
   };
 
   const rename = (id: number, value: string) => renameMutation.mutate({ id, value });
+
+  const setPallets = (id: number, pallets: number | null) => palletsMutation.mutate({ id, pallets });
 
   const confirmDelete = () => {
     if (!deleteTarget) return;
@@ -72,6 +81,7 @@ export const useListPage = (category: LookupCategory) => {
     setDeleteTarget,
     add,
     rename,
+    setPallets,
     confirmDelete,
     reorder,
   };

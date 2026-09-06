@@ -7,9 +7,11 @@ interface StaticOptionListProps {
   options: LookupOption[];
   onRename: (id: number, value: string) => void;
   onDelete: (option: LookupOption) => void;
+  hasPallets?: boolean;
+  onPalletsChange?: (id: number, pallets: number | null) => void;
 }
 
-export const StaticOptionList = ({ options, onRename, onDelete }: StaticOptionListProps) => (
+export const StaticOptionList = ({ options, onRename, onDelete, hasPallets, onPalletsChange }: StaticOptionListProps) => (
   <Paper variant="outlined" sx={LIST_PAPER_SX}>
     {options.map((option, index) => (
       <ListRow
@@ -18,6 +20,8 @@ export const StaticOptionList = ({ options, onRename, onDelete }: StaticOptionLi
         isLast={index === options.length - 1}
         onRename={(value) => onRename(option.id, value)}
         onDelete={() => onDelete(option)}
+        hasPallets={hasPallets}
+        onPalletsChange={(pallets) => onPalletsChange?.(option.id, pallets)}
       />
     ))}
   </Paper>

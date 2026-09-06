@@ -1,6 +1,6 @@
 import type { Pricing } from '../../../api';
-import { ILS_SYMBOL } from './consts';
 import { fmtDate, symbol } from './helpers';
+import { formatNumber } from '../../../utils/format';
 
 const esc = (v: unknown): string =>
   String(v ?? '')
@@ -62,7 +62,7 @@ export const buildPricingSheetHtml = (p: Pricing): string => {
   const fld = (label: string, value: string, unit = '') => `
     <div class="fld">
       ${label ? `<div class="lbl">${esc(label)}</div>` : ''}
-      <div class="val"><span>${esc(value)}</span>${unit ? `<span class="unit">${unit}</span>` : ''}</div>
+      <div class="val"><span>${esc(formatNumber(value))}</span>${unit ? `<span class="unit">${unit}</span>` : ''}</div>
     </div>`;
 
   const panel = (label: string, color: string, inner: string, cls = '') => `
@@ -112,9 +112,9 @@ export const buildPricingSheetHtml = (p: Pricing): string => {
 
   const supplierPanel = panel('SUPPLIER', C.green, `
     <div class="grid g5">
-      ${fld('Price - Unit', g('supplier_price_unit'), ILS_SYMBOL)}
+      ${fld('Price - Unit', g('supplier_price_unit'), sym)}
       ${fld('Price - Unit', g('price_unit_usd'), sym)}
-      ${fld('Price - Case', g('supplier_price_case'), ILS_SYMBOL)}
+      ${fld('Price - Case', g('supplier_price_case'), sym)}
       ${fld('Price - Case', g('price_case_usd'), sym)}
       ${fld('Price - FCL', g('price_fcl_usd'), sym)}
     </div>`);

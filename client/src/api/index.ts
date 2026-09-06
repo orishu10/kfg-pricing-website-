@@ -101,6 +101,7 @@ export interface NewItem {
   size: string | null;
   unit_weight: number | null;
   units_in_case: number | null;
+  cases_per_pallet: number | null;
   cases_in_fcl: number | null;
 }
 
@@ -129,6 +130,7 @@ export interface ItemUpdate {
   size: string | null;
   unit_weight: number | null;
   units_in_case: number | null;
+  cases_per_pallet: number | null;
   cases_in_fcl: number | null;
 }
 
@@ -420,6 +422,7 @@ export interface LookupOption {
   id: number;
   category: LookupCategory;
   value: string;
+  pallets: number | null;
   sort_order: number;
   active: boolean;
   created_at: string;
@@ -430,9 +433,9 @@ export type LookupGroups = Record<LookupCategory, LookupOption[]>;
 export const getLookups = async () => (await api.get<LookupGroups>('/lookups')).data;
 export const getLookupsByCategory = async (category: LookupCategory) =>
   (await api.get<LookupOption[]>('/lookups', { params: { category } })).data;
-export const createLookup = async (category: LookupCategory, value: string) =>
-  (await api.post<LookupOption>('/lookups', { category, value })).data;
-export const updateLookup = async (id: number, data: { value?: string; active?: boolean }) =>
+export const createLookup = async (category: LookupCategory, value: string, pallets?: number | null) =>
+  (await api.post<LookupOption>('/lookups', { category, value, pallets })).data;
+export const updateLookup = async (id: number, data: { value?: string; active?: boolean; pallets?: number | null }) =>
   (await api.patch<LookupOption>(`/lookups/${id}`, data)).data;
 export const reorderLookups = async (category: LookupCategory, ids: number[]) =>
   api.put('/lookups/reorder', { category, ids });

@@ -18,13 +18,16 @@ interface ListsPageProps {
 
 export const ListsPage = ({ category }: ListsPageProps) => {
   const config = LIST_CATEGORIES[category];
-  const { options, error, deleteTarget, setDeleteTarget, add, rename, confirmDelete, reorder } =
+  const { options, error, deleteTarget, setDeleteTarget, add, rename, setPallets, confirmDelete, reorder } =
     useListPage(category);
   const [newValue, setNewValue] = useState('');
+  const [newPallets, setNewPallets] = useState('');
 
   const handleAdd = () => {
-    add(newValue);
+    const pallets = newPallets.trim() === '' ? null : Number(newPallets);
+    add(newValue, pallets != null && Number.isNaN(pallets) ? null : pallets);
     setNewValue('');
+    setNewPallets('');
   };
 
   return (
@@ -46,6 +49,16 @@ export const ListsPage = ({ category }: ListsPageProps) => {
           fullWidth
           sx={LIST_INPUT_SX}
         />
+        {config.hasPallets && (
+          <TextField
+            value={newPallets}
+            onChange={(e) => setNewPallets(e.target.value)}
+            placeholder="Pallets"
+            type="number"
+            size="small"
+            sx={{ width: 120, ...LIST_INPUT_SX }}
+          />
+        )}
         <Button type="submit" variant="contained" startIcon={<AddIcon />} disabled={!newValue.trim()}>
           Add
         </Button>
@@ -71,7 +84,13 @@ export const ListsPage = ({ category }: ListsPageProps) => {
       )}
 
       {options.length > 0 && !config.reorderable && (
-        <StaticOptionList options={options} onRename={rename} onDelete={setDeleteTarget} />
+        <StaticOptionList
+          options={options}
+          onRename={rename}
+          onDelete={setDeleteTarget}
+          hasPallets={config.hasPallets}
+          onPalletsChange={setPallets}
+        />
       )}
 
       <ConfirmDialog

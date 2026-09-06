@@ -40,17 +40,35 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   const { category } = req.body;
   const value = typeof req.body.value === 'string' ? req.body.value.trim() : '';
+  const pallets = req.body.pallets === '' || req.body.pallets == null ? null : req.body.pallets;
   if (!isCategory(category)) return res.status(400).json({ error: 'Unknown category' });
   if (!value) return res.status(400).json({ error: 'Value is required' });
   if (value.length > 255) return res.status(400).json({ error: 'Value is too long' });
   try {
+    const existing = await pool.query(
+      'SELECT * FROM lookup_options WHERE category = $1 AND value = $2',
+      [category, value],
+    );
+    if (existing.rows.length > 0 && existing.rows[0].active) {
+      return res.status(409).json({ error: 'That value already exists' });
+    }
+
     const next = await pool.query(
       'SELECT COALESCE(MAX(sort_order), 0) + 1 AS sort_order FROM lookup_options WHERE category = $1',
       [category],
     );
+
+    if (existing.rows.length > 0) {
+      const result = await pool.query(
+        'UPDATE lookup_options SET active = TRUE, pallets = $1, sort_order = $2 WHERE id = $3 RETURNING *',
+        [pallets, next.rows[0].sort_order, existing.rows[0].id],
+      );
+      return res.status(201).json(result.rows[0]);
+    }
+
     const result = await pool.query(
-      'INSERT INTO lookup_options (category, value, sort_order) VALUES ($1, $2, $3) RETURNING *',
-      [category, value, next.rows[0].sort_order],
+      'INSERT INTO lookup_options (category, value, pallets, sort_order) VALUES ($1, $2, $3, $4) RETURNING *',
+      [category, value, pallets, next.rows[0].sort_order],
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -74,6 +92,11 @@ router.patch('/:id', async (req: Request, res: Response) => {
   if (typeof req.body.active === 'boolean') {
     values.push(req.body.active);
     fields.push(`active = $${values.length}`);
+  }
+  if ('pallets' in req.body) {
+    const pallets = req.body.pallets === '' || req.body.pallets == null ? null : req.body.pallets;
+    values.push(pallets);
+    fields.push(`pallets = $${values.length}`);
   }
   if (fields.length === 0) return res.status(400).json({ error: 'Nothing to update' });
   values.push(req.params.id);
