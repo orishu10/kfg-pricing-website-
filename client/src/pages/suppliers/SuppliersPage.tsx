@@ -2,15 +2,17 @@ import { useSuppliersPage } from './hooks/useSuppliersPage';
 import {
   ConfirmDialog, DataTable, ErrorAlert, PartyFormDialog, type Column,
 } from '../../components';
+import { partyLabel } from '../../utils/format';
 import type { Supplier } from '../../api';
 
 const columns: Column<Supplier>[] = [
   { key: 'id', label: '#', mono: true, align: 'center' },
+  { key: 'short_name', label: 'Short Name', sortable: true, filterable: false, render: (r) => partyLabel(r.short_name, r.name) },
   { key: 'name', label: 'Supplier', sortable: true, filterable: false },
-  { key: 'short_name', label: 'Short Name', sortable: true, filterable: false, render: (r) => r.short_name ?? '' },
   { key: 'address', label: 'Address', render: (r) => r.address ?? '' },
   { key: 'city', label: 'City', render: (r) => r.city ?? '' },
   { key: 'country', label: 'Country', filterable: true, render: (r) => r.country ?? '' },
+  { key: 'currency', label: 'Currency', align: 'center', render: (r) => r.currency ?? '' },
   { key: 'incoterms', label: 'Incoterms', sortable: true, render: (r) => r.incoterms ?? '' },
 ];
 
@@ -18,7 +20,7 @@ export const SuppliersPage = () => {
   const {
     suppliers, search, setSearch,
     dialogOpen, editing, openAdd, openEdit, closeDialog,
-    error, handleSubmit, handleImport,
+    error, handleSubmit, handleImport, saving,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useSuppliersPage();
 
@@ -55,6 +57,7 @@ export const SuppliersPage = () => {
         entity="Supplier"
         initial={editing}
         error={error}
+        saving={saving}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         onDelete={requestDelete}
@@ -63,7 +66,8 @@ export const SuppliersPage = () => {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete supplier?"
-        message={`Delete "${deleteTarget?.name}"? This also removes its items. This cannot be undone.`}
+        target={deleteTarget?.name}
+        message="This also removes its items and their pricing. This cannot be undone."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

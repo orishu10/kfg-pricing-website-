@@ -1,11 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getRoutes } from '../../api';
-import { expiryAlerts } from '../../pages/logistics/routes/utils/helpers';
-import { readDismissedAlerts, routeAlertKey, storeDismissedAlerts } from '../helpers';
+import { getRouteExpiryStatus, getRoutes } from '../../api';
+import { expiryAlerts, worstSeverity } from '../../pages/logistics/routes/utils/helpers';
+import { BELL_PULSE_MS } from '../consts';
+import {
+  readDismissedAlerts, readSeenAlerts, routeAlertKey, storeDismissedAlerts, storeSeenAlerts,
+} from '../helpers';
 
 export const useExpiryNotifications = (enabled: boolean) => {
   const [dismissedKeys, setDismissedKeys] = useState<string[]>(readDismissedAlerts);
+  const [pulse, setPulse] = useState(false);
 
   const { data: routes = [] } = useQuery({
     queryKey: ['routes'],
@@ -13,10 +17,37 @@ export const useExpiryNotifications = (enabled: boolean) => {
     enabled,
   });
 
+  const { data: expiryStatus } = useQuery({
+    queryKey: ['route-expiry-status'],
+    queryFn: getRouteExpiryStatus,
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const alerts = useMemo(
     () => expiryAlerts(routes).filter(({ route }) => !dismissedKeys.includes(routeAlertKey(route))),
     [routes, dismissedKeys],
   );
+
+  const severity = useMemo(() => worstSeverity(alerts), [alerts]);
+
+  const alertKeys = useMemo(() => alerts.map(({ route }) => routeAlertKey(route)).join('|'), [alerts]);
+  const [checkedAlertKeys, setCheckedAlertKeys] = useState('');
+  if (alertKeys !== checkedAlertKeys) {
+    setCheckedAlertKeys(alertKeys);
+    const seen = readSeenAlerts();
+    const fresh = alertKeys ? alertKeys.split('|').filter((key) => !seen.includes(key)) : [];
+    if (fresh.length > 0) {
+      storeSeenAlerts([...seen, ...fresh]);
+      setPulse(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!pulse) return;
+    const timer = window.setTimeout(() => setPulse(false), BELL_PULSE_MS);
+    return () => window.clearTimeout(timer);
+  }, [pulse]);
 
   const persist = useCallback((keys: string[]) => {
     setDismissedKeys(keys);
@@ -33,5 +64,13 @@ export const useExpiryNotifications = (enabled: boolean) => {
     [alerts, dismissedKeys, persist],
   );
 
-  return { alerts, dismissAlert, dismissAllAlerts };
+  return {
+    alerts,
+    severity,
+    pulse,
+    lastSentAt: expiryStatus?.lastSentAt ?? null,
+    sentStages: expiryStatus?.sentStages ?? {},
+    dismissAlert,
+    dismissAllAlerts,
+  };
 };

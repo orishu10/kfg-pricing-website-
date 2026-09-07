@@ -185,3 +185,18 @@ export const CHARGE_PAYER_OPTIONS = ['KFG', 'Customer', 'Supplier'];
 export const SHIPMENT_DATE_KEYS = ['loading_date', 'etd', 'eta'] as const;
 
 export const ALL_FIELDS_FORMAT_NAME = 'All fields';
+
+export const LAST_FORMAT_STORAGE_KEY = 'kfg_last_shipment_format';
+
+export const ALL_FIELDS_FORMAT_ID = 'all';
+
+export const SHIPMENT_STATUS_STYLES: Record<string, { bgcolor: string; color: string }> = {
+  Booking: { bgcolor: '#f6efc0', color: '#5a4700' },
+  Loading: { bgcolor: '#dcecf4', color: '#0b5c8a' },
+  Sailed: { bgcolor: '#e9e4f2', color: '#4a3d78' },
+  Arrived: { bgcolor: '#e6efe1', color: '#2e7d32' },
+  Delivered: { bgcolor: '#e6efe1', color: '#2e7d32' },
+  Closed: { bgcolor: '#e6e6e6', color: '#494445' },
+};
+
+export const SCHEDULE_DRIVEN_KEYS: ShipmentFieldKey[] = ['vessel', 'voyage'];

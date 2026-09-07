@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/auth';
+import { useToast } from '../../../components';
 import {
   getShipmentFormats, createShipmentFormat, updateShipmentFormat, deleteShipmentFormat,
   type ShipmentFormat, type ShipmentFormatPayload,
@@ -9,6 +10,7 @@ import {
 export const useFormatsPage = () => {
   const queryClient = useQueryClient();
   const { username } = useAuth();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [formError, setFormError] = useState('');
@@ -29,9 +31,10 @@ export const useFormatsPage = () => {
     setFormError('');
   };
 
-  const handleSaved = () => {
+  const handleSaved = (format: ShipmentFormat) => {
     invalidate();
     closeDialog();
+    showToast({ title: `Format ${format.name} saved` });
   };
 
   const onFormError = (fallback: string) => (err: unknown) => {
@@ -52,8 +55,11 @@ export const useFormatsPage = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteShipmentFormat,
-    onSuccess: invalidate,
+    mutationFn: (format: ShipmentFormat) => deleteShipmentFormat(format.id),
+    onSuccess: (_, format) => {
+      invalidate();
+      showToast({ title: `Format ${format.name} deleted`, variant: 'info' });
+    },
     onError: () => setError('Failed to delete format'),
   });
 
@@ -79,7 +85,7 @@ export const useFormatsPage = () => {
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setError('');
-    deleteMutation.mutate(deleteTarget.id);
+    deleteMutation.mutate(deleteTarget);
     setDeleteTarget(null);
   };
 
@@ -93,6 +99,7 @@ export const useFormatsPage = () => {
     rows, search, setSearch,
     error: error || (isError ? 'Failed to load formats' : ''),
     formError, dialogOpen, editing, openCreate, openEdit, closeDialog, submitFormat,
+    saving: createMutation.isPending || updateMutation.isPending,
     deleteTarget, setDeleteTarget, confirmDelete,
   };
 };

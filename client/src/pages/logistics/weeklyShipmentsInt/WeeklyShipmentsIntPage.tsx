@@ -1,12 +1,14 @@
 import { useWeeklyShipmentsIntPage } from './hooks/useWeeklyShipmentsIntPage';
 import { DataTable } from '../../../components';
+import { usePartyShortNames } from '../../../hooks/usePartyShortNames';
 import { WeekSelector } from '../components/WeekSelector';
 import { buildShipmentColumns } from '../components/shipmentColumns';
 
 export const WeeklyShipmentsIntPage = () => {
   const { rows, monday, setMonday, search, setSearch } = useWeeklyShipmentsIntPage();
+  const { customerShortName, supplierShortName } = usePartyShortNames();
 
-  const columns = buildShipmentColumns();
+  const columns = buildShipmentColumns({ customerShortName, supplierShortName });
 
   const handleAdd = () => undefined;
 

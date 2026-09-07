@@ -3,6 +3,11 @@ import {
   ROUTE_KEYS,
   INCOTERMS,
   EXPIRY_WINDOW,
+  EXPIRY_CHIP_STYLES,
+  EXPIRY_SEVERITY_ORDER,
+  VALID_CHIP_STYLE,
+  type Incoterm,
+  type RouteCurrency,
   type RouteForm,
   type ExpirySeverity,
   type RouteExpiryAlert,
@@ -19,50 +24,61 @@ export const routeToForm = (r: Route): RouteForm => {
   return { ...out, ...deriveRoute(out) };
 };
 
-export const deriveRoute = (f: RouteForm): Partial<RouteForm> => {
-  const num = (k: keyof RouteForm) => parseFloat(f[k]) || 0;
-  const usdRate = num('usd_rate');
-  const eurRate = num('eur_rate');
-  const s = (v: number | null) => (v != null ? v.toFixed(4) : '');
+export interface IncotermAmounts {
+  ILS: number | null;
+  USD: number | null;
+  EUR: number | null;
+}
 
+const numberOf = (f: RouteForm, k: keyof RouteForm) => parseFloat(f[k]) || 0;
+
+export const incotermCurrency = (f: RouteForm, x: Incoterm): RouteCurrency =>
+  ((f[`${x}_currency` as keyof RouteForm] || 'ILS').toUpperCase() as RouteCurrency);
+
+export const incotermAmounts = (f: RouteForm, x: Incoterm): IncotermAmounts => {
+  const usdRate = numberOf(f, 'usd_rate');
+  const eurRate = numberOf(f, 'eur_rate');
+  const cur = incotermCurrency(f, x);
+
+  if (cur === 'USD') {
+    const usd = numberOf(f, `${x}_usd` as keyof RouteForm);
+    return { USD: usd, ILS: usd * usdRate, EUR: eurRate > 0 ? (usd * usdRate) / eurRate : null };
+  }
+  if (cur === 'EUR') {
+    const eur = numberOf(f, `${x}_eur` as keyof RouteForm);
+    return { EUR: eur, ILS: eur * eurRate, USD: usdRate > 0 ? (eur * eurRate) / usdRate : null };
+  }
+  const ils = numberOf(f, `${x}_ils` as keyof RouteForm);
+  return { ILS: ils, USD: usdRate > 0 ? ils / usdRate : null, EUR: eurRate > 0 ? ils / eurRate : null };
+};
+
+export const routeTotals = (f: RouteForm): Record<RouteCurrency, number> => {
+  const totals: Record<RouteCurrency, number> = { ILS: 0, USD: 0, EUR: 0 };
+  INCOTERMS.forEach((x) => {
+    const amounts = incotermAmounts(f, x);
+    totals.ILS += amounts.ILS ?? 0;
+    totals.USD += amounts.USD ?? 0;
+    totals.EUR += amounts.EUR ?? 0;
+  });
+  return totals;
+};
+
+export const totalCurrency = (f: RouteForm): RouteCurrency =>
+  ((f.total_currency || 'ILS').toUpperCase() as RouteCurrency);
+
+export const deriveRoute = (f: RouteForm): Partial<RouteForm> => {
+  const s = (v: number | null) => (v != null ? v.toFixed(2) : '');
   const out: Partial<RouteForm> = {};
-  const totals = { ILS: 0, USD: 0, EUR: 0 };
 
   INCOTERMS.forEach((x) => {
-    const cur = (f[`${x}_currency` as keyof RouteForm] || 'ILS').toUpperCase();
-    const ilsK = `${x}_ils` as keyof RouteForm;
-    const usdK = `${x}_usd` as keyof RouteForm;
-    const eurK = `${x}_eur` as keyof RouteForm;
-
-    let ils: number | null = null;
-    let usd: number | null = null;
-    let eur: number | null = null;
-
-    if (cur === 'USD') {
-      usd = num(usdK);
-      ils = usd * usdRate;
-      eur = eurRate > 0 ? (usd * usdRate) / eurRate : null;
-    } else if (cur === 'EUR') {
-      eur = num(eurK);
-      ils = eur * eurRate;
-      usd = usdRate > 0 ? (eur * eurRate) / usdRate : null;
-    } else {
-      ils = num(ilsK);
-      usd = usdRate > 0 ? ils / usdRate : null;
-      eur = eurRate > 0 ? ils / eurRate : null;
-    }
-
-    if (cur !== 'ILS') out[ilsK] = s(ils);
-    if (cur !== 'USD') out[usdK] = s(usd);
-    if (cur !== 'EUR') out[eurK] = s(eur);
-
-    totals.ILS += ils ?? 0;
-    totals.USD += usd ?? 0;
-    totals.EUR += eur ?? 0;
+    const cur = incotermCurrency(f, x);
+    const amounts = incotermAmounts(f, x);
+    if (cur !== 'ILS') out[`${x}_ils` as keyof RouteForm] = s(amounts.ILS);
+    if (cur !== 'USD') out[`${x}_usd` as keyof RouteForm] = s(amounts.USD);
+    if (cur !== 'EUR') out[`${x}_eur` as keyof RouteForm] = s(amounts.EUR);
   });
 
-  const totalCurrency = (f.total_currency || 'ILS').toUpperCase() as keyof typeof totals;
-  out.total_cost = s(totals[totalCurrency]);
+  out.total_cost = s(routeTotals(f)[totalCurrency(f)]);
   return out;
 };
 
@@ -93,6 +109,14 @@ export const expiryChipLabel = (days: number): string => {
   return `${days}d`;
 };
 
+export const expiryShortLabel = (days: number): string => {
+  if (days < -1) return `${Math.abs(days)} days ago`;
+  if (days === -1) return 'Yesterday';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  return `${days}d`;
+};
+
 export const expiryMessage = (days: number): string => {
   if (days < -1) return `Expired ${Math.abs(days)} days ago`;
   if (days === -1) return 'Expired yesterday';
@@ -106,3 +130,30 @@ export const expiryAlerts = (routes: Route[]): RouteExpiryAlert[] =>
     .map((route) => ({ route, days: daysUntil(route.validity) }))
     .filter((alert): alert is RouteExpiryAlert => alert.days != null && isWithinExpiryWindow(alert.days))
     .sort((a, b) => a.days - b.days);
+
+export const worstSeverity = (alerts: RouteExpiryAlert[]): ExpirySeverity | null => {
+  const present = new Set(alerts.map((alert) => expirySeverity(alert.days)));
+  return EXPIRY_SEVERITY_ORDER.find((severity) => present.has(severity)) ?? null;
+};
+
+export const groupAlertsBySeverity = (alerts: RouteExpiryAlert[]) =>
+  EXPIRY_SEVERITY_ORDER
+    .map((severity) => ({ severity, alerts: alerts.filter((alert) => expirySeverity(alert.days) === severity) }))
+    .filter((group) => group.alerts.length > 0);
+
+export const validityChip = (days: number | null): { label: string; styles: { bgcolor: string; color: string } } | null => {
+  if (days == null) return null;
+  if (isWithinExpiryWindow(days)) return { label: expiryChipLabel(days), styles: EXPIRY_CHIP_STYLES[expirySeverity(days)] };
+  return { label: `${days} days left`, styles: VALID_CHIP_STYLE };
+};
+
+export const routeLane = (route: Route): string =>
+  [
+    [route.origin, route.destination].filter(Boolean).join(' → '),
+    route.shipping_line,
+    route.container_type,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+export const routeTitle = (route: Route): string => route.reference || route.shipping_line || `Route ${route.id}`;

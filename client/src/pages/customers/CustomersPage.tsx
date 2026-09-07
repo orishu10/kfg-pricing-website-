@@ -2,12 +2,13 @@ import { useCustomersPage } from './hooks/useCustomersPage';
 import {
   ConfirmDialog, DataTable, ErrorAlert, PartyFormDialog, type Column,
 } from '../../components';
+import { partyLabel } from '../../utils/format';
 import type { Customer } from '../../api';
 
 const columns: Column<Customer>[] = [
   { key: 'id', label: '#', mono: true, align: 'center' },
+  { key: 'short_name', label: 'Short Name', sortable: true, filterable: false, render: (r) => partyLabel(r.short_name, r.name) },
   { key: 'name', label: 'Customer', sortable: true, filterable: false },
-  { key: 'short_name', label: 'Short Name', sortable: true, filterable: false, render: (r) => r.short_name ?? '' },
   { key: 'address', label: 'Address', render: (r) => r.address ?? '' },
   { key: 'city', label: 'City', render: (r) => r.city ?? '' },
   { key: 'country', label: 'Country', filterable: true, render: (r) => r.country ?? '' },
@@ -19,7 +20,7 @@ export const CustomersPage = () => {
   const {
     customers, search, setSearch,
     dialogOpen, editing, openAdd, openEdit, closeDialog,
-    error, handleSubmit, handleImport,
+    error, handleSubmit, handleImport, saving,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useCustomersPage();
 
@@ -56,6 +57,7 @@ export const CustomersPage = () => {
         entity="Customer"
         initial={editing}
         error={error}
+        saving={saving}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         onDelete={requestDelete}
@@ -64,7 +66,8 @@ export const CustomersPage = () => {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete customer?"
-        message={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
+        target={deleteTarget?.name}
+        message="Its pricing records are removed too. This cannot be undone."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

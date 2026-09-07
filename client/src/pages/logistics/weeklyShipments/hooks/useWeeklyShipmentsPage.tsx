@@ -1,16 +1,23 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../../context/auth';
+import { useToast } from '../../../../components';
 import {
   getWeeklyShipments, deleteWeeklyShipment, updateWeeklyShipment, createWeeklyShipment,
   getShipmentFormats,
   type ShipmentFormat, type WeeklyShipment, type WeeklyShipmentInput,
 } from '../../../../api';
 import { isInWeek, weekStart } from '../../utils/week';
+import { ALL_FIELDS_FORMAT_ID, LAST_FORMAT_STORAGE_KEY } from '../utils/consts';
+import { formatUsageCounts } from '../utils/helpers';
 
 export const useWeeklyShipmentsPage = () => {
   const queryClient = useQueryClient();
   const { username } = useAuth();
+  const { showToast } = useToast();
+  const [lastUsedFormat, setLastUsedFormat] = useState<string | null>(() =>
+    localStorage.getItem(LAST_FORMAT_STORAGE_KEY),
+  );
   const [monday, setMonday] = useState(() => weekStart(new Date()));
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
@@ -45,6 +52,7 @@ export const useWeeklyShipmentsPage = () => {
     invalidate();
     if (shipment.etd) setMonday(weekStart(new Date(shipment.etd)));
     closeDialog();
+    showToast({ title: `Shipment ${shipment.id} saved` });
   };
 
   const onFormError = (fallback: string) => (err: unknown) => {
@@ -65,8 +73,11 @@ export const useWeeklyShipmentsPage = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteWeeklyShipment,
-    onSuccess: invalidate,
+    mutationFn: ({ id }: { id: string; name: string }) => deleteWeeklyShipment(id),
+    onSuccess: (_, { name }) => {
+      invalidate();
+      showToast({ title: `Shipment ${name} deleted`, variant: 'info' });
+    },
     onError: () => setError('Failed to delete shipment'),
   });
 
@@ -82,6 +93,9 @@ export const useWeeklyShipmentsPage = () => {
     formats.find((candidate) => candidate.id === shipment.format_id) ?? null;
 
   const pickFormat = (picked: ShipmentFormat | null) => {
+    const formatKey = picked ? String(picked.id) : ALL_FIELDS_FORMAT_ID;
+    localStorage.setItem(LAST_FORMAT_STORAGE_KEY, formatKey);
+    setLastUsedFormat(formatKey);
     setFormatPickerOpen(false);
     setSelectedFormat(picked);
     setSourceShipment(null);
@@ -121,7 +135,7 @@ export const useWeeklyShipmentsPage = () => {
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setError('');
-    deleteMutation.mutate(deleteTarget.id);
+    deleteMutation.mutate(deleteTarget);
     setDeleteTarget(null);
   };
 
@@ -132,6 +146,8 @@ export const useWeeklyShipmentsPage = () => {
       data: { ...shipment, booked: !shipment.booked, updated_by: username ?? '' },
     });
   };
+
+  const formatUsage = useMemo(() => formatUsageCounts(shipments), [shipments]);
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -151,7 +167,8 @@ export const useWeeklyShipmentsPage = () => {
   return {
     rows, monday, setMonday, search, setSearch,
     error: error || (isError ? 'Failed to load shipments' : ''),
-    formats, formError, formatPickerOpen, setFormatPickerOpen, dialogOpen,
+    formats, formatUsage, lastUsedFormat, formError, formatPickerOpen, setFormatPickerOpen, dialogOpen,
+    saving: createMutation.isPending || updateMutation.isPending,
     selectedFormat, sourceShipment, isEdit,
     openFormatPicker, pickFormat, openEdit, openDuplicate, closeDialog, submitShipment,
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete, toggleBooked,

@@ -28,6 +28,10 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: { fontFamily: '"Myriad Pro", sans-serif' },
+        '*': { scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.28) transparent' },
+        '*::-webkit-scrollbar': { width: 6, height: 6 },
+        '*::-webkit-scrollbar-track': { background: 'transparent' },
+        '*::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0,0,0,0.28)', borderRadius: 3 },
       },
     },
     MuiButton: {
@@ -44,6 +48,9 @@ const theme = createTheme({
           slotProps: { paper: { sx: { maxHeight: 320 } } },
         },
       },
+    },
+    MuiDialog: {
+      defaultProps: { transitionDuration: 180 },
     },
     MuiCard: {
       styleOverrides: { root: { backgroundImage: 'none' } },

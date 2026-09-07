@@ -19,7 +19,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import { useAuth } from '../context/auth';
-import { MODULES } from './consts';
+import { BELL_BADGE_STYLES, BELL_COLORS, MODULES } from './consts';
 import { ExpiryNotificationsMenu } from './components/ExpiryNotificationsMenu';
 import { useExpiryNotifications } from './hooks/useExpiryNotifications';
 import kfgBackground from '../../public/background-logo.webp';
@@ -43,7 +43,8 @@ export const AppLayout = () => {
 
   const modules = MODULES.filter((m) => canAccess(m.requires));
 
-  const { alerts, dismissAlert, dismissAllAlerts } = useExpiryNotifications(canAccess('logistics'));
+  const { alerts, severity, pulse, lastSentAt, dismissAlert, dismissAllAlerts } =
+    useExpiryNotifications(canAccess('logistics'));
 
   const openNotif = (path: string) => {
     setNotifAnchorEl(null);
@@ -159,8 +160,23 @@ export const AppLayout = () => {
             </Tooltip>
             {canAccess('logistics') && (
               <Tooltip title="Expiring routes">
-                <IconButton onClick={(e) => setNotifAnchorEl(e.currentTarget)} sx={{ color: '#494445' }}>
-                  <Badge badgeContent={alerts.length} color="error">
+                <IconButton
+                  onClick={(e) => setNotifAnchorEl(e.currentTarget)}
+                  sx={{ color: severity ? BELL_COLORS[severity] : '#494445' }}
+                >
+                  <Badge
+                    badgeContent={alerts.length}
+                    sx={{
+                      '@keyframes bellPulse': {
+                        from: { boxShadow: '0 0 0 0 rgba(193,29,40,0.45)' },
+                        to: { boxShadow: '0 0 0 10px rgba(193,29,40,0)' },
+                      },
+                      '& .MuiBadge-badge': {
+                        ...(severity ? BELL_BADGE_STYLES[severity] : {}),
+                        animation: pulse ? 'bellPulse 600ms ease-out' : 'none',
+                      },
+                    }}
+                  >
                     <NotificationsNoneIcon />
                   </Badge>
                 </IconButton>
@@ -169,8 +185,11 @@ export const AppLayout = () => {
             <ExpiryNotificationsMenu
               anchorEl={notifAnchorEl}
               alerts={alerts}
+              lastSentAt={lastSentAt}
               onClose={() => setNotifAnchorEl(null)}
               onOpenRoute={(routeId) => openNotif(`/logistics/routes/${routeId}`)}
+              onExtendRoute={(routeId) => openNotif(`/logistics/routes/${routeId}?focus=validity`)}
+              onShowInRoutes={() => openNotif('/logistics/routes?expiring=1')}
               onDismiss={dismissAlert}
               onDismissAll={dismissAllAlerts}
             />

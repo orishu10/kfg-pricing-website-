@@ -34,7 +34,7 @@ const columns: Column<ShipmentFormat>[] = [
 
 export const FormatsPage = () => {
   const {
-    rows, search, setSearch, error, formError, dialogOpen, editing,
+    rows, search, setSearch, error, formError, dialogOpen, editing, saving,
     openCreate, openEdit, closeDialog, submitFormat,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useFormatsPage();
@@ -65,6 +65,7 @@ export const FormatsPage = () => {
         open={dialogOpen}
         initial={editing}
         error={formError}
+        saving={saving}
         onClose={closeDialog}
         onSubmit={submitFormat}
       />
@@ -72,7 +73,8 @@ export const FormatsPage = () => {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete format?"
-        message={`Delete format "${deleteTarget?.name}"? Shipments already created keep their fields.`}
+        target={deleteTarget?.name}
+        message="Shipments already created keep their fields."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

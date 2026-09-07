@@ -96,7 +96,8 @@ export const ListsPage = ({ category }: ListsPageProps) => {
       <ConfirmDialog
         open={!!deleteTarget}
         title={`Delete ${config.singular}?`}
-        message={`Remove "${deleteTarget?.value}" from the ${config.title} list? Existing records that use it are not changed.`}
+        target={deleteTarget?.value}
+        message={`Removed from the ${config.title} list. Existing records that use it are not changed.`}
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

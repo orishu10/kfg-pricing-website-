@@ -3,15 +3,14 @@ import Typography from '@mui/material/Typography';
 
 interface FormPanelProps {
   label?: string;
-  color?: string;
   children: React.ReactNode;
 }
 
-export const FormPanel = ({ label, color, children }: FormPanelProps) => (
+export const FormPanel = ({ label, children }: FormPanelProps) => (
   <Box
     sx={{
       position: 'relative',
-      bgcolor: color ?? '#fff',
+      bgcolor: '#fff',
       border: '1px solid rgba(0,0,0,0.18)',
       borderRadius: 1.5,
       pt: label ? 2.4 : 1.5,

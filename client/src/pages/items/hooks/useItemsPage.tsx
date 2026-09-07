@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../../components';
 import { getItems, getSuppliers, createItem, updateItem, deleteItem, type Item, type NewItem } from '../../../api';
 
 export const useItemsPage = () => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -24,19 +26,30 @@ export const useItemsPage = () => {
 
   const createMutation = useMutation({
     mutationFn: (data: NewItem) => createItem(data),
-    onSuccess: () => { closeDialog(); invalidate(); },
+    onSuccess: (item) => {
+      closeDialog();
+      invalidate();
+      showToast({ title: `Item ${item.name} created` });
+    },
     onError: onError('Failed to create item'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: NewItem }) => updateItem(id, data),
-    onSuccess: () => { closeDialog(); invalidate(); },
+    onSuccess: (item) => {
+      closeDialog();
+      invalidate();
+      showToast({ title: `Item ${item.name} saved` });
+    },
     onError: onError('Failed to update item'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteItem,
-    onSuccess: invalidate,
+    mutationFn: ({ id }: { id: string; name: string }) => deleteItem(id),
+    onSuccess: (_, { name }) => {
+      invalidate();
+      showToast({ title: `Item ${name} deleted`, variant: 'info' });
+    },
     onError: () => setError('Failed to delete item'),
   });
 
@@ -53,7 +66,7 @@ export const useItemsPage = () => {
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setError('');
-    deleteMutation.mutate(deleteTarget.id);
+    deleteMutation.mutate(deleteTarget);
     setDeleteTarget(null);
   };
 
@@ -111,6 +124,7 @@ export const useItemsPage = () => {
     isEditing: !!editing,
     error: error || (isError ? 'Failed to load items' : ''),
     handleSubmit, handleImport,
+    saving: createMutation.isPending || updateMutation.isPending,
     deleteTarget, setDeleteTarget, confirmDelete,
   };
 };

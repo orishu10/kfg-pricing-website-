@@ -13,7 +13,7 @@ interface ShipmentSectionProps {
 }
 
 export const ShipmentSection = ({ section, form, setField, setSuppliers, setRows }: ShipmentSectionProps) => (
-  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, alignItems: 'start' }}>
+  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2.5, rowGap: 2, alignItems: 'start' }}>
     {section.fields.map((spec) => (
       <Box key={spec.key} sx={{ minWidth: 0, gridColumn: fieldGridColumn(spec) }}>
         <ShipmentFieldControl

@@ -1,5 +1,6 @@
 import { useWeeklyShipmentsPage } from './hooks/useWeeklyShipmentsPage';
 import { ConfirmDialog, DataTable, ErrorAlert } from '../../../components';
+import { usePartyShortNames } from '../../../hooks/usePartyShortNames';
 import { WeekSelector } from '../components/WeekSelector';
 import { buildShipmentColumns } from '../components/shipmentColumns';
 import { ShipmentFormDialog } from './components/ShipmentFormDialog';
@@ -8,13 +9,14 @@ import { FormatPickerDialog } from './components/FormatPickerDialog';
 export const WeeklyShipmentsPage = () => {
   const {
     rows, monday, setMonday, search, setSearch, error,
-    formats, formError, formatPickerOpen, setFormatPickerOpen, dialogOpen,
+    formats, formatUsage, lastUsedFormat, formError, formatPickerOpen, setFormatPickerOpen, dialogOpen, saving,
     selectedFormat, sourceShipment, isEdit,
     openFormatPicker, pickFormat, openEdit, openDuplicate, closeDialog, submitShipment,
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete, toggleBooked,
   } = useWeeklyShipmentsPage();
+  const { customerShortName, supplierShortName } = usePartyShortNames();
 
-  const columns = buildShipmentColumns(toggleBooked);
+  const columns = buildShipmentColumns({ customerShortName, supplierShortName, onToggleBooked: toggleBooked });
 
   return (
     <>
@@ -43,6 +45,8 @@ export const WeeklyShipmentsPage = () => {
       <FormatPickerDialog
         open={formatPickerOpen}
         formats={formats}
+        usage={formatUsage}
+        lastUsed={lastUsedFormat}
         onPick={pickFormat}
         onClose={() => setFormatPickerOpen(false)}
       />
@@ -53,6 +57,7 @@ export const WeeklyShipmentsPage = () => {
         isEdit={isEdit}
         format={selectedFormat}
         error={formError}
+        saving={saving}
         onClose={closeDialog}
         onSubmit={submitShipment}
       />
@@ -60,7 +65,8 @@ export const WeeklyShipmentsPage = () => {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete shipment?"
-        message={`Delete shipment "${deleteTarget?.name}"? This cannot be undone.`}
+        target={deleteTarget?.name}
+        message="This cannot be undone."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

@@ -1,8 +1,11 @@
 import {
   EMPTY_DOCUMENT_ROW, EMPTY_SHIPMENT, SHIPMENT_DATE_KEYS, SHIPMENT_FIELD_KEYS,
   SHIPMENT_SECTIONS,
-  type ShipmentFieldKey, type ShipmentFieldSpec, type ShipmentForm, type ShipmentSelectableKey,
+  type ShipmentFieldKey, type ShipmentFieldSpec, type ShipmentForm, type ShipmentRowKey,
+  type ShipmentSectionSpec, type ShipmentSelectableKey,
 } from './consts';
+import { formatDate } from '../../../../utils/time';
+import { isoWeek } from '../../utils/week';
 import type {
   Schedule, ShipmentDocumentRow, ShipmentFormat, WeeklyShipment, WeeklyShipmentInput,
 } from '../../../../api';
@@ -101,4 +104,47 @@ export const formatFields = (format: ShipmentFormat | null): ShipmentSelectableK
 export const fieldGridColumn = (spec: ShipmentFieldSpec) => {
   if (spec.fullWidth) return '1 / -1';
   return spec.newRow ? '1' : 'auto';
+};
+
+export const isFieldFilled = (form: ShipmentForm, spec: ShipmentFieldSpec): boolean => {
+  if (spec.control === 'supplierList') return form.suppliers.some((supplier) => supplier.trim() !== '');
+  if (spec.control === 'documentRows') return form[spec.key as ShipmentRowKey].some((row) => !isEmptyRow(row));
+  return form[spec.key as ShipmentFieldKey].trim() !== '';
+};
+
+export const sectionFieldCounts = (sections: ShipmentSectionSpec[], form: ShipmentForm) =>
+  sections.map((section) => ({
+    key: section.key,
+    label: section.label,
+    total: section.fields.length,
+    filled: section.fields.filter((spec) => isFieldFilled(form, spec)).length,
+  }));
+
+export interface ShipmentSummaryCell {
+  label: string;
+  value: string;
+}
+
+export const shipmentSummary = (form: ShipmentForm): ShipmentSummaryCell[] => [
+  { label: 'Customer', value: form.customer },
+  { label: 'Suppliers', value: form.suppliers.filter((supplier) => supplier.trim()).join(', ') },
+  { label: 'Lane', value: [form.pup || form.pol, form.pod].filter(Boolean).join(' → ') },
+  { label: 'Vessel', value: [form.vessel, form.voyage ? `V.${form.voyage}` : ''].filter(Boolean).join(' · ') },
+  { label: 'ETD → ETA', value: [formatDate(form.etd), formatDate(form.eta)].filter(Boolean).join(' → ') },
+];
+
+export const shipmentEyebrow = (form: ShipmentForm, isEdit: boolean): string => {
+  if (!form.etd) return isEdit ? 'Shipment' : 'New shipment';
+  const etd = new Date(form.etd);
+  if (Number.isNaN(etd.getTime())) return isEdit ? 'Shipment' : 'New shipment';
+  return `Week ${isoWeek(etd)} · ETD ${formatDate(form.etd)}`;
+};
+
+export const formatUsageCounts = (shipments: WeeklyShipment[]): Record<string, number> => {
+  const counts: Record<string, number> = {};
+  shipments.forEach((shipment) => {
+    const key = shipment.format_id == null ? 'all' : String(shipment.format_id);
+    counts[key] = (counts[key] ?? 0) + 1;
+  });
+  return counts;
 };

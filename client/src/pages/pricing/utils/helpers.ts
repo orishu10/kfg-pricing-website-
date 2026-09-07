@@ -1,11 +1,12 @@
 import {
-  CURRENCY_SYMBOLS, EMPTY_PRICING, ILS_SYMBOL, PRICING_KEYS,
+  CURRENCY_SYMBOLS, DEFAULT_SUPPLIER_CURRENCY, EMPTY_PRICING, ILS_SYMBOL, PRICING_KEYS,
   ROUTE_CURRENCY_SUFFIX, TEXT_KEYS, type PricingForm,
 } from './consts';
 import { getFxRates, type Pricing, type Route } from '../../../api';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const LB_PER_KG = 2.20462;
+const ILS_CURRENCY = 'ILS';
 
 const INTEGER_KEYS: readonly string[] = [
   'units_in_case', 'cases_in_fcl', 'cases_per_pallet', 'pallets_per_fcl', 'pallets',
@@ -36,6 +37,33 @@ export const pricingToForm = (p: Pricing): PricingForm => {
 export const symbol = (currency: string | null | undefined): string =>
   CURRENCY_SYMBOLS[currency ?? ''] ?? ILS_SYMBOL;
 
+export const currencyPair = (
+  supplierCurrency: string | null | undefined,
+  customerCurrency: string | null | undefined,
+): string => {
+  const from = (supplierCurrency ?? '').trim().toUpperCase() || DEFAULT_SUPPLIER_CURRENCY;
+  const to = (customerCurrency ?? '').trim().toUpperCase();
+  return to ? `${from} > ${to}` : '';
+};
+
+// "ILS > USD" → ['ILS', 'USD']: the supplier's currency, then the customer's.
+export const currencyPairSides = (pair: string | null | undefined): [string, string] => {
+  const [from = '', to = ''] = (pair ?? '').split('>').map((side) => side.trim().toUpperCase());
+  return [from, to];
+};
+
+export const isSameCurrencyPair = (pair: string | null | undefined): boolean => {
+  const [from, to] = currencyPairSides(pair);
+  return !!from && from === to;
+};
+
+// Ex Rate is read as "supplier currency per one unit of customer currency",
+// so a customer-currency amount is always the supplier amount divided by it.
+export const exRateUnit = (pair: string | null | undefined): string => {
+  const [from, to] = currencyPairSides(pair);
+  return from && to ? `${symbol(from)}/${symbol(to)}` : '';
+};
+
 export const routeIncotermPrices = (
   route: Route | undefined,
   currency: string | null | undefined,
@@ -51,11 +79,18 @@ export const routeIncotermPrices = (
 };
 
 export const fetchFxRate = async (pair: string): Promise<number | null> => {
-  const target = pair.includes('EUR') ? 'EUR' : 'USD';
+  const [from, to] = currencyPairSides(pair);
+  if (!from || !to) return null;
+  if (from === to) return 1;
   try {
     const rates = await getFxRates();
-    const rate = rates[target];
-    return typeof rate === 'number' && rate > 0 ? rate : null;
+    // The Bank of Israel quotes shekels per one unit of each foreign currency.
+    const shekelsPer = (currency: string): number | null =>
+      currency === ILS_CURRENCY ? 1 : rates[currency as keyof typeof rates];
+    const fromRate = shekelsPer(from);
+    const toRate = shekelsPer(to);
+    if (!fromRate || !toRate || fromRate <= 0 || toRate <= 0) return null;
+    return toRate / fromRate;
   } catch {
     return null;
   }
@@ -91,7 +126,8 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const ddp = num('ddp');
   const tarPct = num('us_tariff_pct');
   const kfgPct = num('kfg_commission_pct');
-  const ex = num('ex_rate');
+  const sameCurrency = isSameCurrencyPair(f.currency_pair);
+  const ex = sameCurrency ? 1 : num('ex_rate');
   const supCostRate = num('supervision_cost_rate');
   const supFeesRate = num('supervision_fees_rate');
 
@@ -99,9 +135,9 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
   const spFcl = spCase != null && cifcl > 0 ? spCase * cifcl : null;
   const sp1kg = unit > 0 && wt > 0 ? unit / wt : null;
 
-  const puUsd = ex > 0 && unit > 0 ? unit / ex : null;
-  const pcUsd = ex > 0 && spCase != null ? spCase / ex : null;
-  const pfUsd = pcUsd != null && cifcl > 0 ? pcUsd * cifcl : null;
+  const convertedUnit = ex > 0 && unit > 0 ? unit / ex : null;
+  const convertedCase = ex > 0 && spCase != null ? spCase / ex : null;
+  const pfUsd = convertedCase != null && cifcl > 0 ? convertedCase * cifcl : null;
 
   const supCostVal = cifcl > 0 && supCostRate > 0 ? supCostRate * cifcl : null;
   const supFeesVal = cifcl > 0 && supFeesRate > 0 ? supFeesRate * cifcl : null;
@@ -137,8 +173,8 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     supplier_price_case: s(spCase),
     supplier_price_fcl: s(spFcl),
     supplier_price_1kg: s(sp1kg),
-    price_unit_usd: s(puUsd),
-    price_case_usd: s(pcUsd),
+    price_unit_usd: sameCurrency ? '' : s(convertedUnit),
+    price_case_usd: sameCurrency ? '' : s(convertedCase),
     price_fcl_usd: s(pfUsd),
     sub_total_1: s(st1),
     sub_total_2: s(st2),
@@ -159,3 +195,6 @@ export const derivePricing = (f: PricingForm): Partial<PricingForm> => {
     sap_price_1kg: s(sap1kg),
   };
 };
+
+export const pricingLabel = (pricing: Pricing): string =>
+  pricing.kfg_sku || pricing.description || pricing.id;

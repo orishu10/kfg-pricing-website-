@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../../components';
 import {
   getUsers, createUser, updateUser, deleteUser,
   type AppUser, type UserPayload,
@@ -7,6 +8,7 @@ import {
 
 export const useUsersPage = () => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -22,11 +24,12 @@ export const useUsersPage = () => {
     setError(message || fallback);
   };
 
-  const handleSaved = () => {
+  const handleSaved = (user: AppUser) => {
     setError('');
     setDialogOpen(false);
     setEditing(null);
     invalidate();
+    showToast({ title: `User ${user.username} saved` });
   };
 
   const createMutation = useMutation({
@@ -42,8 +45,13 @@ export const useUsersPage = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteUser,
-    onSuccess: () => { setError(''); setDeleteTarget(null); invalidate(); },
+    mutationFn: (user: AppUser) => deleteUser(user.id),
+    onSuccess: (_, user) => {
+      setError('');
+      setDeleteTarget(null);
+      invalidate();
+      showToast({ title: `User ${user.username} deleted`, variant: 'info' });
+    },
     onError: (err) => { setDeleteTarget(null); onRequestError('Failed to delete user')(err); },
   });
 
@@ -71,7 +79,7 @@ export const useUsersPage = () => {
   };
 
   const confirmDelete = () => {
-    if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+    if (deleteTarget) deleteMutation.mutate(deleteTarget);
   };
 
   const term = search.trim().toLowerCase();
@@ -92,6 +100,7 @@ export const useUsersPage = () => {
     openEdit,
     closeDialog,
     handleSubmit,
+    saving: createMutation.isPending || updateMutation.isPending,
     deleteTarget,
     setDeleteTarget,
     confirmDelete,

@@ -34,6 +34,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import Divider from "@mui/material/Divider";
 import Checkbox from "@mui/material/Checkbox";
 import { SearchBar } from "../searchBar/SearchBar";
 import { ErrorAlert } from "../errorAlert/ErrorAlert";
@@ -47,8 +49,16 @@ export interface Column<T> {
   filterable?: boolean;
   mono?: boolean;
   width?: number | string;
+  minWidth?: number | string;
   render?: (row: T) => React.ReactNode;
   value?: (row: T) => string | number | null;
+}
+
+export interface RowMenuItem<T> {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: (row: T) => void;
+  divider?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -59,6 +69,8 @@ interface DataTableProps<T> {
   onEdit?: (row: T) => void;
   onDuplicate?: (row: T) => void;
   onDelete?: (row: T) => void;
+  onDeleteMany?: (rows: T[]) => void;
+  rowMenuItems?: (row: T) => RowMenuItem<T>[];
   selectable?: boolean;
   renderBulkActions?: (selected: T[], clear: () => void) => React.ReactNode;
   pageSize?: number;
@@ -117,6 +129,8 @@ export function DataTable<T>({
   onEdit,
   onDuplicate,
   onDelete,
+  onDeleteMany,
+  rowMenuItems,
   selectable,
   renderBulkActions,
   pageSize = 12,
@@ -155,7 +169,7 @@ export function DataTable<T>({
       return next;
     });
 
-  const hasActions = !!(onEdit || onDuplicate || onDelete);
+  const hasActions = !!(onEdit || onDuplicate || onDelete || rowMenuItems);
   const showToolbar = !!(
     title ||
     onAdd ||
@@ -254,6 +268,8 @@ export function DataTable<T>({
     });
   const selectedRows = rows.filter((r) => selected.has(getRowId(r)));
   const selecting = !!selectable && selectedRows.length > 0;
+  const canSelectAll = allPageSelected && selectedRows.length < total;
+  const selectAllRows = () => setSelected(new Set(ordered.map(getRowId)));
 
   const toggleSort = (key: string) =>
     setSort((s) =>
@@ -268,9 +284,9 @@ export function DataTable<T>({
     closeMenu();
   };
 
-  const handleExport = () => {
+  const handleExport = (exportRows: T[] = ordered) => {
     const headers = columns.map((c) => c.label);
-    const data: CellValue[][] = ordered.map((row) =>
+    const data: CellValue[][] = exportRows.map((row) =>
       columns.map((col) => {
         const v = rawValue(col, row);
         return v == null ? "" : (v as CellValue);
@@ -327,6 +343,8 @@ export function DataTable<T>({
             px: 2,
             py: 1.25,
             borderBottom: "1px solid rgba(0,0,0,0.08)",
+            bgcolor: selecting ? "rgba(193,29,40,0.04)" : "transparent",
+            transition: "background-color 150ms ease",
           }}
         >
           {selecting ? (
@@ -334,6 +352,30 @@ export function DataTable<T>({
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "text.primary" }}>
                   {selectedRows.length} selected
+                </Typography>
+                <Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
+                  of {total}
+                  {canSelectAll && (
+                    <>
+                      {" · "}
+                      <Box
+                        component="button"
+                        type="button"
+                        onClick={selectAllRows}
+                        sx={{
+                          background: "none",
+                          border: "none",
+                          p: 0,
+                          font: "inherit",
+                          fontWeight: 700,
+                          color: "primary.main",
+                          cursor: "pointer",
+                        }}
+                      >
+                        select all {total}
+                      </Box>
+                    </>
+                  )}
                 </Typography>
                 <Tooltip title="Clear selection">
                   <IconButton size="small" onClick={clearSelection} aria-label="Clear selection">
@@ -343,6 +385,30 @@ export function DataTable<T>({
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {renderBulkActions?.(selectedRows, clearSelection)}
+                {exportFileName && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={() => handleExport(selectedRows)}
+                  >
+                    Export Excel
+                  </Button>
+                )}
+                {onDeleteMany && (
+                  <>
+                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="error"
+                      startIcon={<DeleteOutlineIcon />}
+                      onClick={() => onDeleteMany(selectedRows)}
+                    >
+                      Delete {selectedRows.length}
+                    </Button>
+                  </>
+                )}
               </Box>
             </>
           ) : (
@@ -363,7 +429,7 @@ export function DataTable<T>({
               <Tooltip title="Download as Excel">
                 <IconButton
                   size="small"
-                  onClick={handleExport}
+                  onClick={() => handleExport()}
                   aria-label="Download as Excel"
                   sx={{ color: "text.secondary" }}
                 >
@@ -597,6 +663,7 @@ export function DataTable<T>({
                       whiteSpace: fitWidth ? "normal" : headCellSx.whiteSpace,
                       overflowWrap: fitWidth ? "break-word" : undefined,
                       px: fitWidth ? 1 : undefined,
+                      minWidth: col.minWidth,
                       borderRight: showDivider ? HEAD_DIVIDER : "none",
                       cursor: col.sortable ? "pointer" : "default",
                     }}
@@ -649,8 +716,13 @@ export function DataTable<T>({
               <TableRow
                 key={getRowId(row)}
                 hover={!!onRowClick}
+                selected={selectable && selected.has(getRowId(row))}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                sx={{ cursor: onRowClick ? "pointer" : "default" }}
+                sx={{
+                  cursor: onRowClick ? "pointer" : "default",
+                  "&.Mui-selected": { bgcolor: "rgba(193,29,40,0.05)" },
+                  "&.Mui-selected:hover": { bgcolor: "rgba(193,29,40,0.08)" },
+                }}
               >
                 {selectable && (
                   <TableCell padding="checkbox" sx={{ borderBottom: "1px solid #ececec", borderRight: COL_DIVIDER }}>
@@ -677,6 +749,7 @@ export function DataTable<T>({
                         whiteSpace: fitWidth ? "normal" : undefined,
                         overflowWrap: fitWidth ? "break-word" : undefined,
                         px: fitWidth ? 1 : undefined,
+                        minWidth: col.minWidth,
                         py: 1.15,
                       }}
                     >
@@ -700,6 +773,7 @@ export function DataTable<T>({
                   >
                     <IconButton
                       size="small"
+                      aria-label="More actions"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenu({ anchor: e.currentTarget, row });
@@ -739,6 +813,15 @@ export function DataTable<T>({
               <ListItemText>Duplicate</ListItemText>
             </MenuItem>
           )}
+          {menu &&
+            rowMenuItems?.(menu.row).map((item) => [
+              item.divider && <Divider key={`${item.label}-divider`} sx={{ my: 0.5 }} />,
+              <MenuItem key={item.label} onClick={runAction(item.onClick)}>
+                {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
+                <ListItemText>{item.label}</ListItemText>
+              </MenuItem>,
+            ])}
+          {onDelete && (menu && (onEdit || onDuplicate || rowMenuItems)) && <Divider sx={{ my: 0.5 }} />}
           {onDelete && (
             <MenuItem
               onClick={runAction(onDelete)}

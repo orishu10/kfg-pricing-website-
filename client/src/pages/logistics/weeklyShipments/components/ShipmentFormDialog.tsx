@@ -1,23 +1,19 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import IconButton from '@mui/material/IconButton';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
-import { ErrorAlert } from '../../../../components';
+import { AppDialog, SectionNav } from '../../../../components';
 import { FormSelect } from '../../components/form';
 import { useShipmentFormOptions } from '../hooks/useShipmentFormOptions';
+import { changedFieldCount } from '../../../../utils/forms';
+import { timeAgo } from '../../../../utils/time';
 import {
-  ALL_FIELDS_FORMAT_NAME, EMPTY_SHIPMENT, SHIPMENT_STATUS_OPTIONS,
+  ALL_FIELDS_FORMAT_NAME, EMPTY_SHIPMENT, SHIPMENT_STATUS_OPTIONS, SHIPMENT_STATUS_STYLES,
   type ShipmentFieldKey, type ShipmentForm, type ShipmentRowKey,
 } from '../utils/consts';
-import { formToInput, formatFields, shipmentToForm, visibleSections } from '../utils/helpers';
+import {
+  formToInput, formatFields, sectionFieldCounts, shipmentEyebrow, shipmentSummary, shipmentToForm, visibleSections,
+} from '../utils/helpers';
 import type { ShipmentDocumentRow, ShipmentFormat, WeeklyShipment, WeeklyShipmentInput } from '../../../../api';
 import { ShipmentSection } from './ShipmentSection';
 
@@ -27,12 +23,13 @@ interface ShipmentFormDialogProps {
   isEdit: boolean;
   format: ShipmentFormat | null;
   error: string;
+  saving?: boolean;
   onClose: () => void;
   onSubmit: (payload: WeeklyShipmentInput) => void;
 }
 
 export const ShipmentFormDialog = ({
-  open, source, isEdit, format, error, onClose, onSubmit,
+  open, source, isEdit, format, error, saving, onClose, onSubmit,
 }: ShipmentFormDialogProps) => {
   const { routeOptions } = useShipmentFormOptions();
   const [form, setForm] = useState<ShipmentForm>(EMPTY_SHIPMENT);
@@ -66,69 +63,81 @@ export const ShipmentFormDialog = ({
     onSubmit(formToInput(form, format?.id ?? null));
   };
 
+  const initialForm = source ? shipmentToForm(source) : EMPTY_SHIPMENT;
+  const changedCount = changedFieldCount(form, initialForm);
+  const navItems = sectionFieldCounts(sections, form);
+  const summary = shipmentSummary(form);
+  const statusStyle = form.status ? SHIPMENT_STATUS_STYLES[form.status] : undefined;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <Box component="form" onSubmit={handleSubmit}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, px: 3, pt: 2.5, pb: 1.5 }}>
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography variant="h6" fontWeight={800}>
-              {isEdit && source ? `Shipment ${source.id}` : 'New Shipment'}
-            </Typography>
-            <Chip size="small" label={format?.name ?? ALL_FIELDS_FORMAT_NAME} sx={{ mt: 0.5 }} />
-          </Box>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      maxWidth="md"
+      eyebrow={shipmentEyebrow(form, isEdit)}
+      title={isEdit && source ? `Shipment ${source.id}` : 'New Shipment'}
+      headerChips={
+        <>
+          <Chip size="small" variant="outlined" label={format?.name ?? ALL_FIELDS_FORMAT_NAME} sx={{ height: 20, fontSize: '0.68rem' }} />
+          {form.status && statusStyle && (
+            <Chip size="small" label={form.status} sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, ...statusStyle }} />
+          )}
+        </>
+      }
+      headerEnd={
+        <Box sx={{ display: 'flex', gap: 1.5, alignSelf: 'flex-end' }}>
           <Box sx={{ width: 170 }}>
             <FormSelect label="Route" value={form.route} onChange={setField('route')} options={routeOptions} />
           </Box>
           <Box sx={{ width: 150 }}>
-            <FormSelect
-              label="Status"
-              value={form.status}
-              onChange={setField('status')}
-              options={SHIPMENT_STATUS_OPTIONS}
-            />
+            <FormSelect label="Status" value={form.status} onChange={setField('status')} options={SHIPMENT_STATUS_OPTIONS} />
           </Box>
-          <IconButton onClick={onClose} aria-label="Close" sx={{ mb: 0.25 }}>
-            <CloseIcon />
-          </IconButton>
         </Box>
-
-        <Tabs
-          value={activeSection?.key ?? false}
-          onChange={(_event, value: string) => setActiveSectionKey(value)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ px: 2, borderBottom: 1, borderColor: 'divider', minHeight: 38 }}
-        >
-          {sections.map((tab) => (
-            <Tab
-              key={tab.key}
-              value={tab.key}
-              label={tab.label}
-              sx={{ minHeight: 38, py: 0, fontSize: '0.72rem', fontWeight: 700 }}
-            />
+      }
+      subheader={
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 2 }}>
+          {summary.map((cell) => (
+            <Box key={cell.label} sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: 0.6, color: 'text.disabled' }}>
+                {cell.label.toUpperCase()}
+              </Typography>
+              <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 600, color: cell.value ? 'text.primary' : 'text.disabled' }}>
+                {cell.value || '—'}
+              </Typography>
+            </Box>
           ))}
-        </Tabs>
-
-        <DialogContent sx={{ pt: 2 }}>
-          {activeSection && (
-            <ShipmentSection
-              section={activeSection}
-              form={form}
-              setField={setField}
-              setSuppliers={setSuppliers}
-              setRows={setRows}
-            />
-          )}
-          <Box sx={{ mt: 2 }}>
-            <ErrorAlert message={error} />
+        </Box>
+      }
+      sideNav={
+        sections.length > 0 ? (
+          <SectionNav items={navItems} activeKey={activeSection?.key ?? ''} onChange={setActiveSectionKey} />
+        ) : undefined
+      }
+      error={error}
+      saving={saving}
+      changedCount={changedCount}
+      lastSavedLabel={
+        isEdit && source?.updated_at
+          ? `Last saved by ${source.updated_by ?? '—'} · ${timeAgo(source.updated_at)}`
+          : undefined
+      }
+    >
+      {activeSection && (
+        <>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 1.75 }}>
+            <Typography sx={{ fontSize: '0.9rem', fontWeight: 800 }}>{activeSection.label}</Typography>
+            <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled' }}>Tab moves to the next field · Enter saves</Typography>
           </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={onClose} variant="outlined">Cancel</Button>
-          <Button type="submit" variant="contained">Save</Button>
-        </DialogActions>
-      </Box>
-    </Dialog>
+          <ShipmentSection
+            section={activeSection}
+            form={form}
+            setField={setField}
+            setSuppliers={setSuppliers}
+            setRows={setRows}
+          />
+        </>
+      )}
+    </AppDialog>
   );
 };

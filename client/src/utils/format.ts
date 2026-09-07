@@ -8,3 +8,8 @@ export const formatNumber = (value: string | number | null | undefined): string 
   const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return `${negative ? '-' : ''}${withCommas}${decPart !== undefined ? `.${decPart}` : ''}`;
 };
+
+export const partyLabel = (
+  shortName: string | null | undefined,
+  fullName: string | null | undefined,
+): string => (shortName ?? '').trim() || (fullName ?? '').trim();

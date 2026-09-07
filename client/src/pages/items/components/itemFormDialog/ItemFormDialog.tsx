@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
-import { CommonInput, CommonSelect, ErrorAlert } from '../../../../components';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import { AppDialog, CommonInput, CommonSelect, FormSection } from '../../../../components';
+import { changedFieldCount } from '../../../../utils/forms';
+import { partyLabel } from '../../../../utils/format';
 import type { Item, NewItem, Supplier } from '../../../../api';
 
 interface ItemFormDialogProps {
@@ -14,6 +12,7 @@ interface ItemFormDialogProps {
   isEdit: boolean;
   suppliers: Supplier[];
   error: string;
+  saving?: boolean;
   onClose: () => void;
   onSubmit: (data: NewItem) => void;
 }
@@ -22,9 +21,11 @@ const EMPTY = {
   supplier_id: '', name: '', size: '', unit_weight: '', units_in_case: '', cases_per_pallet: '', cases_in_fcl: '',
 };
 
+type ItemForm = typeof EMPTY;
+
 const num = (v: string) => (v.trim() === '' ? null : Number(v));
 
-const FIELD_LABELS: Record<keyof typeof EMPTY, string> = {
+const FIELD_LABELS: Record<keyof ItemForm, string> = {
   supplier_id: 'Supplier',
   name: 'Description',
   size: 'Size',
@@ -33,11 +34,11 @@ const FIELD_LABELS: Record<keyof typeof EMPTY, string> = {
   cases_per_pallet: 'Cases / Pallet',
   cases_in_fcl: 'Cases / FCL',
 };
-const NUMERIC_FIELDS: (keyof typeof EMPTY)[] = ['unit_weight', 'units_in_case', 'cases_per_pallet', 'cases_in_fcl'];
+const NUMERIC_FIELDS: (keyof ItemForm)[] = ['unit_weight', 'units_in_case', 'cases_per_pallet', 'cases_in_fcl'];
 
-const validate = (form: typeof EMPTY): Partial<Record<keyof typeof EMPTY, string>> => {
-  const errors: Partial<Record<keyof typeof EMPTY, string>> = {};
-  (Object.keys(FIELD_LABELS) as (keyof typeof EMPTY)[]).forEach((key) => {
+const validate = (form: ItemForm): Partial<Record<keyof ItemForm, string>> => {
+  const errors: Partial<Record<keyof ItemForm, string>> = {};
+  (Object.keys(FIELD_LABELS) as (keyof ItemForm)[]).forEach((key) => {
     if (form[key].trim() === '') {
       errors[key] = `${FIELD_LABELS[key]} is required`;
     } else if (NUMERIC_FIELDS.includes(key)) {
@@ -48,7 +49,7 @@ const validate = (form: typeof EMPTY): Partial<Record<keyof typeof EMPTY, string
   return errors;
 };
 
-const toForm = (it: Item | null) =>
+const toForm = (it: Item | null): ItemForm =>
   it
     ? {
         supplier_id: it.supplier_id,
@@ -61,7 +62,9 @@ const toForm = (it: Item | null) =>
       }
     : EMPTY;
 
-export const ItemFormDialog = ({ open, initial, isEdit, suppliers, error, onClose, onSubmit }: ItemFormDialogProps) => {
+export const ItemFormDialog = ({
+  open, initial, isEdit, suppliers, error, saving, onClose, onSubmit,
+}: ItemFormDialogProps) => {
   const [form, setForm] = useState(EMPTY);
   const [submitted, setSubmitted] = useState(false);
 
@@ -77,9 +80,10 @@ export const ItemFormDialog = ({ open, initial, isEdit, suppliers, error, onClos
 
   const errors = validate(form);
   const hasErrors = Object.keys(errors).length > 0;
-  const errFor = (key: keyof typeof form) => (submitted ? errors[key] : undefined);
+  const errFor = (key: keyof ItemForm) => (submitted ? errors[key] : undefined);
+  const changedCount = changedFieldCount(form, isEdit ? toForm(initial) : EMPTY);
 
-  const set = (key: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
+  const set = (key: keyof ItemForm) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,44 +100,74 @@ export const ItemFormDialog = ({ open, initial, isEdit, suppliers, error, onClos
     });
   };
 
-  const supplierOptions = suppliers.map((s) => ({ label: s.name, value: s.id }));
+  const supplierOptions = suppliers.map((s) => ({ label: partyLabel(s.short_name, s.name), value: s.id }));
+  const supplierName = suppliers.find((s) => s.id === form.supplier_id);
+
+  const title = isEdit ? 'Edit Item' : initial ? 'Duplicate Item' : 'Add Item';
+  const subtitle = isEdit && initial
+    ? [`#${initial.id}`, partyLabel(initial.supplier_short_name, initial.supplier_name)].filter(Boolean).join(' · ')
+    : initial
+      ? `Copy of #${initial.id}`
+      : supplierName
+        ? partyLabel(supplierName.short_name, supplierName.name)
+        : 'New item';
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEdit ? `Edit Item ${initial?.id}` : initial ? 'Duplicate Item' : 'Add Item'}</DialogTitle>
-      <Box component="form" onSubmit={handleSubmit}>
-        <DialogContent dividers>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-            <CommonSelect
-              label="Supplier"
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title={title}
+      subtitle={subtitle}
+      avatar={<Inventory2OutlinedIcon />}
+      error={error}
+      saving={saving}
+      changedCount={changedCount}
+      submitDisabled={submitted && hasErrors}
+    >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <FormSection label="Item">
+          <CommonSelect
+            label="Supplier"
+            size="small"
+            required
+            searchable
+            value={form.supplier_id}
+            onChange={set('supplier_id')}
+            options={supplierOptions}
+            error={!!errFor('supplier_id')}
+            helperText={errFor('supplier_id')}
+          />
+          <CommonInput
+            label="Size"
+            size="small"
+            required
+            value={form.size}
+            onChange={set('size')}
+            placeholder="e.g. 12/800gr"
+            error={!!errFor('size')}
+            helperText={errFor('size')}
+          />
+          <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+            <CommonInput
+              label="Description"
               size="small"
               required
-              value={form.supplier_id}
-              onChange={set('supplier_id')}
-              options={supplierOptions}
-              error={!!errFor('supplier_id')}
-              helperText={errFor('supplier_id')}
+              value={form.name}
+              onChange={set('name')}
+              error={!!errFor('name')}
+              helperText={errFor('name')}
             />
-            <CommonInput label="Description" size="small" required value={form.name} onChange={set('name')} error={!!errFor('name')} helperText={errFor('name')} />
-            <CommonInput label="Size" size="small" required value={form.size} onChange={set('size')} placeholder="e.g. 12/800gr" error={!!errFor('size')} helperText={errFor('size')} />
-            <CommonInput label="Unit Weight" size="small" required type="number" value={form.unit_weight} onChange={set('unit_weight')} error={!!errFor('unit_weight')} helperText={errFor('unit_weight')} />
-            <CommonInput label="Units / Case" size="small" required type="number" value={form.units_in_case} onChange={set('units_in_case')} error={!!errFor('units_in_case')} helperText={errFor('units_in_case')} />
-            <CommonInput label="Cases / Pallet" size="small" required type="number" value={form.cases_per_pallet} onChange={set('cases_per_pallet')} error={!!errFor('cases_per_pallet')} helperText={errFor('cases_per_pallet')} />
-            <CommonInput label="Cases / FCL" size="small" required type="number" value={form.cases_in_fcl} onChange={set('cases_in_fcl')} error={!!errFor('cases_in_fcl')} helperText={errFor('cases_in_fcl')} />
           </Box>
-          <Box sx={{ mt: 2 }}>
-            <ErrorAlert message={error} />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={onClose} variant="outlined">
-            Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={submitted && hasErrors}>
-            Save
-          </Button>
-        </DialogActions>
+        </FormSection>
+
+        <FormSection label="Packaging">
+          <CommonInput label="Unit Weight" size="small" required type="number" value={form.unit_weight} onChange={set('unit_weight')} error={!!errFor('unit_weight')} helperText={errFor('unit_weight')} />
+          <CommonInput label="Units / Case" size="small" required type="number" value={form.units_in_case} onChange={set('units_in_case')} error={!!errFor('units_in_case')} helperText={errFor('units_in_case')} />
+          <CommonInput label="Cases / Pallet" size="small" required type="number" value={form.cases_per_pallet} onChange={set('cases_per_pallet')} error={!!errFor('cases_per_pallet')} helperText={errFor('cases_per_pallet')} />
+          <CommonInput label="Cases / FCL" size="small" required type="number" value={form.cases_in_fcl} onChange={set('cases_in_fcl')} error={!!errFor('cases_in_fcl')} helperText={errFor('cases_in_fcl')} />
+        </FormSection>
       </Box>
-    </Dialog>
+    </AppDialog>
   );
 };

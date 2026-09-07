@@ -1,23 +1,28 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import InputAdornment from '@mui/material/InputAdornment';
+import TextField from '@mui/material/TextField';
+import { AppDialog } from '../appDialog/AppDialog';
 import { CommonInput } from '../commonInput/CommonInput';
 import { CommonSelect } from '../commonSelect/CommonSelect';
-import { ErrorAlert } from '../errorAlert/ErrorAlert';
+import { FormSection } from '../formSection/FormSection';
+import { SegmentedControl } from '../segmentedControl/SegmentedControl';
 import { useLookups } from '../../hooks/useLookups';
+import { changedFieldCount, initials, PHONE_PATTERN } from '../../utils/forms';
+import { formatDate } from '../../utils/time';
 import type { Customer, PartyPayload, Supplier } from '../../api';
 
-const CURRENCY_OPTIONS = ['USD', 'EUR', 'ILS'];
+const CURRENCY_OPTIONS = ['ILS', 'USD', 'EUR'];
 
 interface PartyFormDialogProps {
   open: boolean;
   entity: string;
   initial: Customer | Supplier | null;
   error: string;
+  saving?: boolean;
   onClose: () => void;
   onSubmit: (id: string, payload: PartyPayload) => void;
   onDelete?: () => void;
@@ -36,7 +41,7 @@ const toForm = (initial: Customer | Supplier | null) =>
         short_name: initial.short_name ?? '',
         phone: initial.phone ?? '',
         incoterms: initial.incoterms ?? '',
-        currency: (initial as Customer).currency ?? '',
+        currency: initial.currency ?? '',
         address: initial.address ?? '',
         city: initial.city ?? '',
         zip_code: initial.zip_code ?? '',
@@ -44,31 +49,43 @@ const toForm = (initial: Customer | Supplier | null) =>
       }
     : EMPTY;
 
-export const PartyFormDialog = ({ open, entity, initial, error, onClose, onSubmit, onDelete }: PartyFormDialogProps) => {
+export const PartyFormDialog = ({
+  open, entity, initial, error, saving, onClose, onSubmit, onDelete,
+}: PartyFormDialogProps) => {
   const { options } = useLookups();
   const [form, setForm] = useState(EMPTY);
+  const [submitted, setSubmitted] = useState(false);
   const isEdit = initial !== null;
 
   const formKey = open ? (initial ? initial.id : '__new__') : null;
   const [activeKey, setActiveKey] = useState<string | null>(null);
   if (formKey !== activeKey) {
     setActiveKey(formKey);
-    if (open) setForm(toForm(initial));
+    if (open) {
+      setForm(toForm(initial));
+      setSubmitted(false);
+    }
   }
 
   const set = (key: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
 
-  const isCustomer = entity === 'Customer';
+  const phoneInvalid = !PHONE_PATTERN.test(form.phone);
+  const nameMissing = form.name.trim() === '';
+  const idMissing = !isEdit && form.id.trim() === '';
+  const hasErrors = phoneInvalid || nameMissing || idMissing;
+  const changedCount = changedFieldCount(form, toForm(initial));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
+    if (hasErrors) return;
     const { id, name, short_name, phone, incoterms, currency, address, city, zip_code, country } = form;
     onSubmit(id.trim(), {
       name: name.trim(),
       short_name: short_name.trim() || null,
       phone: phone.trim() || null,
       incoterms: incoterms.trim() || null,
-      ...(isCustomer ? { currency: currency.trim() || null } : {}),
+      currency: currency.trim() || null,
       address: address.trim() || null,
       city: city.trim() || null,
       zip_code: zip_code.trim() || null,
@@ -76,75 +93,119 @@ export const PartyFormDialog = ({ open, entity, initial, error, onClose, onSubmi
     });
   };
 
+  const subtitle = isEdit
+    ? [`ID ${initial.id}`, initial.name, initial.created_at ? `created ${formatDate(initial.created_at)}` : '']
+        .filter(Boolean)
+        .join(' · ')
+    : `New ${entity.toLowerCase()}`;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEdit ? `Edit ${entity}` : `Add ${entity}`}</DialogTitle>
-      <Box component="form" onSubmit={handleSubmit}>
-        <DialogContent dividers>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-              gap: 2,
-            }}
-          >
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title={isEdit ? `Edit ${entity}` : `Add ${entity}`}
+      subtitle={subtitle}
+      avatar={initials(form.name, entity[0])}
+      error={error}
+      saving={saving}
+      changedCount={changedCount}
+      submitDisabled={submitted && hasErrors}
+      footerStart={
+        isEdit && onDelete ? (
+          <Button onClick={onDelete} color="error" startIcon={<DeleteOutlineIcon />} disabled={saving}>
+            Delete
+          </Button>
+        ) : undefined
+      }
+    >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <FormSection label="Identity">
+          {isEdit ? (
+            <TextField
+              label={`${entity} ID`}
+              size="small"
+              value={form.id}
+              disabled
+              helperText="Locked after creation"
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <LockOutlinedIcon sx={{ fontSize: '1rem', color: 'text.disabled' }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          ) : (
             <CommonInput
               label={`${entity} ID`}
               size="small"
               required
+              autoFocus
               value={form.id}
               onChange={set('id')}
-              disabled={isEdit}
               placeholder="e.g. 001"
+              error={submitted && idMissing}
+              helperText={submitted && idMissing ? `${entity} ID is required` : undefined}
             />
-            <CommonInput label="Full Name" size="small" required value={form.name} onChange={set('name')} />
-            <CommonInput label="Short Name" size="small" value={form.short_name} onChange={set('short_name')} />
-            <CommonInput label="Phone" size="small" value={form.phone} onChange={set('phone')} />
-            <CommonSelect
-              label="Incoterms"
-              size="small"
-              value={form.incoterms}
-              onChange={set('incoterms')}
-              options={options('incoterms', form.incoterms)}
-            />
-            {isCustomer && (
-              <CommonSelect
-                label="Currency"
-                size="small"
-                value={form.currency}
-                onChange={set('currency')}
-                options={CURRENCY_OPTIONS}
-              />
-            )}
+          )}
+          <CommonInput
+            label="Full Name"
+            size="small"
+            required
+            value={form.name}
+            onChange={set('name')}
+            error={submitted && nameMissing}
+            helperText={submitted && nameMissing ? 'Full name is required' : undefined}
+          />
+          <CommonInput label="Short Name" size="small" value={form.short_name} onChange={set('short_name')} />
+        </FormSection>
+
+        <FormSection label="Contact & Terms">
+          <CommonInput
+            label="Phone"
+            size="small"
+            value={form.phone}
+            onChange={set('phone')}
+            error={phoneInvalid}
+            helperText={phoneInvalid ? 'Digits, spaces, + ( ) - only' : undefined}
+          />
+          <CommonSelect
+            label="Incoterms"
+            size="small"
+            value={form.incoterms}
+            onChange={set('incoterms')}
+            options={options('incoterms', form.incoterms)}
+          />
+          <SegmentedControl
+            label="Currency"
+            size="medium"
+            value={form.currency}
+            onChange={set('currency')}
+            options={CURRENCY_OPTIONS}
+          />
+        </FormSection>
+
+        <FormSection label="Address">
+          <Box sx={{ gridColumn: { sm: 'span 2' } }}>
             <CommonInput label="Address" size="small" value={form.address} onChange={set('address')} />
-            <CommonInput label="City" size="small" value={form.city} onChange={set('city')} />
-            <CommonInput label="ZIP Code" size="small" value={form.zip_code} onChange={set('zip_code')} />
+          </Box>
+          <CommonInput label="City" size="small" value={form.city} onChange={set('city')} />
+          <CommonInput label="ZIP Code" size="small" value={form.zip_code} onChange={set('zip_code')} />
+          <Box sx={{ gridColumn: { sm: 'span 2' } }}>
             <CommonSelect
               label="Country"
               size="small"
+              searchable
               value={form.country}
               onChange={set('country')}
               options={options('country', form.country)}
             />
           </Box>
-          <Box sx={{ mt: 2 }}>
-            <ErrorAlert message={error} />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          {isEdit && onDelete && (
-            <Button onClick={onDelete} color="error" sx={{ mr: 'auto' }}>
-              Delete
-            </Button>
-          )}
-          <Button onClick={onClose} variant="outlined">
-            Cancel
-          </Button>
-          <Button type="submit" variant="contained">
-            Save
-          </Button>
-        </DialogActions>
+        </FormSection>
       </Box>
-    </Dialog>
+    </AppDialog>
   );
 };

@@ -1,4 +1,5 @@
 import type { AccessRequirement } from '../context/auth';
+import type { ExpirySeverity } from '../pages/logistics/routes/utils/consts';
 
 export interface NavItem {
   label: string;
@@ -51,3 +52,19 @@ export const MODULES: NavModule[] = [
   { label: 'Users', path: '/users', requires: 'admin', ready: true, children: [] },
   { label: 'Formats', path: '/formats', requires: 'admin', ready: true, children: [] },
 ];
+
+export const SEEN_ALERTS_STORAGE_KEY = 'kfg_seen_route_alerts';
+
+export const BELL_COLORS: Record<ExpirySeverity, string> = {
+  expired: '#c11d28',
+  urgent: '#ed6c02',
+  soon: '#8a6d00',
+};
+
+export const BELL_BADGE_STYLES: Record<ExpirySeverity, { bgcolor: string; color: string }> = {
+  expired: { bgcolor: '#c11d28', color: '#ffffff' },
+  urgent: { bgcolor: '#ed6c02', color: '#ffffff' },
+  soon: { bgcolor: '#ffe680', color: '#5a4700' },
+};
+
+export const BELL_PULSE_MS = 1200;

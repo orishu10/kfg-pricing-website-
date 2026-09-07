@@ -10,6 +10,7 @@ import { AuthGuard } from './layout/AuthGuard';
 import { AdminGuard } from './layout/AdminGuard';
 import { ModuleGuard } from './layout/ModuleGuard';
 import { AppLayout } from './layout/AppLayout';
+import { ToastProvider } from './components/toast/ToastProvider';
 
 const SignInPage = lazy(() => import('./pages/auth/SignInPage'));
 const HomePage = lazy(() => import('./pages/home/HomePage'));
@@ -37,6 +38,7 @@ const PageLoader = () => (
 export const App = () => (
   <ThemeProvider theme={theme}>
     <CssBaseline />
+    <ToastProvider>
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
@@ -89,6 +91,7 @@ export const App = () => (
         </Suspense>
       </BrowserRouter>
     </AuthProvider>
+    </ToastProvider>
   </ThemeProvider>
 );
 

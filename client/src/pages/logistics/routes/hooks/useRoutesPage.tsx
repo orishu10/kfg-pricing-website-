@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../../../components';
 import { getRoutes, deleteRoute, type Route } from '../../../../api';
 
 export const useRoutesPage = () => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -11,8 +13,11 @@ export const useRoutesPage = () => {
   const { data: routes = [], isError } = useQuery({ queryKey: ['routes'], queryFn: getRoutes });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteRoute,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routes'] }),
+    mutationFn: ({ id }: { id: string; name: string }) => deleteRoute(id),
+    onSuccess: (_, { name }) => {
+      queryClient.invalidateQueries({ queryKey: ['routes'] });
+      showToast({ title: `Route ${name} deleted`, variant: 'info' });
+    },
     onError: () => setError('Failed to delete route'),
   });
 
@@ -22,7 +27,7 @@ export const useRoutesPage = () => {
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setError('');
-    deleteMutation.mutate(deleteTarget.id);
+    deleteMutation.mutate(deleteTarget);
     setDeleteTarget(null);
   };
 
@@ -41,6 +46,7 @@ export const useRoutesPage = () => {
 
   return {
     routes: filtered,
+    allRoutes: routes,
     search, setSearch,
     error: error || (isError ? 'Failed to load routes' : ''),
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete,

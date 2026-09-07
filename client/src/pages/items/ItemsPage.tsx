@@ -1,13 +1,18 @@
 import { ItemFormDialog } from './components/itemFormDialog/ItemFormDialog';
 import { useItemsPage } from './hooks/useItemsPage';
 import { ConfirmDialog, DataTable, ErrorAlert, type Column } from '../../components';
-import { formatNumber } from '../../utils/format';
+import { formatNumber, partyLabel } from '../../utils/format';
 import type { Item } from '../../api';
 
 const columns: Column<Item>[] = [
   { key: 'id', label: '#', mono: true, align: 'center' },
-  { key: 'supplier_name', label: 'Supplier', sortable: true, render: (r) => r.supplier_name ?? r.supplier_id },
-  { key: 'name', label: 'Description', sortable: true },
+  {
+    key: 'supplier_name',
+    label: 'Supplier',
+    sortable: true,
+    render: (r) => partyLabel(r.supplier_short_name, r.supplier_name) || r.supplier_id,
+  },
+  { key: 'name', label: 'Description', sortable: true, minWidth: 320 },
   { key: 'size', label: 'Size', render: (r) => r.size ?? '' },
   { key: 'unit_weight', label: 'Unit Weight', align: 'right', render: (r) => formatNumber(r.unit_weight) },
   { key: 'units_in_case', label: 'Units / Case', align: 'right', render: (r) => formatNumber(r.units_in_case) },
@@ -19,7 +24,7 @@ export const ItemsPage = () => {
   const {
     items, suppliers, search, setSearch,
     dialogOpen, dialogInitial, isEditing, openAdd, openEdit, openDuplicate, closeDialog,
-    error, handleSubmit, handleImport,
+    error, handleSubmit, handleImport, saving,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useItemsPage();
 
@@ -51,6 +56,7 @@ export const ItemsPage = () => {
         isEdit={isEditing}
         suppliers={suppliers}
         error={error}
+        saving={saving}
         onClose={closeDialog}
         onSubmit={handleSubmit}
       />
@@ -58,7 +64,8 @@ export const ItemsPage = () => {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete item?"
-        message={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
+        target={deleteTarget?.name}
+        message="Its pricing records are removed too. This cannot be undone."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

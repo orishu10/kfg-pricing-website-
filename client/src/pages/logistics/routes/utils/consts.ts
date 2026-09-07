@@ -46,3 +46,27 @@ export const EXPIRY_TEXT_COLORS: Record<ExpirySeverity, string> = {
   urgent: '#ed6c02',
   soon: '#8a6d00',
 };
+
+export type Incoterm = (typeof INCOTERMS)[number];
+
+export type RouteCurrency = 'ILS' | 'USD' | 'EUR';
+
+export const ROUTE_CURRENCIES: RouteCurrency[] = ['ILS', 'USD', 'EUR'];
+
+export const VALID_CHIP_STYLE = { bgcolor: '#e6efe1', color: '#2e7d32' };
+
+export const EXPIRY_STAGE_LABELS: Record<string, string> = {
+  week: 'week-out email sent',
+  day: 'day-out email sent',
+  expired: 'expiry email sent',
+};
+
+export const EXPIRY_GROUP_LABELS: Record<ExpirySeverity, string> = {
+  expired: 'Expired',
+  urgent: 'Due tomorrow',
+  soon: 'This week',
+};
+
+export const EXPIRY_SEVERITY_ORDER: ExpirySeverity[] = ['expired', 'urgent', 'soon'];
+
+export const FX_STALE_MS = 10 * 60 * 1000;

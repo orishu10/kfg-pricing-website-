@@ -18,7 +18,7 @@ export const UsersPage = () => {
   const {
     users, search, setSearch,
     dialogOpen, editing, openAdd, openEdit, closeDialog,
-    error, handleSubmit,
+    error, handleSubmit, saving,
     deleteTarget, setDeleteTarget, confirmDelete,
   } = useUsersPage();
 
@@ -53,6 +53,7 @@ export const UsersPage = () => {
         open={dialogOpen}
         initial={editing}
         error={error}
+        saving={saving}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         onDelete={editing?.username === username ? undefined : requestDelete}
@@ -61,7 +62,8 @@ export const UsersPage = () => {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete user?"
-        message={`Delete "${deleteTarget?.username}"? They will lose access immediately. This cannot be undone.`}
+        target={deleteTarget?.username}
+        message="They will lose access immediately. This cannot be undone."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

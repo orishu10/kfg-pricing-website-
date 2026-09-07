@@ -1,8 +1,8 @@
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import { LABEL_SX, INPUT_SX } from './styles';
+import { FieldLabel } from '../../../../components/fieldLabel/FieldLabel';
+import { INPUT_SX } from './styles';
 
 export type SelectOption = string | { label: string; value: string };
 
@@ -11,12 +11,23 @@ interface FormSelectProps {
   value: string;
   onChange: (value: string) => void;
   options: SelectOption[];
+  required?: boolean;
+  disabled?: boolean;
 }
 
-export const FormSelect = ({ label, value, onChange, options }: FormSelectProps) => (
+export const FormSelect = ({ label, value, onChange, options, required, disabled }: FormSelectProps) => (
   <Box sx={{ minWidth: 0 }}>
-    {label && <Typography sx={LABEL_SX}>{label}</Typography>}
-    <Select value={value} onChange={(e) => onChange(e.target.value)} size="small" fullWidth displayEmpty sx={INPUT_SX}>
+    <FieldLabel label={label} required={required} />
+    <Select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      size="small"
+      fullWidth
+      displayEmpty
+      disabled={disabled}
+      error={required && value === ''}
+      sx={INPUT_SX}
+    >
       <MenuItem value=""><em>—</em></MenuItem>
       {options.map((op) =>
         typeof op === 'string' ? (

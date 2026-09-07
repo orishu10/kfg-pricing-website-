@@ -25,6 +25,7 @@ interface DateInputProps {
   error?: boolean;
   helperText?: string;
   inputSx?: SxProps<Theme>;
+  autoFocus?: boolean;
 }
 
 export const DateInput = ({
@@ -40,6 +41,7 @@ export const DateInput = ({
   error,
   helperText,
   inputSx,
+  autoFocus,
 }: DateInputProps) => {
   const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(null);
   const interactive = !disabled && !readOnly && onChange !== undefined;
@@ -70,6 +72,7 @@ export const DateInput = ({
         disabled={disabled}
         error={error}
         helperText={helperText}
+        autoFocus={autoFocus}
         onClick={(event) => openCalendar(event.currentTarget)}
         onKeyDown={(event) => {
           if (!OPEN_CALENDAR_KEYS.includes(event.key)) return;

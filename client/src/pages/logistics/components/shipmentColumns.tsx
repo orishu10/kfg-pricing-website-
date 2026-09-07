@@ -5,15 +5,29 @@ import type { Column } from '../../../components';
 import { fmtDate } from '../../pricing/utils/helpers';
 import type { WeeklyShipment } from '../../../api';
 
-const supplierLabel = (shipment: WeeklyShipment) =>
-  shipment.suppliers?.length ? shipment.suppliers.join(', ') : shipment.supplier ?? '';
+type PartyShortName = (value: string | null | undefined) => string;
 
-export const buildShipmentColumns = (
-  onToggleBooked?: (shipment: WeeklyShipment) => void,
-): Column<WeeklyShipment>[] => [
+interface ShipmentColumnOptions {
+  customerShortName: PartyShortName;
+  supplierShortName: PartyShortName;
+  onToggleBooked?: (shipment: WeeklyShipment) => void;
+}
+
+export const buildShipmentColumns = ({
+  customerShortName,
+  supplierShortName,
+  onToggleBooked,
+}: ShipmentColumnOptions): Column<WeeklyShipment>[] => {
+  const supplierLabel = (shipment: WeeklyShipment) =>
+    (shipment.suppliers?.length ? shipment.suppliers : [shipment.supplier])
+      .map(supplierShortName)
+      .filter(Boolean)
+      .join(', ');
+
+  return [
   { key: 'id', label: 'LOG #', mono: true, align: 'center', width: 58 },
   { key: 'con', label: 'CON', width: 92, render: (r) => r.con ?? '' },
-  { key: 'customer', label: 'Customer', sortable: true, render: (r) => r.customer ?? '' },
+  { key: 'customer', label: 'Customer', sortable: true, render: (r) => customerShortName(r.customer) },
   {
     key: 'supplier',
     label: 'Supplier',
@@ -57,4 +71,5 @@ export const buildShipmentColumns = (
       />
     ),
   },
-];
+  ];
+};

@@ -19,7 +19,7 @@ import {
 } from '../utils/consts';
 import {
   derivePricing, pricingToForm, fetchFxRate, routeIncotermPrices,
-  symbol, fmtDateTime, to2, to4,
+  symbol, currencyPair, isSameCurrencyPair, exRateUnit, fmtDateTime, to2, to4,
 } from '../utils/helpers';
 import {
   getPricing, getItems, getCustomers, getRoutes, createPricing, updatePricing,
@@ -48,21 +48,23 @@ const FieldLabel = ({ label, required }: { label?: string; required?: boolean })
     </Typography>
   ) : null;
 
-const Fld = ({ label, value, onChange, readOnly, unit, required }: {
-  label?: string; value: string; onChange?: (v: string) => void; readOnly?: boolean; unit?: string; required?: boolean;
+const Fld = ({ label, value, onChange, readOnly, disabled, unit, required }: {
+  label?: string; value: string; onChange?: (v: string) => void; readOnly?: boolean;
+  disabled?: boolean; unit?: string; required?: boolean;
 }) => (
   <Box sx={{ minWidth: 0 }}>
-    <FieldLabel label={label} required={required} />
+    <FieldLabel label={label} required={required && !disabled} />
     <TextField
-      value={readOnly ? formatNumber(value) : value}
+      value={disabled ? '' : readOnly ? formatNumber(value) : value}
       onChange={onChange ? (e) => onChange(e.target.value) : undefined}
       size="small"
       fullWidth
-      error={required && value.trim() === ''}
+      disabled={disabled}
+      error={required && !disabled && value.trim() === ''}
       slotProps={{
         input: {
           readOnly,
-          sx: { ...INPUT_SX, bgcolor: readOnly ? 'rgba(0,0,0,0.05)' : '#fff' },
+          sx: { ...INPUT_SX, bgcolor: disabled ? 'rgba(0,0,0,0.12)' : readOnly ? 'rgba(0,0,0,0.05)' : '#fff' },
           endAdornment: unit ? (
             <InputAdornment position="end" sx={{ '& p': { fontSize: '0.75rem' } }}>{unit}</InputAdornment>
           ) : undefined,
@@ -179,6 +181,7 @@ export const PricingFormPage = () => {
         pack_size: it?.size ?? '',
         supplier_name: it?.supplier_name ?? '',
         description: it?.name ?? '',
+        currency_pair: currencyPair(it?.supplier_currency, prev.currency),
       };
       return { ...next, ...derivePricing(next) };
     });
@@ -188,12 +191,12 @@ export const PricingFormPage = () => {
       const customer = customers.find((option) => option.id === id);
       const currency = customer?.currency ?? '';
       const selectedRoute = routes.find((option) => option.id === prev.route);
+      const item = items.find((option) => option.id === prev.item_id);
       const next: PricingForm = {
         ...prev,
         customer_id: id,
         currency,
-        currency_pair:
-          currency === 'EUR' ? 'ILS > EUR' : currency === 'USD' ? 'ILS > USD' : prev.currency_pair,
+        currency_pair: currencyPair(item?.supplier_currency, currency),
         ...(selectedRoute ? routeIncotermPrices(selectedRoute, currency) : {}),
       };
       return { ...next, ...derivePricing(next) };
@@ -245,7 +248,9 @@ export const PricingFormPage = () => {
     onError: onError('Failed to update pricing'),
   });
 
-  const canSave = !!form.item_id && !!form.customer_id && form.ex_rate.trim() !== '';
+  const sameCurrency = isSameCurrencyPair(form.currency_pair);
+  const canSave =
+    !!form.item_id && !!form.customer_id && (sameCurrency || form.ex_rate.trim() !== '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,6 +282,7 @@ export const PricingFormPage = () => {
   }
 
   const sym = symbol(form.currency);
+  const supplierSym = symbol(items.find((i) => i.id === form.item_id)?.supplier_currency);
   const weightUnit = form.weight_unit || 'KG';
 
   return (
@@ -323,8 +329,15 @@ export const PricingFormPage = () => {
               <Sel value={form.currency_pair} onChange={set('currency_pair')} options={options('currency_pair', form.currency_pair)} />
             </Box>
             <Box sx={gridSx(2)}>
-              <Fld label="Ex Rate" required value={form.ex_rate} onChange={set('ex_rate')} />
-              <Fld label="Ex Current" value={form.ex_current} readOnly />
+              <Fld
+                label="Ex Rate"
+                required
+                disabled={sameCurrency}
+                value={form.ex_rate}
+                onChange={set('ex_rate')}
+                unit={exRateUnit(form.currency_pair)}
+              />
+              <Fld label="Ex Current" value={form.ex_current} readOnly unit={exRateUnit(form.currency_pair)} />
             </Box>
           </Panel>
 
@@ -356,10 +369,10 @@ export const PricingFormPage = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px' }, gap: 2, alignItems: 'stretch' }}>
           <Panel label="SUPPLIER" color={C.green} fill>
             <Box sx={gridSx(5)}>
-              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit={sym} />
-              <Fld label="Price - Unit" value={form.price_unit_usd} readOnly unit={sym} />
-              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit={sym} />
-              <Fld label="Price - Case" value={form.price_case_usd} readOnly unit={sym} />
+              <Fld label="Price - Unit" value={form.supplier_price_unit} onChange={set('supplier_price_unit')} unit={supplierSym} />
+              <Fld label="Price - Unit" value={form.price_unit_usd} readOnly disabled={sameCurrency} unit={sym} />
+              <Fld label="Price - Case" value={form.supplier_price_case} readOnly unit={supplierSym} />
+              <Fld label="Price - Case" value={form.price_case_usd} readOnly disabled={sameCurrency} unit={sym} />
               <Fld label="Price - FCL" value={form.price_fcl_usd} readOnly unit={sym} />
             </Box>
           </Panel>

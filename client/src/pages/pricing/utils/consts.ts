@@ -3,6 +3,8 @@ export const WEIGHT_UNIT_OPTIONS = ['KG', 'LB'];
 
 export const ILS_SYMBOL = '₪';
 
+export const DEFAULT_SUPPLIER_CURRENCY = 'ILS';
+
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',
   EUR: '€',
@@ -45,3 +47,17 @@ export const TEXT_KEYS: readonly string[] = [
 ];
 
 export const NUMERIC_KEYS: readonly string[] = PRICING_KEYS.filter((k) => !TEXT_KEYS.includes(k));
+
+export const PRICING_STATUS_STYLES: Record<string, { bgcolor: string; color: string }> = {
+  Active: { bgcolor: '#e6efe1', color: '#2e7d32' },
+  Inactive: { bgcolor: '#e6e6e6', color: '#494445' },
+};
+
+export type BulkField = 'ex_rate' | 'us_tariff_pct';
+
+export const BULK_FIELD_META: Record<BulkField, { title: string; button: string; unit?: string }> = {
+  ex_rate: { title: 'Update Ex Rate', button: 'Update Ex Rate' },
+  us_tariff_pct: { title: 'Update US Tariff %', button: 'Update Tariff %', unit: '%' },
+};
+
+export const BULK_PREVIEW_LIMIT = 8;

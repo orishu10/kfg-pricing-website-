@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../../components';
 import {
   getCustomers, createCustomer, updateCustomer, deleteCustomer,
   type Customer, type PartyPayload,
@@ -7,6 +8,7 @@ import {
 
 export const useCustomersPage = () => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -33,19 +35,30 @@ export const useCustomersPage = () => {
 
   const createMutation = useMutation({
     mutationFn: (data: { id: string } & PartyPayload) => createCustomer(data),
-    onSuccess: () => { closeDialog(); invalidate(); },
+    onSuccess: (saved) => {
+      closeDialog();
+      invalidate();
+      showToast({ title: `Customer ${saved.name} created` });
+    },
     onError: onError('Failed to create customer'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: PartyPayload }) => updateCustomer(id, data),
-    onSuccess: () => { closeDialog(); invalidate(); },
+    onSuccess: (saved) => {
+      closeDialog();
+      invalidate();
+      showToast({ title: `Customer ${saved.name} saved` });
+    },
     onError: onError('Failed to update customer'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteCustomer,
-    onSuccess: invalidate,
+    mutationFn: ({ id }: { id: string; name: string }) => deleteCustomer(id),
+    onSuccess: (_, { name }) => {
+      invalidate();
+      showToast({ title: `Customer ${name} deleted`, variant: 'info' });
+    },
     onError: () => setError('Failed to delete customer'),
   });
 
@@ -72,6 +85,7 @@ export const useCustomersPage = () => {
           short_name: r.short_name || null,
           phone: null,
           incoterms: r.incoterms || null,
+          currency: r.currency || null,
           address: r.address || null,
           city: r.city || null,
           zip_code: null,
@@ -97,7 +111,7 @@ export const useCustomersPage = () => {
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setError('');
-    deleteMutation.mutate(deleteTarget.id);
+    deleteMutation.mutate(deleteTarget);
     setDeleteTarget(null);
   };
 
@@ -112,6 +126,7 @@ export const useCustomersPage = () => {
     dialogOpen, editing, openAdd, openEdit, closeDialog,
     error: error || (isError ? 'Failed to load customers' : ''),
     handleSubmit, handleImport,
+    saving: createMutation.isPending || updateMutation.isPending,
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete,
   };
 };

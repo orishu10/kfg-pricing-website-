@@ -27,13 +27,13 @@ export interface Customer extends PartyProfile {
 export interface Supplier extends PartyProfile {
   id: string;
   name: string;
+  currency: string | null; // USD / EUR / ILS — the currency its prices are quoted in
   created_at: string;
 }
 
-// currency is customer-only; suppliers leave it undefined.
 export interface PartyPayload extends PartyProfile {
   name: string;
-  currency?: string | null;
+  currency: string | null;
 }
 
 export type N = string | null; // numeric fields come back as strings from pg
@@ -44,6 +44,8 @@ export interface Item {
   name: string;
   supplier_id: string;
   supplier_name?: string;
+  supplier_short_name?: string | null;
+  supplier_currency?: string | null;
   size: string | null;
   created_at: string;
   updated_at: string | null;
@@ -153,7 +155,9 @@ export interface Pricing {
 
   // joined (read-only)
   customer_name?: string;
+  customer_short_name?: string | null;
   supplier_name?: string;
+  supplier_short_name?: string | null;
   description?: string;
   size?: string | null;
 
@@ -262,6 +266,14 @@ export const createRoute = async (data: RouteInput) =>
 export const updateRoute = async (id: string, data: RouteInput) =>
   (await api.put<Route>(`/routes/${id}`, data)).data;
 export const deleteRoute = async (id: string) => api.delete(`/routes/${id}`);
+
+export interface RouteExpiryStatus {
+  lastSentAt: string | null;
+  sentStages: Record<string, string[]>;
+}
+
+export const getRouteExpiryStatus = async () =>
+  (await api.get<RouteExpiryStatus>('/routes/expiry-notifications')).data;
 
 export interface ShipmentDocumentRow {
   number: string;

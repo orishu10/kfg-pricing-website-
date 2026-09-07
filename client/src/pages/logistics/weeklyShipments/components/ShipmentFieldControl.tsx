@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
+import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Typography from '@mui/material/Typography';
 import { FormField, FormSelect } from '../../components/form';
@@ -7,7 +7,7 @@ import { useLookups } from '../../../../hooks/useLookups';
 import { useShipmentFormOptions } from '../hooks/useShipmentFormOptions';
 import { appendValue, removeValue, scheduleSummary, updateValue } from '../utils/helpers';
 import {
-  CHARGE_PAYER_OPTIONS,
+  CHARGE_PAYER_OPTIONS, SCHEDULE_DRIVEN_KEYS,
   type ShipmentFieldKey, type ShipmentFieldSpec, type ShipmentForm, type ShipmentRowKey,
 } from '../utils/consts';
 import type { ShipmentDocumentRow } from '../../../../api';
@@ -67,14 +67,16 @@ export const ShipmentFieldControl = ({
   if (spec.control === 'checkbox') {
     return (
       <FormControlLabel
-        sx={{ alignSelf: 'end' }}
+        sx={{ alignSelf: 'end', m: 0, gap: 0.5, height: 40 }}
         control={
-          <Checkbox
+          <Switch
+            size="small"
             checked={value === 'true'}
             onChange={(event) => setField(key)(event.target.checked ? 'true' : '')}
           />
         }
         label={spec.label}
+        slotProps={{ typography: { fontSize: '0.8rem', fontWeight: 600 } }}
       />
     );
   }
@@ -141,6 +143,7 @@ export const ShipmentFieldControl = ({
       unit={spec.unit}
       value={value}
       onChange={setField(key)}
+      auto={SCHEDULE_DRIVEN_KEYS.includes(key) && form.schedule_id !== ''}
     />
   );
 };

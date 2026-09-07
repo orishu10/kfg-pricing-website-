@@ -1,9 +1,11 @@
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
-import { DateInput } from '../../../../components';
-import { LABEL_SX, INPUT_SX } from './styles';
+import Typography from '@mui/material/Typography';
+import { DateInput } from '../../../../components/dateInput/DateInput';
+import { FieldLabel } from '../../../../components/fieldLabel/FieldLabel';
+import { formatNumber } from '../../../../utils/format';
+import { INPUT_SX } from './styles';
 
 interface FormFieldProps {
   label?: string;
@@ -12,32 +14,50 @@ interface FormFieldProps {
   readOnly?: boolean;
   unit?: string;
   type?: string;
+  required?: boolean;
+  auto?: boolean;
+  hint?: string;
+  error?: boolean;
+  autoFocus?: boolean;
+  emphasized?: boolean;
 }
 
-export const FormField = ({ label, value, onChange, readOnly, unit, type }: FormFieldProps) => {
-  const fieldSx = { ...INPUT_SX, bgcolor: readOnly ? 'rgba(0,0,0,0.05)' : '#fff' };
+export const FormField = ({
+  label, value, onChange, readOnly, unit, type, required, auto, hint, error, autoFocus, emphasized,
+}: FormFieldProps) => {
+  const locked = readOnly || auto;
+  const fieldSx = {
+    ...INPUT_SX,
+    bgcolor: locked ? 'rgba(0,0,0,0.05)' : '#fff',
+    ...(emphasized ? { '& .MuiInputBase-input': { ...INPUT_SX['& .MuiInputBase-input'], fontWeight: 700 } } : {}),
+  };
+  const showError = error || (required && !locked && value.trim() === '');
 
   return (
     <Box sx={{ minWidth: 0 }}>
-      {label && <Typography sx={LABEL_SX}>{label}</Typography>}
+      <FieldLabel label={label} required={required && !locked} auto={auto} />
       {type === 'date' ? (
         <DateInput
           value={value}
           onChange={onChange}
-          readOnly={readOnly}
+          readOnly={locked}
           placeholder="Pick a date"
           inputSx={fieldSx}
+          error={showError}
+          autoFocus={autoFocus}
         />
       ) : (
         <TextField
-          value={value}
+          value={locked ? formatNumber(value) : value}
           type={type}
           onChange={onChange ? (event) => onChange(event.target.value) : undefined}
           size="small"
           fullWidth
+          error={showError}
+          autoFocus={autoFocus}
           slotProps={{
             input: {
-              readOnly,
+              readOnly: locked,
               sx: fieldSx,
               endAdornment: unit ? (
                 <InputAdornment position="end" sx={{ '& p': { fontSize: '0.75rem' } }}>{unit}</InputAdornment>
@@ -45,6 +65,9 @@ export const FormField = ({ label, value, onChange, readOnly, unit, type }: Form
             },
           }}
         />
+      )}
+      {hint && (
+        <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', mt: 0.35, lineHeight: 1.3 }}>{hint}</Typography>
       )}
     </Box>
   );

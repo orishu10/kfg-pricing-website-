@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../../components';
 import {
   getSuppliers, createSupplier, updateSupplier, deleteSupplier,
   type Supplier, type PartyPayload,
@@ -7,6 +8,7 @@ import {
 
 export const useSuppliersPage = () => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -33,19 +35,30 @@ export const useSuppliersPage = () => {
 
   const createMutation = useMutation({
     mutationFn: (data: { id: string } & PartyPayload) => createSupplier(data),
-    onSuccess: () => { closeDialog(); invalidate(); },
+    onSuccess: (saved) => {
+      closeDialog();
+      invalidate();
+      showToast({ title: `Supplier ${saved.name} created` });
+    },
     onError: onError('Failed to create supplier'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: PartyPayload }) => updateSupplier(id, data),
-    onSuccess: () => { closeDialog(); invalidate(); },
+    onSuccess: (saved) => {
+      closeDialog();
+      invalidate();
+      showToast({ title: `Supplier ${saved.name} saved` });
+    },
     onError: onError('Failed to update supplier'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteSupplier,
-    onSuccess: invalidate,
+    mutationFn: ({ id }: { id: string; name: string }) => deleteSupplier(id),
+    onSuccess: (_, { name }) => {
+      invalidate();
+      showToast({ title: `Supplier ${name} deleted`, variant: 'info' });
+    },
     onError: () => setError('Failed to delete supplier'),
   });
 
@@ -72,6 +85,7 @@ export const useSuppliersPage = () => {
           short_name: r.short_name || null,
           phone: null,
           incoterms: r.incoterms || null,
+          currency: r.currency || null,
           address: r.address || null,
           city: r.city || null,
           zip_code: null,
@@ -97,7 +111,7 @@ export const useSuppliersPage = () => {
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setError('');
-    deleteMutation.mutate(deleteTarget.id);
+    deleteMutation.mutate(deleteTarget);
     setDeleteTarget(null);
   };
 
@@ -112,6 +126,7 @@ export const useSuppliersPage = () => {
     dialogOpen, editing, openAdd, openEdit, closeDialog,
     error: error || (isError ? 'Failed to load suppliers' : ''),
     handleSubmit, handleImport,
+    saving: createMutation.isPending || updateMutation.isPending,
     deleteTarget, setDeleteTarget, handleDelete, confirmDelete,
   };
 };
