@@ -5,7 +5,9 @@ const router = Router();
 
 const ITEM_SELECT = `
   SELECT i.*,
-         s.name AS supplier_name
+         s.name AS supplier_name,
+         s.short_name AS supplier_short_name,
+         s.currency AS supplier_currency
   FROM items i
   JOIN suppliers s ON s.id = i.supplier_id
 `;

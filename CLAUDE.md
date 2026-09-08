@@ -46,8 +46,9 @@ PORT=3001
 DB_HOST=localhost  DB_PORT=5432  DB_NAME=kfg_project
 DB_USER=postgres   DB_PASSWORD=...  JWT_SECRET=...
 # Production extras: DATABASE_URL (managed Postgres), CLIENT_ORIGIN (CORS), DB_SSL
-# Route validity alert emails: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER,
-# SMTP_PASSWORD, MAIL_FROM, ROUTE_ALERT_RECIPIENTS, ROUTE_ALERT_HOUR, APP_URL
+# Outgoing email: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD,
+# MAIL_FROM. Route validity alerts: ROUTE_ALERT_RECIPIENTS, ROUTE_ALERT_HOUR,
+# ROUTE_ALERT_TIMEZONE, APP_URL
 ```
 `JWT_SECRET` is required — the server refuses to start without it.
 
@@ -74,11 +75,13 @@ React 19 + Vite (port 5173) → Express + PostgreSQL (port 3001). Vite proxies `
 - Auth: `POST /api/auth/login` → bcrypt verify → JWT (7-day expiry). `POST /api/auth/verify` validates existing tokens.
 
 ### Route validity alerts
-`services/routeExpiryNotifier.ts` emails every admin user (plus
-`ROUTE_ALERT_RECIPIENTS`) when a route reaches each of three stages — a week
-out, a day out, and expired — one email per stage listing the routes in it.
-`services/mailer.ts` wraps a nodemailer SMTP transport and no-ops when
-`SMTP_HOST`/`MAIL_FROM` are unset, which also disables the scheduler. The
+`services/routeExpiryNotifier.ts` sends one email per route when it reaches
+each of three stages — a week out, a day out, and expired — subject
+`Route Validity Alert - #<id>`. Recipients are `ROUTE_ALERT_RECIPIENTS`
+(comma-separated, default `log.il@kfg.co.il`), not the admin user list.
+`services/mailer.ts` wraps a nodemailer SMTP transport, sends every system
+email from `MAIL_FROM` (default `KFG NETWORK <network@kfg.co.il>`), and no-ops
+when `SMTP_HOST` is unset, which also disables the scheduler. The
 scheduler ticks every 15 minutes and only works from `ROUTE_ALERT_HOUR`
 (default 8) onward in `ROUTE_ALERT_TIMEZONE` (default `Asia/Jerusalem`) — the
 timezone is explicit because Render runs the process in UTC. `route_expiry_notifications`
@@ -86,10 +89,25 @@ keys sent emails on `(route_id, stage, validity)`: each stage sends once, and
 moving a route's validity forward re-arms all three.
 
 ### Database schema (`db/schema.sql`)
-Five tables: `users`, `customers`, `suppliers`, `customer_suppliers` (junction), `items`. Items holds ~25 NUMERIC(14,4) pricing columns spanning incoterm prices (`fob`, `cif`, `dap`, `ddp`), supplier pricing, cost build-up (`sub_total_1`, `us_tariff`, `sub_total_2`, `import_factor`, `kfg_commission`, `total`), and final cost/price/SAP fields. An `updated_at` trigger fires on item update.
+Five core tables: `users`, `customers`, `suppliers`, `customer_suppliers` (junction), `items`.
+`customers` and `suppliers` share an identical profile shape, `currency` included —
+the customer's drives the pricing form's display currency, the supplier's the
+currency its unit/case prices are quoted in. Items holds ~25 NUMERIC(14,4) pricing columns spanning incoterm prices (`fob`, `cif`, `dap`, `ddp`), supplier pricing, cost build-up (`sub_total_1`, `us_tariff`, `sub_total_2`, `import_factor`, `kfg_commission`, `total`), and final cost/price/SAP fields. An `updated_at` trigger fires on item update.
 
 ### Pricing logic
 Calculations (e.g. `supplier_price_case = supplier_price_unit × units_in_case`) are computed **on the client** by `derivePricing` in `pages/pricing/utils/helpers.ts`, called from `PricingFormPage` before sending to the server. The server stores values as-is, enabling manual overrides. `pg` returns numeric DB columns as strings — the `Item` interface reflects this; `ItemPayload` uses `number | null` for what gets sent.
+
+Two currencies meet on the pricing form: `supplier_price_unit`/`_case`/`_fcl`/`_1kg`
+are amounts in the **supplier's** currency, while the route incoterms, supervision,
+cost build-up and every price/SAP field are in the **customer's**. `currency_pair`
+is derived as `<supplier currency> > <customer currency>` (a supplier with no
+currency set falls back to `ILS`, the pre-supplier-currency behaviour), and
+`ex_rate` reads as *supplier-currency units per one customer-currency unit* — so
+crossing into customer currency is always a division, and `fetchFxRate` derives the
+rate for either direction from the Bank of Israel's shekel quotes. Nothing in the
+build-up may mix the two sides directly: `sub_total_1` adds the **converted**
+`price_fcl_usd`, never `supplier_price_fcl`. A same-currency pair converts at 1,
+blanks the converted unit/case fields, and makes `ex_rate` optional.
 
 ## TypeScript notes
 - Client: `tsconfig.app.json` — ES2023, `react-jsx`, strict, `noUnusedLocals`, `erasableSyntaxOnly`.

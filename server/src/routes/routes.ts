@@ -25,6 +25,32 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
+interface SentNotificationRow {
+  route_id: string;
+  stage: string;
+  sent_at: Date;
+}
+
+router.get('/expiry-notifications', async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query<SentNotificationRow>(
+      `SELECT n.route_id, n.stage, n.sent_at
+         FROM route_expiry_notifications n
+         JOIN routes r ON r.id = n.route_id AND r.validity = n.validity
+        ORDER BY n.sent_at DESC`,
+    );
+    const sentStages: Record<string, string[]> = {};
+    for (const row of result.rows) {
+      if (!sentStages[row.route_id]) sentStages[row.route_id] = [];
+      sentStages[row.route_id].push(row.stage);
+    }
+    const lastSentAt = result.rows.length > 0 ? result.rows[0].sent_at : null;
+    res.json({ lastSentAt, sentStages });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch route expiry notifications' });
+  }
+});
+
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const result = await pool.query('SELECT * FROM routes WHERE id = $1', [req.params.id]);

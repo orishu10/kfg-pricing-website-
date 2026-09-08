@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
     short_name VARCHAR(255),
     phone      VARCHAR(50),
     incoterms  VARCHAR(50),
+    currency   VARCHAR(10),                -- USD / EUR / ILS (supplier price currency)
     address    VARCHAR(255),
     city       VARCHAR(255),
     zip_code   VARCHAR(50),

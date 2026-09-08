@@ -10,15 +10,17 @@ export interface MailMessage {
   text: string;
 }
 
+const DEFAULT_MAIL_FROM = 'KFG NETWORK <network@kfg.co.il>';
+
 let transporter: Transporter | null = null;
 
 const smtpHost = () => process.env.SMTP_HOST?.trim() || '';
 
 const smtpPort = () => Number(process.env.SMTP_PORT) || 587;
 
-const mailFrom = () => process.env.MAIL_FROM?.trim() || process.env.SMTP_USER?.trim() || '';
+const mailFrom = () => process.env.MAIL_FROM?.trim() || DEFAULT_MAIL_FROM;
 
-export const isMailConfigured = (): boolean => Boolean(smtpHost() && mailFrom());
+export const isMailConfigured = (): boolean => Boolean(smtpHost());
 
 const getTransporter = (): Transporter => {
   if (transporter) return transporter;
@@ -36,7 +38,7 @@ const getTransporter = (): Transporter => {
 
 export const sendMail = async ({ to, subject, html, text }: MailMessage): Promise<boolean> => {
   if (!isMailConfigured()) {
-    console.warn(`✗ Email not configured (SMTP_HOST / MAIL_FROM) — skipped "${subject}"`);
+    console.warn(`✗ Email not configured (SMTP_HOST) — skipped "${subject}"`);
     return false;
   }
   if (to.length === 0) {

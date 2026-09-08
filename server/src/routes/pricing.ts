@@ -25,9 +25,11 @@ const COLUMNS = [
 const LIST_SELECT = `
   SELECT p.*,
          c.name AS customer_name,
+         c.short_name AS customer_short_name,
          i.name AS description,
          i.size AS size,
-         s.name AS supplier_name
+         s.name AS supplier_name,
+         s.short_name AS supplier_short_name
   FROM pricing p
   JOIN customers c ON c.id = p.customer_id
   JOIN items     i ON i.id = p.item_id

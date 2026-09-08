@@ -2,10 +2,10 @@ import { pool } from '../db';
 import { isMailConfigured, sendMail } from './mailer';
 import {
   EXPIRY_STAGES,
-  stageEmailHtml,
-  stageEmailText,
+  routeEmailHtml,
+  routeEmailSubject,
+  routeEmailText,
   stageForDaysLeft,
-  stageSubject,
   type ExpiringRoute,
   type ExpiryStage,
 } from './routeExpiryEmail';
@@ -19,6 +19,8 @@ const TICK_MS = 15 * 60 * 1000;
 const DEFAULT_ALERT_HOUR = 8;
 
 const DEFAULT_ALERT_TIMEZONE = 'Asia/Jerusalem';
+
+const DEFAULT_ALERT_RECIPIENTS = ['log.il@kfg.co.il'];
 
 const alertHour = (): number => {
   const parsed = Number(process.env.ROUTE_ALERT_HOUR);
@@ -39,11 +41,12 @@ const currentHour = (): number => {
   }
 };
 
-const loadRecipients = async (): Promise<string[]> => {
-  const result = await pool.query<{ email: string }>(
-    "SELECT DISTINCT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email <> '' ORDER BY email",
-  );
-  return result.rows.map((row) => row.email);
+const recipients = (): string[] => {
+  const configured = (process.env.ROUTE_ALERT_RECIPIENTS ?? '')
+    .split(',')
+    .map((address) => address.trim())
+    .filter(Boolean);
+  return configured.length > 0 ? configured : DEFAULT_ALERT_RECIPIENTS;
 };
 
 const loadPendingRoutes = async (): Promise<PendingRoute[]> => {
@@ -65,13 +68,12 @@ const loadPendingRoutes = async (): Promise<PendingRoute[]> => {
   return result.rows;
 };
 
-const recordSent = async (stage: ExpiryStage, routes: ExpiringRoute[]): Promise<void> => {
+const recordSent = async (stage: ExpiryStage, route: ExpiringRoute): Promise<void> => {
   await pool.query(
     `INSERT INTO route_expiry_notifications (route_id, stage, validity)
-     SELECT due.route_id, $2, due.validity
-       FROM unnest($1::varchar[], $3::date[]) AS due(route_id, validity)
+     VALUES ($1, $2, $3)
      ON CONFLICT DO NOTHING`,
-    [routes.map((route) => route.id), stage, routes.map((route) => route.validity)],
+    [route.id, stage, route.validity],
   );
 };
 
@@ -92,36 +94,31 @@ const runRouteExpiryNotifications = async (): Promise<void> => {
   const dueByStage = await collectDueRoutes();
   if (dueByStage.size === 0) return;
 
-  const recipients = await loadRecipients();
-  if (recipients.length === 0) {
-    console.warn('⚠ No administrator has an email address — route validity alerts have nowhere to go');
-    return;
-  }
-
+  const to = recipients();
   let delivered = 0;
 
   for (const stage of EXPIRY_STAGES) {
-    const routes = dueByStage.get(stage);
-    if (!routes?.length) continue;
-    const sent = await sendMail({
-      to: recipients,
-      subject: stageSubject(stage, routes.length),
-      html: stageEmailHtml(stage, routes),
-      text: stageEmailText(stage, routes),
-    });
-    if (!sent) continue;
-    await recordSent(stage, routes);
-    delivered += 1;
+    for (const route of dueByStage.get(stage) ?? []) {
+      const sent = await sendMail({
+        to,
+        subject: routeEmailSubject(route),
+        html: routeEmailHtml(route),
+        text: routeEmailText(route),
+      });
+      if (!sent) continue;
+      await recordSent(stage, route);
+      delivered += 1;
+    }
   }
 
   if (delivered > 0) {
-    console.log(`✓ Route validity alerts sent (${delivered} email(s), ${recipients.length} recipient(s))`);
+    console.log(`✓ Route validity alerts sent (${delivered} email(s) to ${to.join(', ')})`);
   }
 };
 
 export const startRouteExpiryNotifier = (): void => {
   if (!isMailConfigured()) {
-    console.warn('⚠ Route validity alerts disabled — SMTP_HOST / MAIL_FROM are not set');
+    console.warn('⚠ Route validity alerts disabled — SMTP_HOST is not set');
     return;
   }
 
