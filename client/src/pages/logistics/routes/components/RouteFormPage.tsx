@@ -192,8 +192,7 @@ export const RouteFormPage = () => {
   const fileHint = fileError
     || (fileChange instanceof File ? 'Attached when you save' : '')
     || (isSavedFileShown ? [formatFileSize(r?.file_size), r?.file_uploaded_at ? formatDate(r.file_uploaded_at) : '']
-        .filter(Boolean).join(' · ') : '')
-    || 'PDF, Word, Excel or image · up to 10 MB';
+        .filter(Boolean).join(' · ') : '');
 
   const applyTodayRates = () => {
     if (!fxRates) return;
@@ -274,29 +273,27 @@ export const RouteFormPage = () => {
               <FormField label="Origin" value={form.origin} onChange={set('origin')} />
               <FormField label="Destination" value={form.destination} onChange={set('destination')} />
             </Box>
-            <Box sx={{ ...gridSx(3), mb: 1.25 }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-end', pb: 1, fontSize: '0.72rem', color: 'text.disabled' }}>
-                {[form.origin, form.destination].filter(Boolean).join(' → ')}
-                {form.tt ? ` · ${form.tt} days` : ''}
-              </Box>
+            <Box sx={gridSx(3)}>
+              <FileField
+                label="Reference File"
+                fileName={shownFileName}
+                accept={ROUTE_FILE_ACCEPT}
+                hint={fileHint}
+                error={!!fileError}
+                emptyLabel="Upload document"
+                onSelect={selectFile}
+                onOpen={isSavedFileShown ? openFile : undefined}
+                onRemove={removeFile}
+              />
               <FormSelect label="POL" value={form.origin_port} onChange={set('origin_port')} options={options('sea_port', form.origin_port)} />
               <FormSelect label="POD" value={form.destination_port} onChange={set('destination_port')} options={options('sea_port', form.destination_port)} />
             </Box>
-            <Box sx={gridSx(3)}>
-              <Box sx={{ gridColumn: 'span 2' }}>
-                <FileField
-                  label="Reference File"
-                  fileName={shownFileName}
-                  accept={ROUTE_FILE_ACCEPT}
-                  hint={fileHint}
-                  error={!!fileError}
-                  emptyLabel="Upload the route document"
-                  onSelect={selectFile}
-                  onOpen={isSavedFileShown ? openFile : undefined}
-                  onRemove={removeFile}
-                />
+            {(form.origin || form.destination || form.tt) && (
+              <Box sx={{ mt: 1, fontSize: '0.72rem', color: 'text.disabled' }}>
+                {[form.origin, form.destination].filter(Boolean).join(' → ')}
+                {form.tt ? ` · ${form.tt} days` : ''}
               </Box>
-            </Box>
+            )}
           </FormPanel>
 
           <FormPanel label="DETAILS">
