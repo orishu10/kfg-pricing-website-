@@ -30,7 +30,7 @@ interface PartyFormDialogProps {
 
 const EMPTY = {
   id: '', name: '', short_name: '', phone: '', incoterms: '', currency: '',
-  address: '', city: '', zip_code: '', country: '',
+  payment_terms: '', address: '', city: '', zip_code: '', country: '',
 };
 
 const toForm = (initial: Customer | Supplier | null) =>
@@ -42,6 +42,7 @@ const toForm = (initial: Customer | Supplier | null) =>
         phone: initial.phone ?? '',
         incoterms: initial.incoterms ?? '',
         currency: initial.currency ?? '',
+        payment_terms: initial.payment_terms ?? '',
         address: initial.address ?? '',
         city: initial.city ?? '',
         zip_code: initial.zip_code ?? '',
@@ -79,13 +80,17 @@ export const PartyFormDialog = ({
     e.preventDefault();
     setSubmitted(true);
     if (hasErrors) return;
-    const { id, name, short_name, phone, incoterms, currency, address, city, zip_code, country } = form;
+    const {
+      id, name, short_name, phone, incoterms, currency, payment_terms,
+      address, city, zip_code, country,
+    } = form;
     onSubmit(id.trim(), {
       name: name.trim(),
       short_name: short_name.trim() || null,
       phone: phone.trim() || null,
       incoterms: incoterms.trim() || null,
       currency: currency.trim() || null,
+      payment_terms: payment_terms.trim() || null,
       address: address.trim() || null,
       city: city.trim() || null,
       zip_code: zip_code.trim() || null,
@@ -160,7 +165,21 @@ export const PartyFormDialog = ({
             error={submitted && nameMissing}
             helperText={submitted && nameMissing ? 'Full name is required' : undefined}
           />
-          <CommonInput label="Short Name" size="small" value={form.short_name} onChange={set('short_name')} />
+          <CommonInput label={entity} size="small" value={form.short_name} onChange={set('short_name')} />
+        </FormSection>
+
+        <FormSection label="Address">
+          <CommonInput label="Address" size="small" value={form.address} onChange={set('address')} />
+          <CommonInput label="ZIP Code" size="small" value={form.zip_code} onChange={set('zip_code')} />
+          <CommonInput label="City" size="small" value={form.city} onChange={set('city')} />
+          <CommonSelect
+            label="Country"
+            size="small"
+            searchable
+            value={form.country}
+            onChange={set('country')}
+            options={options('country', form.country)}
+          />
         </FormSection>
 
         <FormSection label="Contact & Terms">
@@ -186,22 +205,13 @@ export const PartyFormDialog = ({
             onChange={set('currency')}
             options={CURRENCY_OPTIONS}
           />
-        </FormSection>
-
-        <FormSection label="Address">
-          <Box sx={{ gridColumn: { sm: 'span 2' } }}>
-            <CommonInput label="Address" size="small" value={form.address} onChange={set('address')} />
-          </Box>
-          <CommonInput label="City" size="small" value={form.city} onChange={set('city')} />
-          <CommonInput label="ZIP Code" size="small" value={form.zip_code} onChange={set('zip_code')} />
-          <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+          <Box sx={{ alignSelf: 'end' }}>
             <CommonSelect
-              label="Country"
+              label="Payment Terms"
               size="small"
-              searchable
-              value={form.country}
-              onChange={set('country')}
-              options={options('country', form.country)}
+              value={form.payment_terms}
+              onChange={set('payment_terms')}
+              options={options('payment_terms', form.payment_terms)}
             />
           </Box>
         </FormSection>

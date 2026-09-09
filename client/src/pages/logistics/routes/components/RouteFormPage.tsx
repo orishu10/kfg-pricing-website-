@@ -11,20 +11,24 @@ import { useAuth } from '../../../../context/auth';
 import {
   ConfirmDialog, ErrorAlert, LoadingPage, SegmentedControl, useDiscardGuard, useToast,
 } from '../../../../components';
-import { FormField, FormSelect, FormPanel, gridSx } from '../../components/form';
+import { FileField, FormField, FormSelect, FormPanel, gridSx } from '../../components/form';
 import { useLookups } from '../../../../hooks/useLookups';
 import { changedFieldCount } from '../../../../utils/forms';
-import { formatNumber } from '../../../../utils/format';
+import { useUnsavedWork } from '../../../../hooks/useUnsavedWork';
+import { formatFileSize, formatNumber } from '../../../../utils/format';
+import { saveBlob } from '../../../../utils/download';
 import { formatDate } from '../../../../utils/time';
 import {
   EMPTY_ROUTE, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, FX_STALE_MS, INCOTERMS, ROUTE_CURRENCIES,
-  type Incoterm, type RouteCurrency, type RouteForm,
+  ROUTE_FILE_ACCEPT, type Incoterm, type RouteCurrency, type RouteForm,
 } from '../utils/consts';
 import {
-  daysUntil, deriveRoute, incotermAmounts, incotermCurrency, routeToForm, routeTotals, totalCurrency, validityChip,
+  daysUntil, deriveRoute, incotermAmounts, incotermCurrency, routeFileError, routeToForm, routeTotals,
+  totalCurrency, validityChip,
 } from '../utils/helpers';
 import {
-  getRoute, createRoute, updateRoute, getFxRates, getWeeklyShipments, getPricings, type RouteInput,
+  getRoute, createRoute, updateRoute, getFxRates, getWeeklyShipments, getPricings,
+  uploadRouteFile, downloadRouteFile, deleteRouteFile, type Route, type RouteInput,
 } from '../../../../api';
 
 const SUMMARY_CARD_SX = {
@@ -56,6 +60,8 @@ export const RouteFormPage = () => {
   const { options } = useLookups();
   const [error, setError] = useState('');
   const [form, setForm] = useState<RouteForm>(EMPTY_ROUTE);
+  const [fileChange, setFileChange] = useState<File | 'remove' | null>(null);
+  const [fileError, setFileError] = useState('');
 
   const sourceQuery = useQuery({
     queryKey: ['route', sourceId],
@@ -78,7 +84,9 @@ export const RouteFormPage = () => {
 
   const initialForm = r ? routeToForm(r) : EMPTY_ROUTE;
   const changedCount = changedFieldCount(form, initialForm);
-  const { guardOpen, guard, discard, keepEditing } = useDiscardGuard(changedCount > 0);
+  const dirty = changedCount > 0 || fileChange !== null;
+  useUnsavedWork(dirty);
+  const { guardOpen, guard, discard, keepEditing } = useDiscardGuard(dirty);
   const leave = () => navigate('/logistics/routes');
 
   const update = (patch: Partial<RouteForm>) =>
@@ -93,8 +101,30 @@ export const RouteFormPage = () => {
     const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
     setError(msg || fallback);
   };
-  const done = () => {
+  const applyFileChange = async (id: string) => {
+    if (fileChange === null) return;
+    if (fileChange === 'remove') {
+      await deleteRouteFile(id).catch((err: unknown) => {
+        const status = (err as { response?: { status?: number } }).response?.status;
+        if (status !== 404) throw err;
+      });
+    } else {
+      await uploadRouteFile(id, fileChange);
+    }
+    setFileChange(null);
+  };
+
+  const done = async (saved: Route) => {
+    try {
+      await applyFileChange(saved.id);
+    } catch (err) {
+      queryClient.invalidateQueries({ queryKey: ['routes'] });
+      queryClient.invalidateQueries({ queryKey: ['route', saved.id] });
+      onError('The route was saved, but its file could not be updated')(err);
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ['routes'] });
+    queryClient.invalidateQueries({ queryKey: ['route', saved.id] });
     queryClient.invalidateQueries({ queryKey: ['route-expiry-status'] });
     showToast({
       title: `Route ${form.reference || routeId || ''} saved`.replace(/\s+/g, ' ').trim(),
@@ -131,6 +161,39 @@ export const RouteFormPage = () => {
   const validity = validityChip(daysUntil(form.validity || null));
   const usedByShipments = isEdit ? shipments.filter((shipment) => shipment.route === routeId).length : 0;
   const usedByPricings = isEdit ? pricings.filter((pricing) => pricing.route === routeId).length : 0;
+
+  const savedFileName = isEdit ? r?.file_name ?? null : null;
+  const shownFileName = fileChange instanceof File
+    ? fileChange.name
+    : fileChange === 'remove' ? null : savedFileName;
+  const isSavedFileShown = shownFileName !== null && shownFileName === savedFileName;
+
+  const selectFile = (file: File) => {
+    const message = routeFileError(file);
+    setFileError(message);
+    if (!message) setFileChange(file);
+  };
+
+  const removeFile = () => {
+    setFileError('');
+    setFileChange(savedFileName ? 'remove' : null);
+  };
+
+  const openFile = async () => {
+    if (!routeId || !savedFileName) return;
+    setFileError('');
+    try {
+      saveBlob(await downloadRouteFile(routeId), savedFileName);
+    } catch {
+      setFileError('Failed to download the file');
+    }
+  };
+
+  const fileHint = fileError
+    || (fileChange instanceof File ? 'Attached when you save' : '')
+    || (isSavedFileShown ? [formatFileSize(r?.file_size), r?.file_uploaded_at ? formatDate(r.file_uploaded_at) : '']
+        .filter(Boolean).join(' · ') : '')
+    || 'PDF, Word, Excel or image · up to 10 MB';
 
   const applyTodayRates = () => {
     if (!fxRates) return;
@@ -211,13 +274,28 @@ export const RouteFormPage = () => {
               <FormField label="Origin" value={form.origin} onChange={set('origin')} />
               <FormField label="Destination" value={form.destination} onChange={set('destination')} />
             </Box>
-            <Box sx={gridSx(3)}>
+            <Box sx={{ ...gridSx(3), mb: 1.25 }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-end', pb: 1, fontSize: '0.72rem', color: 'text.disabled' }}>
                 {[form.origin, form.destination].filter(Boolean).join(' → ')}
                 {form.tt ? ` · ${form.tt} days` : ''}
               </Box>
               <FormSelect label="POL" value={form.origin_port} onChange={set('origin_port')} options={options('sea_port', form.origin_port)} />
               <FormSelect label="POD" value={form.destination_port} onChange={set('destination_port')} options={options('sea_port', form.destination_port)} />
+            </Box>
+            <Box sx={gridSx(3)}>
+              <Box sx={{ gridColumn: 'span 2' }}>
+                <FileField
+                  label="Reference File"
+                  fileName={shownFileName}
+                  accept={ROUTE_FILE_ACCEPT}
+                  hint={fileHint}
+                  error={!!fileError}
+                  emptyLabel="Upload the route document"
+                  onSelect={selectFile}
+                  onOpen={isSavedFileShown ? openFile : undefined}
+                  onRemove={removeFile}
+                />
+              </Box>
             </Box>
           </FormPanel>
 

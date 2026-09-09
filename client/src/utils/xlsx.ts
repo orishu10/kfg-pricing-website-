@@ -1,3 +1,5 @@
+import { saveBlob } from './download';
+
 // Minimal, dependency-free .xlsx (OOXML) writer.
 // Produces a genuine Excel file from a header row + data rows, packaged as a
 // "stored" (uncompressed) ZIP. We only ever WRITE our own data here.
@@ -292,12 +294,5 @@ export const downloadXlsx = (
   const blob = new Blob([bytes as BlobPart], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  saveBlob(blob, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
 };

@@ -88,6 +88,17 @@ timezone is explicit because Render runs the process in UTC. `route_expiry_notif
 keys sent emails on `(route_id, stage, validity)`: each stage sends once, and
 moving a route's validity forward re-arms all three.
 
+### Route reference files
+Each route can carry one attached document (`route_files`, keyed by `route_id`,
+replaced on re-upload). Bytes live in Postgres as `BYTEA`, not on disk — Render
+rebuilds the container filesystem on every deploy. `GET /api/routes` and
+`GET /api/routes/:id` LEFT JOIN the metadata as `file_name` / `file_size` /
+`file_uploaded_at` (never the bytes); `POST /api/routes/:id/file?name=&type=`
+takes the raw body through `express.raw` (10 MB cap, extension allowlist),
+`GET`/`DELETE /api/routes/:id/file` download and remove it. The form holds the
+picked file in state and applies it only after the route itself saves, so a new
+route gets an id first.
+
 ### Database schema (`db/schema.sql`)
 Five core tables: `users`, `customers`, `suppliers`, `customer_suppliers` (junction), `items`.
 `customers` and `suppliers` share an identical profile shape, `currency` included —

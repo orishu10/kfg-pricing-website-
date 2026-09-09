@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { ConfirmDialog } from '../confirmDialog/ConfirmDialog';
 import { ErrorAlert } from '../errorAlert/ErrorAlert';
+import { useUnsavedWork } from '../../hooks/useUnsavedWork';
 import { useDiscardGuard } from './useDiscardGuard';
 
 interface AppDialogProps {
@@ -59,6 +60,7 @@ export const AppDialog = ({
   fullHeight = sideNav !== undefined,
 }: AppDialogProps) => {
   const dirty = changedCount > 0;
+  useUnsavedWork(open && dirty);
   const { guardOpen, guard, discard, keepEditing } = useDiscardGuard(dirty);
   const requestClose = () => guard(onClose);
 

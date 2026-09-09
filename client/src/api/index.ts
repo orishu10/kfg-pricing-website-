@@ -11,6 +11,7 @@ export interface PartyProfile {
   short_name: string | null;
   phone: string | null;
   incoterms: string | null;
+  payment_terms: string | null;
   address: string | null;
   city: string | null;
   zip_code: string | null;
@@ -251,6 +252,10 @@ export interface Route {
 
   total_currency: string | null; total_cost: N;
 
+  file_name: string | null;
+  file_size: number | null;
+  file_uploaded_at: string | null;
+
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
@@ -266,6 +271,23 @@ export const createRoute = async (data: RouteInput) =>
 export const updateRoute = async (id: string, data: RouteInput) =>
   (await api.put<Route>(`/routes/${id}`, data)).data;
 export const deleteRoute = async (id: string) => api.delete(`/routes/${id}`);
+
+export interface RouteFile {
+  file_name: string;
+  file_size: number;
+  file_uploaded_at: string;
+}
+
+export const uploadRouteFile = async (id: string, file: File) =>
+  (await api.post<RouteFile>(`/routes/${id}/file`, file, {
+    headers: { 'Content-Type': 'application/octet-stream' },
+    params: { name: file.name, type: file.type || 'application/octet-stream' },
+  })).data;
+
+export const downloadRouteFile = async (id: string) =>
+  (await api.get(`/routes/${id}/file`, { responseType: 'blob' })).data as Blob;
+
+export const deleteRouteFile = async (id: string) => api.delete(`/routes/${id}/file`);
 
 export interface RouteExpiryStatus {
   lastSentAt: string | null;
@@ -428,7 +450,8 @@ export type LookupCategory =
   | 'country'
   | 'container'
   | 'shipping_line'
-  | 'sea_port';
+  | 'sea_port'
+  | 'payment_terms';
 
 export interface LookupOption {
   id: number;
@@ -491,3 +514,11 @@ export interface AuthSession {
 
 export const login = async (username: string, password: string) =>
   (await api.post<AuthSession>('/auth/login', { username, password })).data;
+
+// App version
+export interface AppVersion {
+  version: string;
+  autoRefresh: boolean;
+}
+
+export const getAppVersion = async () => (await api.get<AppVersion>('/version')).data;

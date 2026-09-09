@@ -7,12 +7,13 @@ import type { Supplier } from '../../api';
 
 const columns: Column<Supplier>[] = [
   { key: 'id', label: '#', mono: true, align: 'center' },
-  { key: 'short_name', label: 'Short Name', sortable: true, filterable: false, render: (r) => partyLabel(r.short_name, r.name) },
-  { key: 'name', label: 'Supplier', sortable: true, filterable: false },
+  { key: 'short_name', label: 'Supplier', sortable: true, filterable: false, render: (r) => partyLabel(r.short_name, r.name) },
+  { key: 'name', label: 'Full Name', hidden: true },
   { key: 'address', label: 'Address', render: (r) => r.address ?? '' },
   { key: 'city', label: 'City', render: (r) => r.city ?? '' },
   { key: 'country', label: 'Country', filterable: true, render: (r) => r.country ?? '' },
   { key: 'currency', label: 'Currency', align: 'center', render: (r) => r.currency ?? '' },
+  { key: 'payment_terms', label: 'Payment Terms', filterable: true, render: (r) => r.payment_terms ?? '' },
   { key: 'incoterms', label: 'Incoterms', sortable: true, render: (r) => r.incoterms ?? '' },
 ];
 

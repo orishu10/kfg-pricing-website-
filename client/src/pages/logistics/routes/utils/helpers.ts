@@ -1,5 +1,7 @@
 import {
   EMPTY_ROUTE,
+  ROUTE_FILE_EXTENSIONS,
+  ROUTE_FILE_MAX_BYTES,
   ROUTE_KEYS,
   INCOTERMS,
   EXPIRY_WINDOW,
@@ -157,3 +159,13 @@ export const routeLane = (route: Route): string =>
     .join(' · ');
 
 export const routeTitle = (route: Route): string => route.reference || route.shipping_line || `Route ${route.id}`;
+
+export const routeFileError = (file: File): string => {
+  const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!ROUTE_FILE_EXTENSIONS.includes(extension)) {
+    return `Allowed file types: ${ROUTE_FILE_EXTENSIONS.join(', ')}`;
+  }
+  if (file.size > ROUTE_FILE_MAX_BYTES) return 'The file is larger than 10 MB';
+  if (file.size === 0) return 'The file is empty';
+  return '';
+};

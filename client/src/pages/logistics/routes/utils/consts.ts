@@ -26,6 +26,12 @@ export const EMPTY_ROUTE: RouteForm = {
   total_currency: 'ILS',
 };
 
+export const ROUTE_FILE_MAX_BYTES = 10 * 1024 * 1024;
+
+export const ROUTE_FILE_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'png', 'jpg', 'jpeg'];
+
+export const ROUTE_FILE_ACCEPT = ROUTE_FILE_EXTENSIONS.map((extension) => `.${extension}`).join(',');
+
 export const EXPIRY_WINDOW = 7;
 
 export type ExpirySeverity = 'expired' | 'urgent' | 'soon';

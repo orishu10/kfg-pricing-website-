@@ -11,6 +11,8 @@ import { AdminGuard } from './layout/AdminGuard';
 import { ModuleGuard } from './layout/ModuleGuard';
 import { AppLayout } from './layout/AppLayout';
 import { ToastProvider } from './components/toast/ToastProvider';
+import { DeploymentRefresh } from './components/deploymentRefresh/DeploymentRefresh';
+import { ChunkErrorBoundary } from './components/chunkErrorBoundary/ChunkErrorBoundary';
 
 const SignInPage = lazy(() => import('./pages/auth/SignInPage'));
 const HomePage = lazy(() => import('./pages/home/HomePage'));
@@ -41,6 +43,8 @@ export const App = () => (
     <ToastProvider>
     <AuthProvider>
       <BrowserRouter>
+        <DeploymentRefresh />
+        <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<SignInPage />} />
@@ -64,6 +68,7 @@ export const App = () => (
                   <Route path="/containers" element={<ListsPage category="container" />} />
                   <Route path="/shipping-lines" element={<ListsPage category="shipping_line" />} />
                   <Route path="/sea-ports" element={<ListsPage category="sea_port" />} />
+                  <Route path="/payment-terms" element={<ListsPage category="payment_terms" />} />
                 </Route>
 
                 <Route element={<ModuleGuard module="pricing" />}>
@@ -89,6 +94,7 @@ export const App = () => (
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Suspense>
+        </ChunkErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
     </ToastProvider>

@@ -86,6 +86,7 @@ export const useSuppliersPage = () => {
           phone: null,
           incoterms: r.incoterms || null,
           currency: r.currency || null,
+          payment_terms: r.payment_terms || null,
           address: r.address || null,
           city: r.city || null,
           zip_code: null,
@@ -117,7 +118,10 @@ export const useSuppliersPage = () => {
 
   const q = search.toLowerCase();
   const filtered = suppliers.filter(
-    (s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q),
+    (s) =>
+      s.name.toLowerCase().includes(q)
+      || (s.short_name ?? '').toLowerCase().includes(q)
+      || s.id.toLowerCase().includes(q),
   );
 
   return {

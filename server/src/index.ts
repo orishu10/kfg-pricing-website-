@@ -20,6 +20,8 @@ import schedulesRouter from './routes/schedules';
 import fxRouter from './routes/fx';
 import authRouter from './routes/auth';
 import usersRouter from './routes/users';
+import versionRouter from './routes/version';
+import { appVersion, APP_VERSION_HEADER } from './services/appVersion';
 import { requireAuth, requireAdmin, requireInternalUser, requireModuleForWrites } from './middleware/auth';
 
 dotenv.config();
@@ -50,12 +52,14 @@ app.use(
   cors({
     origin: (origin, callback) =>
       isOriginAllowed(origin) ? callback(null, true) : callback(new Error('Not allowed by CORS')),
+    exposedHeaders: [APP_VERSION_HEADER],
   })
 );
 app.use(compression());
 app.use(express.json());
 
 app.use('/api', (req, res, next) => {
+  res.set(APP_VERSION_HEADER, appVersion);
   if (req.method === 'GET') res.set('Cache-Control', 'private, no-cache');
   next();
 });
@@ -65,6 +69,7 @@ const dbmAccess = [...internalAccess, requireModuleForWrites('dbm')];
 const pricingAccess = [...internalAccess, requireModuleForWrites('pricing')];
 const logisticsAccess = [...internalAccess, requireModuleForWrites('logistics')];
 
+app.use('/api/version', versionRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', requireAuth, requireAdmin, usersRouter);
 app.use('/api/customers', dbmAccess, customersRouter);

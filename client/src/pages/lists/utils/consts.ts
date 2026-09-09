@@ -23,4 +23,5 @@ export const LIST_CATEGORIES: Record<LookupCategory, ListCategoryConfig> = {
   container: { category: 'container', title: 'Containers', singular: 'container', reorderable: false, hasPallets: true },
   shipping_line: { category: 'shipping_line', title: 'Shipping Lines', singular: 'shipping line', reorderable: true },
   sea_port: { category: 'sea_port', title: 'Sea Ports', singular: 'sea port', reorderable: true },
+  payment_terms: { category: 'payment_terms', title: 'Payment Terms', singular: 'payment term', reorderable: true },
 };

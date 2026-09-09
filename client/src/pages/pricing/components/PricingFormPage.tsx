@@ -12,6 +12,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../components';
 import { useLookups } from '../../../hooks/useLookups';
+import { useUnsavedWork } from '../../../hooks/useUnsavedWork';
+import { changedFieldCount } from '../../../utils/forms';
 import { formatNumber } from '../../../utils/format';
 import {
   EMPTY_PRICING, NUMERIC_KEYS, type PricingForm,
@@ -161,6 +163,11 @@ export const PricingFormPage = () => {
     setSynced(sig);
     setForm(p ? pricingToForm(p) : EMPTY_PRICING);
   }
+
+  const initialForm = p ? pricingToForm(p) : EMPTY_PRICING;
+  useUnsavedWork(
+    changedFieldCount({ ...form, ex_current: '' }, { ...initialForm, ex_current: '' }) > 0,
+  );
 
   const set = (k: keyof PricingForm) => (v: string) =>
     setForm((prev) => {

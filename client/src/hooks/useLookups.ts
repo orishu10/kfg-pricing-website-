@@ -8,6 +8,7 @@ const EMPTY_GROUPS: LookupGroups = {
   container: [],
   shipping_line: [],
   sea_port: [],
+  payment_terms: [],
 };
 
 export const useLookups = () => {

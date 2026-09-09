@@ -5,6 +5,7 @@ const router = Router();
 
 const CATEGORIES = [
   'incoterms', 'currency_pair', 'country', 'container', 'shipping_line', 'sea_port',
+  'payment_terms',
 ] as const;
 
 type Category = (typeof CATEGORIES)[number];

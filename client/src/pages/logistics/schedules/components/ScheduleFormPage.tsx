@@ -8,6 +8,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../../../context/auth';
 import { ErrorAlert, LoadingPage } from '../../../../components';
 import { useLookups } from '../../../../hooks/useLookups';
+import { useUnsavedWork } from '../../../../hooks/useUnsavedWork';
+import { changedFieldCount } from '../../../../utils/forms';
 import { FormField, FormSelect, FormPanel, gridSx } from '../../components/form';
 import { EMPTY_SCHEDULE, type ScheduleForm } from '../utils/consts';
 import { scheduleToForm } from '../utils/helpers';
@@ -41,6 +43,9 @@ export const ScheduleFormPage = () => {
     setSynced(sig);
     setForm(s ? scheduleToForm(s) : EMPTY_SCHEDULE);
   }
+
+  const initialForm = s ? scheduleToForm(s) : EMPTY_SCHEDULE;
+  useUnsavedWork(changedFieldCount(form, initialForm) > 0);
 
   const set = (k: keyof ScheduleForm) => (v: string) => setForm((prev) => ({ ...prev, [k]: v }));
 

@@ -7,7 +7,8 @@ const router = Router();
 const n = (v: unknown) => (v === '' || v === undefined ? null : v);
 
 const PROFILE_FIELDS = [
-  'short_name', 'phone', 'incoterms', 'currency', 'address', 'city', 'zip_code', 'country',
+  'short_name', 'phone', 'incoterms', 'currency', 'payment_terms',
+  'address', 'city', 'zip_code', 'country',
 ] as const;
 
 // GET /api/customers
@@ -42,8 +43,9 @@ router.post('/', async (req: Request, res: Response) => {
   const b = req.body;
   try {
     const result = await pool.query(
-      `INSERT INTO customers (id, name, short_name, phone, incoterms, currency, address, city, zip_code, country)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO customers (id, name, short_name, phone, incoterms, currency, payment_terms,
+                             address, city, zip_code, country)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [id, name, ...PROFILE_FIELDS.map((f) => n(b[f]))]
     );
@@ -66,16 +68,17 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     const result = await pool.query(
       `UPDATE customers SET
-        name       = $1,
-        short_name = $2,
-        phone      = $3,
-        incoterms  = $4,
-        currency   = $5,
-        address    = $6,
-        city       = $7,
-        zip_code   = $8,
-        country    = $9
-       WHERE id = $10
+        name          = $1,
+        short_name    = $2,
+        phone         = $3,
+        incoterms     = $4,
+        currency      = $5,
+        payment_terms = $6,
+        address       = $7,
+        city          = $8,
+        zip_code      = $9,
+        country       = $10
+       WHERE id = $11
        RETURNING *`,
       [name, ...PROFILE_FIELDS.map((f) => n(b[f])), req.params.id]
     );

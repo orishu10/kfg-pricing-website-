@@ -48,6 +48,7 @@ export interface Column<T> {
   sortable?: boolean;
   filterable?: boolean;
   mono?: boolean;
+  hidden?: boolean;
   width?: number | string;
   minWidth?: number | string;
   render?: (row: T) => React.ReactNode;
@@ -196,6 +197,8 @@ export function DataTable<T>({
     Array.from(new Set(rows.map((r) => displayText(col, r)).filter((s) => s !== ""))).sort(
       (a, b) => a.localeCompare(b, undefined, { numeric: true }),
     );
+
+  const visibleColumns = columns.filter((col) => !col.hidden);
 
   const activeFilters = Object.entries(filters).filter(([, v]) => v.length > 0);
 
@@ -624,7 +627,7 @@ export function DataTable<T>({
           {fitWidth && (
             <colgroup>
               {selectable && <col style={{ width: 44 }} />}
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <col key={col.key} style={col.width != null ? { width: col.width } : undefined} />
               ))}
               {hasActions && <col style={{ width: 48 }} />}
@@ -647,10 +650,10 @@ export function DataTable<T>({
                   />
                 </TableCell>
               )}
-              {columns.map((col, idx) => {
+              {visibleColumns.map((col, idx) => {
                 const active = sort?.key === col.key;
                 const canFilter = (col.filterable ?? col.sortable) && !disableFilters;
-                const showDivider = idx < columns.length - 1 || hasActions;
+                const showDivider = idx < visibleColumns.length - 1 || hasActions;
                 return (
                   <TableCell
                     key={col.key}
@@ -734,8 +737,8 @@ export function DataTable<T>({
                     />
                   </TableCell>
                 )}
-                {columns.map((col, idx) => {
-                  const showDivider = idx < columns.length - 1 || hasActions;
+                {visibleColumns.map((col, idx) => {
+                  const showDivider = idx < visibleColumns.length - 1 || hasActions;
                   return (
                     <TableCell
                       key={col.key}

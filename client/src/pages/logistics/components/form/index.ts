@@ -1,3 +1,4 @@
+export { FileField } from './FileField';
 export { FormField } from './FormField';
 export { FormSelect, type SelectOption } from './FormSelect';
 export { FormPanel } from './FormPanel';

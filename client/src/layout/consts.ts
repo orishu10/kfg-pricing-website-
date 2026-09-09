@@ -30,6 +30,7 @@ export const MODULES: NavModule[] = [
       { label: 'Containers', path: '/containers', ready: true },
       { label: 'Shipping Lines', path: '/shipping-lines', ready: true },
       { label: 'Sea Ports', path: '/sea-ports', ready: true },
+      { label: 'Payment Terms', path: '/payment-terms', ready: true },
     ],
   },
   { label: 'Pricing', path: '/pricing', requires: 'pricing', ready: true, children: [] },

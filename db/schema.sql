@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS customers (
     phone      VARCHAR(50),
     incoterms  VARCHAR(50),
     currency   VARCHAR(10),                -- USD / EUR / ILS (drives pricing)
+    payment_terms VARCHAR(100),
     address    VARCHAR(255),
     city       VARCHAR(255),
     zip_code   VARCHAR(50),
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
     phone      VARCHAR(50),
     incoterms  VARCHAR(50),
     currency   VARCHAR(10),                -- USD / EUR / ILS (supplier price currency)
+    payment_terms VARCHAR(100),
     address    VARCHAR(255),
     city       VARCHAR(255),
     zip_code   VARCHAR(50),
@@ -259,7 +261,8 @@ CREATE TRIGGER update_routes_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Editable option lists that feed form dropdowns, keyed by `category`
--- (incoterms, currency_pair, country, container, shipping_line, sea_port).
+-- (incoterms, currency_pair, country, container, shipping_line, sea_port,
+-- payment_terms).
 -- Managed from the DBM > Lists pages; deletes are soft (active=false). Seed
 -- values are loaded by db/migration_016_lookup_options.sql.
 CREATE TABLE IF NOT EXISTS lookup_options (
@@ -274,6 +277,19 @@ CREATE TABLE IF NOT EXISTS lookup_options (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_lookup_category_value ON lookup_options(category, value);
 CREATE INDEX IF NOT EXISTS idx_lookup_category ON lookup_options(category);
+
+-- The reference document attached to a route (one per route, replaceable).
+-- Stored in the database rather than on disk: the web host rebuilds its
+-- filesystem on every deploy, while the database is backed up.
+CREATE TABLE IF NOT EXISTS route_files (
+    route_id    VARCHAR(50)  PRIMARY KEY REFERENCES routes(id) ON DELETE CASCADE,
+    filename    VARCHAR(255) NOT NULL,
+    mime_type   VARCHAR(150) NOT NULL,
+    size_bytes  INTEGER      NOT NULL,
+    content     BYTEA        NOT NULL,
+    uploaded_by VARCHAR(100),
+    created_at  TIMESTAMP    DEFAULT NOW()
+);
 
 -- Tracks which route validity alert emails have already gone out, so the daily
 -- notifier sends each stage once. The validity date is part of the key: pushing

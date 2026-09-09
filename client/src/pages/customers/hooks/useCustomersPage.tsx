@@ -86,6 +86,7 @@ export const useCustomersPage = () => {
           phone: null,
           incoterms: r.incoterms || null,
           currency: r.currency || null,
+          payment_terms: r.payment_terms || null,
           address: r.address || null,
           city: r.city || null,
           zip_code: null,
@@ -117,7 +118,10 @@ export const useCustomersPage = () => {
 
   const q = search.toLowerCase();
   const filtered = customers.filter(
-    (c) => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q),
+    (c) =>
+      c.name.toLowerCase().includes(q)
+      || (c.short_name ?? '').toLowerCase().includes(q)
+      || c.id.toLowerCase().includes(q),
   );
 
   return {
